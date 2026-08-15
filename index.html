@@ -4,35 +4,243 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>art · Corentin Bel</title>
-<meta name="description" content="Generative playthings.">
+<meta name="description" content="Brain × art projects and generative playthings.">
 <style>
-  :root { --bg:#07080c; --fg:#e8e6df; --dim:#8a8fa3; --accent:#6ea8ff; }
+  :root {
+    --bg:#07080c; --panel:#0a0e14; --fg:#e8e6df; --dim:#8a8fa3; --accent:#6ea8ff;
+    --border:#232b3a; --teal:#8ceedd; --amber:#eda100;
+  }
   * { margin:0; padding:0; box-sizing:border-box; }
-  html, body { height:100%; }
-  body { background:var(--bg); color:var(--fg); font-family:ui-sans-serif,system-ui,sans-serif; overflow:hidden; }
-  canvas { position:fixed; inset:0; display:block; cursor:crosshair; }
+  html { scroll-behavior:smooth; }
+  body { background:var(--bg); color:var(--fg); font-family:ui-sans-serif,system-ui,sans-serif; }
+  canvas { position:fixed; inset:0; display:block; z-index:0; }
+
+  /* ---------- hero (live flow field) ---------- */
+  .hero {
+    position:relative; height:85vh; z-index:1; cursor:crosshair;
+  }
   header {
-    position:fixed; top:0; left:0; right:0; z-index:2;
+    position:absolute; top:0; left:0; right:0;
     display:flex; justify-content:space-between; align-items:baseline;
     padding:1.4rem 2rem; pointer-events:none; mix-blend-mode:difference;
   }
+  header nav { display:flex; gap:1.2rem; }
   header a { pointer-events:auto; color:var(--dim); text-decoration:none; font-size:.9rem; }
   header a:hover { color:var(--accent); }
   h1 { font-weight:300; font-size:1.4rem; letter-spacing:.06em; }
   h1 b { font-weight:600; }
   #hint {
-    position:fixed; bottom:1.2rem; width:100%; text-align:center; z-index:2;
+    position:absolute; bottom:3.4rem; width:100%; text-align:center;
     color:#565b6e; font-size:.8rem; pointer-events:none; mix-blend-mode:difference;
   }
+  .scroll-ind {
+    position:absolute; bottom:.7rem; left:50%; transform:translateX(-50%);
+    color:var(--dim); text-decoration:none; font-size:1.1rem; line-height:1;
+    padding:.4rem .8rem; animation:bob 2.2s ease-in-out infinite;
+  }
+  .scroll-ind:hover { color:var(--fg); }
+  @keyframes bob {
+    0%, 100% { transform:translateX(-50%) translateY(0); opacity:.6; }
+    50%      { transform:translateX(-50%) translateY(6px); opacity:1; }
+  }
+
+  /* ---------- projects panel ---------- */
+  .projects {
+    position:relative; z-index:1; background:var(--panel);
+    border-top:1px solid var(--border);
+    padding:4rem 2rem 5rem; min-height:15vh;
+  }
+  .projects-inner { max-width:1060px; margin:0 auto; }
+  .kicker {
+    text-transform:uppercase; letter-spacing:.22em; font-size:.72rem;
+    color:var(--dim); margin-bottom:.6rem;
+  }
+  .projects h2 { font-weight:300; font-size:1.7rem; margin-bottom:2.2rem; }
+  .grid {
+    display:grid; gap:1.2rem;
+    grid-template-columns:repeat(auto-fill, minmax(290px, 1fr));
+  }
+  .card {
+    border:1px solid var(--border); border-radius:12px;
+    padding:1.4rem; background:rgba(255,255,255,0.015);
+    display:flex; flex-direction:column; gap:.8rem;
+    transition:background .25s, border-color .25s, transform .25s;
+  }
+  .card:hover {
+    background:rgba(255,255,255,0.045); border-color:#31405a;
+    backdrop-filter:blur(6px); transform:translateY(-2px);
+  }
+  .card-top { display:flex; align-items:center; justify-content:space-between; }
+  .card .emoji { font-size:2rem; line-height:1; }
+  .badge {
+    text-transform:uppercase; letter-spacing:.14em; font-size:.62rem;
+    padding:.28em .7em; border-radius:999px; border:1px solid var(--border);
+    color:var(--dim); white-space:nowrap;
+  }
+  .badge.live { color:var(--teal); border-color:rgba(140,238,221,.35); }
+  .badge.in-progress { color:var(--amber); border-color:rgba(237,161,0,.35); }
+  .card h3 { font-weight:500; font-size:1.05rem; letter-spacing:.02em; }
+  .card p { color:var(--dim); font-size:.88rem; line-height:1.55; flex:1; }
+  .card-links { display:flex; gap:1rem; }
+  .card-links a { color:var(--accent); font-size:.82rem; text-decoration:none; }
+  .card-links a:hover { text-decoration:underline; }
+
+  /* media strip: real media if present, shimmer placeholder otherwise */
+  .media-strip { display:flex; gap:.5rem; overflow-x:auto; }
+  .media-strip img, .media-strip video {
+    height:110px; border-radius:8px; border:1px solid var(--border);
+    max-width:100%; object-fit:cover;
+  }
+  .media-placeholder {
+    height:64px; border-radius:8px; border:1px dashed var(--border);
+    display:flex; align-items:center; justify-content:center;
+    color:#565b6e; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase;
+    background:linear-gradient(100deg, transparent 30%, rgba(232,230,223,.05) 50%, transparent 70%);
+    background-size:250% 100%; animation:shimmer 2.8s linear infinite;
+  }
+  @keyframes shimmer { from { background-position:120% 0; } to { background-position:-120% 0; } }
+
+  footer {
+    position:relative; z-index:1; background:var(--panel);
+    text-align:center; padding:0 2rem 2.5rem; color:#565b6e; font-size:.78rem;
+  }
+  footer a { color:var(--dim); text-decoration:none; }
+  footer a:hover { color:var(--accent); }
 </style>
 </head>
 <body>
-<header>
-  <h1><b>art</b>.corentinbel.com</h1>
-  <a href="https://corentinbel.com">← home</a>
-</header>
 <canvas id="c"></canvas>
-<div id="hint">flow field #<span id="seedn"></span> · click for a new one</div>
+
+<section class="hero" id="top">
+  <header>
+    <h1><b>art</b>.corentinbel.com</h1>
+    <nav>
+      <a href="https://corentinbel.com">home</a>
+      <a href="https://corentinbel.com/lab">lab</a>
+      <a href="https://corentinbel.com/aboutme">about me</a>
+    </nav>
+  </header>
+  <div id="hint">flow field #<span id="seedn"></span> · click for a new one</div>
+  <a class="scroll-ind" href="#projects" aria-label="scroll to projects">↓</a>
+</section>
+
+<section class="projects" id="projects">
+  <div class="projects-inner">
+    <div class="kicker">brain × art</div>
+    <h2>Projects</h2>
+    <div class="grid" id="grid"></div>
+  </div>
+</section>
+
+<footer>
+  <a href="https://corentinbel.com">corentinbel.com</a> · decoding brains, rendering the noise
+</footer>
+
+<script>
+// ============================================================
+// PROJECTS — add a project = one object.
+// status: "live" | "in progress" | "concept"
+// media:  paths under media/ (images or .mp4/.webm) → rendered as a strip
+// links:  [{label, href}]  ("#top" scrolls back to the flow field)
+// ============================================================
+const PROJECTS = [
+  {
+    id: 'neural-music',
+    emoji: '🎼',
+    title: 'Neural music spectacle',
+    status: 'in progress',
+    description: 'Live EEG/OPM decoding of what music does to a listening brain, projected as visuals during a concert — the audience watches the listener\'s cortex dance.',
+    media: [],
+    links: [],
+  },
+  {
+    id: 'music-to-images',
+    emoji: '🎨',
+    title: 'Music → images',
+    status: 'in progress',
+    description: 'Feeding decoded auditory features into image diffusion: what a song looks like, noise and all. Examples coming as the pipeline stabilises.',
+    media: [],
+    links: [],
+  },
+  {
+    id: 'petit-prince-imaged',
+    emoji: '🎬',
+    title: 'Le Petit Prince, imaged',
+    status: 'concept',
+    description: 'People listened to Le Petit Prince inside an fMRI scanner. Turning each listener\'s brain responses into their own private film of the story — one image sequence per brain.',
+    media: [],
+    links: [],
+  },
+  {
+    id: 'flow-fields',
+    emoji: '🌊',
+    title: 'Flow fields',
+    status: 'live',
+    description: 'The generative piece behind this page: seeded particle trails in a layered-sine flow field. Click the background for a new one.',
+    media: [],
+    links: [{ label: 'see it', href: '#top' }],
+  },
+];
+
+function renderProjects() {
+  const grid = document.getElementById('grid');
+  for (const p of PROJECTS) {
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.id = p.id;
+
+    const top = document.createElement('div');
+    top.className = 'card-top';
+    const em = document.createElement('span');
+    em.className = 'emoji'; em.textContent = p.emoji;
+    const badge = document.createElement('span');
+    badge.className = 'badge ' + p.status.replace(/\s+/g, '-');
+    badge.textContent = p.status;
+    top.append(em, badge);
+
+    const h3 = document.createElement('h3');
+    h3.textContent = p.title;
+    const desc = document.createElement('p');
+    desc.textContent = p.description;
+
+    const strip = document.createElement('div');
+    if (p.media.length) {
+      strip.className = 'media-strip';
+      for (const src of p.media) {
+        if (/\.(mp4|webm|mov)$/i.test(src)) {
+          const v = document.createElement('video');
+          v.src = src; v.muted = true; v.loop = true; v.autoplay = true;
+          v.playsInline = true; v.controls = false;
+          strip.append(v);
+        } else {
+          const img = document.createElement('img');
+          img.src = src; img.loading = 'lazy'; img.alt = p.title;
+          strip.append(img);
+        }
+      }
+    } else {
+      strip.className = 'media-placeholder';
+      strip.textContent = 'media coming';
+    }
+
+    card.append(top, h3, desc, strip);
+
+    if (p.links.length) {
+      const links = document.createElement('div');
+      links.className = 'card-links';
+      for (const l of p.links) {
+        const a = document.createElement('a');
+        a.href = l.href; a.textContent = l.label + ' →';
+        links.append(a);
+      }
+      card.append(links);
+    }
+    grid.append(card);
+  }
+}
+renderProjects();
+</script>
+
 <script>
 // Flow-field particles. Field = curl of layered sines; each seed gets its own
 // field constants + palette. Trails accumulate (no clear, translucent fade).
@@ -96,8 +304,18 @@ function resize() {
 addEventListener('resize', resize); resize();
 reset((Math.random() * 1e6) | 0);
 
-cv.addEventListener('pointerdown', () => reset((Math.random() * 1e6) | 0));
-addEventListener('keydown', e => { if (e.key === ' ') reset((Math.random() * 1e6) | 0); });
+// Only clicks on the hero regenerate — never the projects panel,
+// and never the header links / scroll arrow inside the hero.
+document.getElementById('top').addEventListener('pointerdown', e => {
+  if (e.target.closest('a')) return;
+  reset((Math.random() * 1e6) | 0);
+});
+addEventListener('keydown', e => {
+  if (e.key === ' ' && !e.target.closest('a, button, input, textarea')) {
+    e.preventDefault();
+    reset((Math.random() * 1e6) | 0);
+  }
+});
 
 function step() {
   // gentle fade so trails persist but don't saturate
