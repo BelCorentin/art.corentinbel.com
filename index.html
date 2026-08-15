@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>art · Corentin Bel</title>
+<meta name="description" content="Generative playthings.">
+<style>
+  :root { --bg:#07080c; --fg:#e8e6df; --dim:#8a8fa3; --accent:#6ea8ff; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body { background:var(--bg); color:var(--fg); font-family:ui-sans-serif,system-ui,sans-serif; overflow:hidden; }
+  canvas { position:fixed; inset:0; display:block; cursor:crosshair; }
+  header {
+    position:fixed; top:0; left:0; right:0; z-index:2;
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:1.4rem 2rem; pointer-events:none; mix-blend-mode:difference;
+  }
+  header a { pointer-events:auto; color:var(--dim); text-decoration:none; font-size:.9rem; }
+  header a:hover { color:var(--accent); }
+  h1 { font-weight:300; font-size:1.4rem; letter-spacing:.06em; }
+  h1 b { font-weight:600; }
+  #hint {
+    position:fixed; bottom:1.2rem; width:100%; text-align:center; z-index:2;
+    color:#565b6e; font-size:.8rem; pointer-events:none; mix-blend-mode:difference;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1><b>art</b>.corentinbel.com</h1>
+  <a href="https://corentinbel.com">← home</a>
+</header>
+<canvas id="c"></canvas>
+<div id="hint">flow field #<span id="seedn"></span> · click for a new one</div>
+<script>
+// Flow-field particles. Field = curl of layered sines; each seed gets its own
+// field constants + palette. Trails accumulate (no clear, translucent fade).
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+let W, H;
+
+const PALETTES = [
+  ['#6ea8ff', '#b48ce8', '#e8e6df', '#ff8ca3'],
+  ['#f4a259', '#f25c54', '#efe9e0', '#7d8cc4'],
+  ['#7bd389', '#38a3a5', '#e2f0cb', '#22577a'],
+  ['#ffd166', '#ef476f', '#f7ede2', '#118ab2'],
+  ['#e0c3fc', '#8ec5fc', '#f9f7f3', '#5e60ce'],
+  ['#d9ed92', '#76c893', '#f6fff8', '#1a759f'],
+];
+
+let seed, K, palette, parts;
+function rand() { // mulberry32
+  seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+  let z = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  z = z + Math.imul(z ^ z >>> 7, 61 | z) ^ z;
+  return ((z ^ z >>> 14) >>> 0) / 4294967296;
+}
+
+function field(x, y) {
+  // angle from layered sines; K holds per-seed frequencies/phases
+  const nx = x / W - 0.5, ny = y / H - 0.5;
+  const a =
+    Math.sin(nx * K[0] + K[1] + Math.sin(ny * K[2] + K[3]) * K[8]) * 2 +
+    Math.cos(ny * K[4] + K[5] + Math.sin(nx * K[6] + K[7]) * K[9]) * 2;
+  return a * Math.PI * 0.5;
+}
+
+function reset(newSeed) {
+  seed = newSeed;
+  document.getElementById('seedn').textContent = newSeed;
+  K = [];
+  for (let i = 0; i < 8; i++) K.push(rand() * 8 + 1.5);
+  K.push(rand() * 2, rand() * 2);
+  palette = PALETTES[(rand() * PALETTES.length) | 0];
+  parts = [];
+  for (let i = 0; i < 900; i++) spawn();
+  ctx.fillStyle = '#07080c';
+  ctx.fillRect(0, 0, W, H);
+}
+
+function spawn() {
+  parts.push({
+    x: rand() * W, y: rand() * H,
+    c: palette[(rand() * palette.length) | 0],
+    life: 100 + rand() * 300,
+    speed: 0.6 + rand() * 1.4
+  });
+}
+
+function resize() {
+  W = cv.width = innerWidth * devicePixelRatio;
+  H = cv.height = innerHeight * devicePixelRatio;
+  if (K) { ctx.fillStyle = '#07080c'; ctx.fillRect(0, 0, W, H); }
+}
+addEventListener('resize', resize); resize();
+reset((Math.random() * 1e6) | 0);
+
+cv.addEventListener('pointerdown', () => reset((Math.random() * 1e6) | 0));
+addEventListener('keydown', e => { if (e.key === ' ') reset((Math.random() * 1e6) | 0); });
+
+function step() {
+  // gentle fade so trails persist but don't saturate
+  ctx.fillStyle = 'rgba(7,8,12,0.035)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.lineWidth = devicePixelRatio * 0.8;
+  for (const p of parts) {
+    const a = field(p.x, p.y);
+    const nx = p.x + Math.cos(a) * p.speed * devicePixelRatio * 1.5;
+    const ny = p.y + Math.sin(a) * p.speed * devicePixelRatio * 1.5;
+    ctx.strokeStyle = p.c + '55';
+    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(nx, ny); ctx.stroke();
+    p.x = nx; p.y = ny; p.life--;
+    if (p.life <= 0 || p.x < 0 || p.x > W || p.y < 0 || p.y > H) {
+      p.x = rand() * W; p.y = rand() * H;
+      p.life = 100 + rand() * 300;
+    }
+  }
+  requestAnimationFrame(step);
+}
+step();
+</script>
+</body>
+</html>
