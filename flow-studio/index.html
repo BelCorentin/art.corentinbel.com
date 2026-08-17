@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>flow studio · art.corentinbel.com</title>
+<meta name="description" content="Paint with fluid dynamics around a foil — long-exposure flow trails as art.">
+<style>
+  :root {
+    --bg:#07080c; --fg:#e8e6df; --dim:#8a8fa3; --accent:#6ea8ff;
+    --border:#232b3a; --glass:rgba(13,16,24,.72);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; }
+  body {
+    background:var(--bg); color:var(--fg);
+    font-family:ui-sans-serif,system-ui,sans-serif;
+    cursor:ns-resize;
+  }
+  canvas { position:fixed; inset:0; display:block; }
+  #paint { z-index:0; }
+  #overlay { z-index:1; pointer-events:none; }
+
+  header {
+    position:fixed; top:0; left:0; right:0; z-index:3;
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:1.2rem 1.6rem; pointer-events:none; mix-blend-mode:difference;
+  }
+  header h1 { font-weight:300; font-size:1.05rem; letter-spacing:.06em; }
+  header h1 b { font-weight:600; }
+  header nav { display:flex; gap:1.1rem; }
+  header a { pointer-events:auto; color:var(--dim); text-decoration:none; font-size:.85rem; cursor:pointer; }
+  header a:hover { color:var(--accent); }
+
+  #caption {
+    position:fixed; left:1.4rem; bottom:1.1rem; z-index:3;
+    color:var(--dim); font-size:.74rem; letter-spacing:.08em;
+    pointer-events:none; mix-blend-mode:difference; white-space:nowrap;
+  }
+
+  /* ---------- glass control panel ---------- */
+  #panel {
+    position:fixed; top:4.4rem; right:1.2rem; z-index:4;
+    width:248px; max-height:calc(100vh - 6rem); overflow-y:auto;
+    background:var(--glass); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border:1px solid var(--border); border-radius:12px;
+    padding:.9rem 1rem 1.1rem; cursor:default;
+    scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+  }
+  #panel.collapsed { max-height:none; overflow:visible; padding-bottom:.9rem; }
+  #panel.collapsed #panelBody { display:none; }
+  .panel-head {
+    display:flex; justify-content:space-between; align-items:center;
+    text-transform:uppercase; letter-spacing:.2em; font-size:.66rem; color:var(--dim);
+  }
+  .panel-head button {
+    background:none; border:none; color:var(--dim); cursor:pointer;
+    font-size:.9rem; line-height:1; padding:.15rem .3rem;
+  }
+  .panel-head button:hover { color:var(--fg); }
+  #panelBody { margin-top:.8rem; display:flex; flex-direction:column; gap:.72rem; }
+
+  .row { display:flex; flex-direction:column; gap:.28rem; }
+  .row .lab {
+    display:flex; justify-content:space-between;
+    font-size:.72rem; color:var(--dim); letter-spacing:.05em;
+  }
+  .row .lab output { color:var(--fg); font-variant-numeric:tabular-nums; }
+
+  select {
+    background:rgba(255,255,255,.04); color:var(--fg);
+    border:1px solid var(--border); border-radius:8px;
+    padding:.34rem .5rem; font-size:.8rem; width:100%; cursor:pointer;
+  }
+  select:focus { outline:1px solid var(--accent); }
+
+  input[type=range] {
+    -webkit-appearance:none; appearance:none; width:100%; height:16px;
+    background:transparent; cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+    height:2px; background:var(--border); border-radius:1px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none; appearance:none; width:11px; height:11px;
+    border-radius:50%; background:var(--fg); margin-top:-4.5px;
+    border:none; transition:transform .15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.25); }
+  input[type=range]::-moz-range-track { height:2px; background:var(--border); border-radius:1px; }
+  input[type=range]::-moz-range-thumb {
+    width:11px; height:11px; border-radius:50%; background:var(--fg); border:none;
+  }
+
+  .seg { display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .seg button {
+    flex:1; background:none; border:none; color:var(--dim);
+    padding:.4rem 0; font-size:.76rem; cursor:pointer; letter-spacing:.08em;
+  }
+  .seg button.active { background:rgba(255,255,255,.07); color:var(--fg); }
+  .seg button:hover:not(.active) { color:var(--fg); }
+
+  #palettes { display:flex; flex-wrap:wrap; gap:.4rem; }
+  .swatch {
+    width:24px; height:24px; border-radius:6px; cursor:pointer;
+    border:1px solid var(--border); padding:0; overflow:hidden;
+    display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr;
+    transition:transform .15s;
+  }
+  .swatch:hover { transform:scale(1.15); }
+  .swatch.active { outline:1.5px solid var(--fg); outline-offset:1.5px; }
+  .swatch i { display:block; }
+
+  .actions { display:flex; gap:.45rem; }
+  .actions button {
+    flex:1; background:rgba(255,255,255,.04); border:1px solid var(--border);
+    border-radius:8px; color:var(--fg); padding:.44rem 0; cursor:pointer;
+    font-size:.82rem; transition:background .2s, border-color .2s;
+  }
+  .actions button:hover { background:rgba(255,255,255,.09); border-color:#31405a; }
+  #snapBtn { flex:2.2; }
+
+  .check { display:flex; align-items:center; gap:.5rem; font-size:.74rem; color:var(--dim); cursor:pointer; }
+  .check input { accent-color:var(--accent); cursor:pointer; }
+
+  .hint { font-size:.66rem; color:#565b6e; letter-spacing:.04em; line-height:1.5; }
+
+  @media (max-width:640px) {
+    #panel { width:216px; right:.7rem; top:4rem; }
+    #caption { font-size:.64rem; left:.9rem; }
+  }
+</style>
+</head>
+<body>
+<canvas id="paint"></canvas>
+<canvas id="overlay"></canvas>
+
+<header>
+  <h1><b>flow studio</b> · art.corentinbel.com</h1>
+  <nav>
+    <a href="https://art.corentinbel.com">art</a>
+    <a href="https://corentinbel.com">home</a>
+  </nav>
+</header>
+
+<aside id="panel">
+  <div class="panel-head">
+    <span>controls</span>
+    <button id="panelToggle" title="collapse panel">–</button>
+  </div>
+  <div id="panelBody">
+    <div class="row">
+      <div class="lab"><span>foil</span></div>
+      <select id="preset"></select>
+    </div>
+    <div class="row">
+      <div class="lab"><span>angle of attack</span><output id="aoaVal"></output></div>
+      <input type="range" id="aoa" min="-28" max="28" step="0.5" value="8">
+    </div>
+    <div class="row">
+      <div class="lab"><span>camber</span><output id="camberVal"></output></div>
+      <input type="range" id="camber" min="0" max="12" step="0.5" value="4">
+    </div>
+    <div class="row">
+      <div class="lab"><span>thickness</span><output id="thicknessVal"></output></div>
+      <input type="range" id="thickness" min="1" max="22" step="0.5" value="10">
+    </div>
+    <div class="row">
+      <div class="lab"><span>flow speed</span><output id="speedVal"></output></div>
+      <input type="range" id="speed" min="0.3" max="3" step="0.05" value="1.2">
+    </div>
+    <div class="row">
+      <div class="lab"><span>particles</span><output id="densityVal"></output></div>
+      <input type="range" id="density" min="200" max="2600" step="50" value="1100">
+    </div>
+    <div class="row">
+      <div class="lab"><span>persistence</span><output id="persistenceVal"></output></div>
+      <input type="range" id="persistence" min="0" max="1" step="0.01" value="0.9">
+    </div>
+    <div class="row">
+      <div class="lab"><span>stroke</span><output id="strokeVal"></output></div>
+      <input type="range" id="stroke" min="0.4" max="3" step="0.1" value="1">
+    </div>
+    <div class="row">
+      <div class="lab"><span>medium</span></div>
+      <div class="seg">
+        <button id="medAir" class="active">air</button>
+        <button id="medWater">water</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="lab"><span>palette</span></div>
+      <div id="palettes"></div>
+    </div>
+    <div class="actions">
+      <button id="snapBtn" title="download the paint layer as PNG">📷 snapshot</button>
+      <button id="shuffleBtn" title="randomize everything">🎲</button>
+      <button id="freezeBtn" title="freeze / resume">⏸</button>
+    </div>
+    <label class="check"><input type="checkbox" id="signit"> sign it</label>
+    <div class="hint">drag vertically on the canvas to tilt the foil · past ~15° the wake goes wild</div>
+  </div>
+</aside>
+
+<div id="caption"></div>
+
+<script>
+// ================================================================
+// flow studio — paint with flow around a foil.
+// uniform stream + bound vortices on the camber line (thin-airfoil
+// circulation, Γ ∝ U·c·(α + 2·camber)) + a thickness doublet.
+// past ~15° AoA the Kutta condition gives up: free vortices shed
+// off the trailing edge and stir the paint.
+// ================================================================
+'use strict';
+
+const paintCv = document.getElementById('paint');
+const overCv  = document.getElementById('overlay');
+const pctx = paintCv.getContext('2d');
+const octx = overCv.getContext('2d');
+const DPR = Math.min(devicePixelRatio || 1, 2);
+let W, H;
+
+// ---------------- seeded rng ----------------
+let seed = (Math.random() * 1e6) | 0;
+let rngState = seed;
+function rand() { // mulberry32
+  rngState |= 0; rngState = rngState + 0x6D2B79F5 | 0;
+  let z = Math.imul(rngState ^ rngState >>> 15, 1 | rngState);
+  z = z + Math.imul(z ^ z >>> 7, 61 | z) ^ z;
+  return ((z ^ z >>> 14) >>> 0) / 4294967296;
+}
+
+// ---------------- palettes (bg follows palette) ----------------
+const PALETTES = [
+  { name:'nocturne',  bg:'#07080c', colors:['#6ea8ff','#b48ce8','#e8e6df','#ff8ca3'] },
+  { name:'ember',     bg:'#0c0807', colors:['#f4a259','#f25c54','#efe9e0','#7d8cc4'] },
+  { name:'lagoon',    bg:'#06090b', colors:['#7bd389','#38a3a5','#e2f0cb','#22577a'] },
+  { name:'carnival',  bg:'#0b070c', colors:['#ffd166','#ef476f','#f7ede2','#118ab2'] },
+  { name:'lavender',  bg:'#08070e', colors:['#e0c3fc','#8ec5fc','#f9f7f3','#5e60ce'] },
+  { name:'meadow',    bg:'#070a08', colors:['#d9ed92','#76c893','#f6fff8','#1a759f'] },
+  { name:'monochrome ink', bg:'#0a0a0c', colors:['#f5f4ef','#e8e6df','#c9c7bf','#8a8fa3'] },
+  { name:'blueprint', bg:'#081733', colors:['#6ee7ff','#a8d8ff','#e6f6ff','#4d9fdb'] },
+];
+
+function hexRgb(h) {
+  return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
+}
+function mix(hexA, rgbB, t) {
+  const a = hexRgb(hexA);
+  const m = a.map((v,i) => Math.round(v + (rgbB[i]-v)*t));
+  return '#' + m.map(v => v.toString(16).padStart(2,'0')).join('');
+}
+const WATER_TINT = hexRgb('#5896c8');
+
+// ---------------- foil presets ----------------
+// shapes are just camber + thickness curves over t∈[0,1] (fraction of chord)
+const naca = t => 5*(0.2969*Math.sqrt(t) - 0.1260*t - 0.3516*t*t + 0.2843*t**3 - 0.1015*t**4);
+const PRESETS = [
+  { name:'flat plate',       camber:0,   thick:1.5,
+    cFn:t=>Math.sin(Math.PI*t),          tFn:t=>0.5 },
+  { name:'thin cambered',    camber:5,   thick:4,
+    cFn:t=>Math.sin(Math.PI*t),          tFn:naca },
+  { name:'thick symmetric',  camber:0,   thick:15,
+    cFn:t=>Math.sin(Math.PI*t),          tFn:naca },
+  { name:'wing-foil section',camber:6,   thick:12,
+    cFn:t=>Math.sin(Math.PI*Math.pow(t,0.68)),  tFn:naca },
+  { name:'crescent gull',    camber:9.5, thick:3,
+    cFn:t=>Math.pow(Math.sin(Math.PI*t),0.75)*(0.72+0.28*Math.sin(Math.PI*t*1.15)),
+    tFn:t=>0.5*Math.sin(Math.PI*Math.pow(t,0.8)) },
+];
+
+// ---------------- state ----------------
+const S = {
+  preset: 1,
+  aoa: 8,           // degrees
+  camber: 4,        // % chord
+  thick: 10,        // % chord
+  speed: 1.2,
+  density: 1100,
+  persistence: 0.9,
+  stroke: 1,
+  medium: 'air',    // 'air' | 'water'
+  palette: 0,
+  frozen: false,
+};
+
+// foil placement + derived physics (rebuilt on param change)
+let chord, pivotX, pivotY, ca, sa;      // rotation of foil frame
+let vortices = [];                      // bound vortices {x,y,G} world coords
+let doubletR2 = 0;                      // thickness doublet radius²
+let strokes = [];                       // per-palette-color stroke styles
+let wake = [];                          // shed vortices {x,y,G,life}
+let parts = [];
+let shedClock = 0, shedSign = 1;
+
+function med() {
+  return S.medium === 'water'
+    ? { vel:0.55, alpha:'66', width:1.9, tint:0.32 }
+    : { vel:1.0,  alpha:'3d', width:0.75, tint:0 };
+}
+
+function camberLine(t) { // foil-up units of chord
+  return (S.camber/100) * PRESETS[S.preset].cFn(t);
+}
+function halfThick(t) {
+  return (S.thick/100) * PRESETS[S.preset].tFn(t);
+}
+
+function rebuildFoil() {
+  chord = Math.min(W, H) * 0.42;
+  pivotX = W * 0.36;
+  pivotY = H * 0.52;
+  const a = S.aoa * Math.PI / 180;
+  ca = Math.cos(a); sa = Math.sin(a);
+
+  // circulation: thin-airfoil-flavoured  Γ ∝ U·c·(α + 2·camber)
+  const stalled = Math.abs(S.aoa) > 15;
+  const effA = stalled ? Math.sign(S.aoa) * (15*Math.PI/180) : a; // lift saturates at stall
+  const U = baseU();
+  const G_total = 1.8 * U * chord * (effA + 2*(S.camber/100)) / (2*Math.PI);
+  const N = 5;
+  vortices = [];
+  for (let i = 0; i < N; i++) {
+    const t = (i + 0.5) / N;
+    const w = Math.sqrt((1-t)/Math.max(t,0.02));       // cosine-ish loading, LE-heavy
+    vortices.push({ t, w, G: 0 });
+  }
+  const wsum = vortices.reduce((s,v)=>s+v.w, 0);
+  for (const v of vortices) {
+    v.G = G_total * v.w / wsum;
+    const lx = v.t*chord - 0.25*chord;
+    const ly = -camberLine(v.t)*chord;
+    v.x = pivotX + lx*ca - ly*sa;
+    v.y = pivotY + lx*sa + ly*ca;
+  }
+  const R = Math.max(chord * (S.thick/100) * 0.9, 2);
+  doubletR2 = R * R;
+  drawFoil();
+  updateCaption();
+}
+
+function baseU() { return S.speed * med().vel * 1.7 * DPR; }
+
+// world point → foil frame {u: 0..chord from LE, v: foil-up px}
+function toFoil(x, y) {
+  const dx = x - pivotX, dy = y - pivotY;
+  const lx =  dx*ca + dy*sa;
+  const ly = -dx*sa + dy*ca;
+  return { u: lx + 0.25*chord, v: -ly };
+}
+
+function insideFoil(x, y, margin) {
+  const f = toFoil(x, y);
+  if (f.u < -margin || f.u > chord + margin) return false;
+  const t = Math.min(Math.max(f.u/chord, 0.001), 0.999);
+  const yc = camberLine(t)*chord;
+  return Math.abs(f.v - yc) < halfThick(t)*chord + margin;
+}
+
+// velocity field at world point
+function vel(x, y) {
+  const U = baseU();
+  let u = U, v = 0;
+  // thickness doublet at quarter chord (cylinder-style blockage)
+  {
+    const dx = x - pivotX, dy = y - pivotY;
+    const r2 = dx*dx + dy*dy + doubletR2*0.25 + 40; // soft core: no spikes near thin foils
+    const r4 = r2*r2;
+    u -= U * doubletR2 * (dx*dx - dy*dy) / r4;
+    v -= U * doubletR2 * (2*dx*dy) / r4;
+  }
+  // bound vortices (soft core)
+  for (const vt of vortices) {
+    const dx = x - vt.x, dy = y - vt.y;
+    const r2 = dx*dx + dy*dy + 120;
+    u += -vt.G * dy / r2;
+    v +=  vt.G * dx / r2;
+  }
+  // shed wake vortices
+  for (const wv of wake) {
+    const dx = x - wv.x, dy = y - wv.y;
+    const r2 = dx*dx + dy*dy + 400 * DPR;
+    u += -wv.G * dy / r2;
+    v +=  wv.G * dx / r2;
+  }
+  return { u, v };
+}
+
+// ---------------- particles ----------------
+function spawnPart(p, anywhere) {
+  p.x = anywhere ? rand()*W : rand()*W*0.12 - W*0.02;
+  p.y = rand()*H;
+  p.ci = (rand()*4) | 0;
+  p.life = 150 + rand()*450;
+  p.jit = 0.6 + rand()*0.9;
+}
+function syncDensity() {
+  while (parts.length < S.density) { const p = {}; spawnPart(p, true); parts.push(p); }
+  parts.length = Math.min(parts.length, S.density);
+}
+
+function rebuildStrokes() {
+  const pal = PALETTES[S.palette];
+  const m = med();
+  strokes = pal.colors.map(c => (m.tint ? mix(c, WATER_TINT, m.tint) : c) + m.alpha);
+}
+
+// ---------------- paint layer ----------------
+function clearPaint() {
+  pctx.globalCompositeOperation = 'source-over';
+  pctx.fillStyle = PALETTES[S.palette].bg;
+  pctx.fillRect(0, 0, W, H);
+}
+
+function drawFoil() {
+  octx.clearRect(0, 0, W, H);
+  octx.save();
+  octx.translate(pivotX, pivotY);
+  octx.rotate(S.aoa * Math.PI/180);
+  octx.beginPath();
+  const n = 48;
+  for (let i = 0; i <= n; i++) {          // upper surface LE→TE
+    const t = i/n;
+    const x = t*chord - 0.25*chord;
+    const y = -(camberLine(t) + halfThick(t))*chord;
+    if (i === 0) octx.moveTo(x, y); else octx.lineTo(x, y);
+  }
+  for (let i = n; i >= 0; i--) {          // lower surface TE→LE
+    const t = i/n;
+    const x = t*chord - 0.25*chord;
+    const y = -(camberLine(t) - halfThick(t))*chord;
+    octx.lineTo(x, y);
+  }
+  octx.closePath();
+  octx.fillStyle = 'rgba(7,9,13,0.94)';
+  octx.fill();
+  octx.strokeStyle = 'rgba(232,230,223,0.5)';
+  octx.lineWidth = 1.1 * DPR;
+  octx.stroke();
+  octx.restore();
+}
+
+// ---------------- simulation ----------------
+function shedWake() {
+  const stallExcess = Math.abs(S.aoa) - 15;
+  if (stallExcess <= 0) { if (wake.length && rand() < 0.02) wake.shift(); return; }
+  shedClock++;
+  const interval = Math.max(4, 14 - stallExcess);
+  if (shedClock >= interval) {
+    shedClock = 0;
+    shedSign = -shedSign;
+    // trailing edge, world coords
+    const lx = 0.75*chord, ly = 0;
+    const tx = pivotX + lx*ca - ly*sa;
+    const ty = pivotY + lx*sa + ly*ca;
+    const str = 0.9 * baseU() * chord * Math.min(1, stallExcess/18) / (2*Math.PI);
+    wake.push({
+      x: tx + (rand()-0.5)*20*DPR,
+      y: ty + (rand()-0.5)*30*DPR,
+      G: shedSign * str * (0.7 + rand()*0.6) * Math.sign(S.aoa || 1),
+      life: 260 + rand()*240,
+    });
+    if (wake.length > 42) wake.shift();
+  }
+  for (let i = wake.length - 1; i >= 0; i--) {
+    const wv = wake[i];
+    // advect with the field of everything except itself
+    const selfG = wv.G; wv.G = 0;
+    const vv = vel(wv.x, wv.y);
+    wv.G = selfG * 0.9975;
+    wv.x += vv.u * 0.9 + (rand()-0.5)*1.2*DPR;
+    wv.y += vv.v * 0.9 + (rand()-0.5)*1.2*DPR;
+    wv.life--;
+    if (wv.life <= 0 || wv.x > W + 60) wake.splice(i, 1);
+  }
+}
+
+function step() {
+  requestAnimationFrame(step);
+  if (S.frozen) return;
+
+  // persistence: 1 = pure long exposure, lower = trails dissolve
+  const fade = (1 - S.persistence) * 0.09;
+  if (fade > 0.0005) {
+    const [r,g,b] = hexRgb(PALETTES[S.palette].bg);
+    pctx.fillStyle = `rgba(${r},${g},${b},${fade})`;
+    pctx.fillRect(0, 0, W, H);
+  }
+
+  shedWake();
+
+  const m = med();
+  pctx.lineWidth = S.stroke * m.width * DPR;
+  pctx.lineCap = 'round';
+  const stalled = Math.abs(S.aoa) > 15;
+
+  for (const p of parts) {
+    const x0 = p.x, y0 = p.y;
+    // two substeps for smoother curvature
+    for (let s = 0; s < 2; s++) {
+      const vv = vel(p.x, p.y);
+      p.x += vv.u * 0.55;
+      p.y += vv.v * 0.55;
+    }
+    // turbulent wobble in the stalled wake region
+    if (stalled) {
+      const f = toFoil(p.x, p.y);
+      if (f.u > chord*0.55 && f.u < chord*4 && Math.abs(f.v) < chord*0.9) {
+        p.x += (rand()-0.5) * p.jit * 2.2 * DPR;
+        p.y += (rand()-0.5) * p.jit * 2.2 * DPR;
+      }
+    }
+    pctx.strokeStyle = strokes[p.ci];
+    pctx.beginPath();
+    pctx.moveTo(x0, y0);
+    pctx.lineTo(p.x, p.y);
+    pctx.stroke();
+    p.life--;
+    if (p.life <= 0 || p.x > W + 4 || p.x < -W*0.05 || p.y < -4 || p.y > H + 4
+        || insideFoil(p.x, p.y, 1.5*DPR)) {
+      spawnPart(p, false);
+    }
+  }
+}
+
+// ---------------- ui wiring ----------------
+const $ = id => document.getElementById(id);
+
+const presetSel = $('preset');
+PRESETS.forEach((p, i) => {
+  const o = document.createElement('option');
+  o.value = i; o.textContent = p.name;
+  presetSel.append(o);
+});
+presetSel.value = S.preset;
+
+const palettesEl = $('palettes');
+PALETTES.forEach((p, i) => {
+  const b = document.createElement('button');
+  b.className = 'swatch';
+  b.title = p.name;
+  b.setAttribute('aria-label', 'palette ' + p.name);
+  for (const c of p.colors) {
+    const cell = document.createElement('i');
+    cell.style.background = c;
+    b.append(cell);
+  }
+  b.addEventListener('click', () => setPalette(i));
+  palettesEl.append(b);
+});
+
+function setPalette(i) {
+  S.palette = i;
+  document.querySelectorAll('.swatch').forEach((s, j) => s.classList.toggle('active', j === i));
+  document.body.style.background = PALETTES[i].bg;
+  rebuildStrokes();
+  clearPaint();
+  updateCaption();
+}
+
+function fmt(v, unit) { return (+v).toFixed(unit === '°' ? 1 : unit === '' ? 2 : 1).replace(/\.?0+$/,'') + unit; }
+
+function refreshOutputs() {
+  $('aoaVal').textContent = fmt(S.aoa, '°');
+  $('camberVal').textContent = fmt(S.camber, '%');
+  $('thicknessVal').textContent = fmt(S.thick, '%');
+  $('speedVal').textContent = fmt(S.speed, '');
+  $('densityVal').textContent = S.density;
+  $('persistenceVal').textContent = fmt(S.persistence, '');
+  $('strokeVal').textContent = fmt(S.stroke, '');
+}
+
+function bindRange(id, key, onchange) {
+  const el = $(id);
+  el.addEventListener('input', () => {
+    S[key] = +el.value;
+    refreshOutputs();
+    if (onchange) onchange();
+  });
+}
+bindRange('aoa', 'aoa', rebuildFoil);
+bindRange('camber', 'camber', rebuildFoil);
+bindRange('thickness', 'thick', rebuildFoil);
+bindRange('speed', 'speed', rebuildFoil);
+bindRange('density', 'density', syncDensity);
+bindRange('persistence', 'persistence');
+bindRange('stroke', 'stroke');
+
+presetSel.addEventListener('change', () => {
+  S.preset = +presetSel.value;
+  const p = PRESETS[S.preset];
+  S.camber = p.camber; S.thick = p.thick;
+  $('camber').value = S.camber;
+  $('thickness').value = S.thick;
+  refreshOutputs();
+  rebuildFoil();
+});
+
+function setMedium(mdm) {
+  S.medium = mdm;
+  $('medAir').classList.toggle('active', mdm === 'air');
+  $('medWater').classList.toggle('active', mdm === 'water');
+  rebuildStrokes();
+  rebuildFoil();
+}
+$('medAir').addEventListener('click', () => setMedium('air'));
+$('medWater').addEventListener('click', () => setMedium('water'));
+
+$('panelToggle').addEventListener('click', () => {
+  const panel = $('panel');
+  panel.classList.toggle('collapsed');
+  $('panelToggle').textContent = panel.classList.contains('collapsed') ? '+' : '–';
+});
+
+$('freezeBtn').addEventListener('click', () => {
+  S.frozen = !S.frozen;
+  $('freezeBtn').textContent = S.frozen ? '▶' : '⏸';
+});
+
+// 🎲 shuffle: new seed drives every parameter
+$('shuffleBtn').addEventListener('click', () => {
+  seed = (Math.random() * 1e6) | 0;
+  rngState = seed;
+  S.preset = (rand() * PRESETS.length) | 0;
+  const p = PRESETS[S.preset];
+  S.aoa = Math.round((rand()*44 - 22) * 2) / 2;
+  S.camber = Math.round((p.camber + (rand()-0.5)*4) * 2) / 2;
+  S.camber = Math.min(12, Math.max(0, S.camber));
+  S.thick = Math.min(22, Math.max(1, Math.round((p.thick + (rand()-0.5)*5) * 2) / 2));
+  S.speed = Math.round((0.5 + rand()*2) * 20) / 20;
+  S.persistence = Math.round((0.75 + rand()*0.25) * 100) / 100;
+  S.stroke = Math.round((0.5 + rand()*1.6) * 10) / 10;
+  S.medium = rand() < 0.4 ? 'water' : 'air';
+  presetSel.value = S.preset;
+  $('aoa').value = S.aoa; $('camber').value = S.camber; $('thickness').value = S.thick;
+  $('speed').value = S.speed; $('persistence').value = S.persistence; $('stroke').value = S.stroke;
+  refreshOutputs();
+  setMedium(S.medium);
+  wake = [];
+  setPalette((rand() * PALETTES.length) | 0);
+});
+
+// 📷 snapshot: composite paint + foil (+ optional signature), download PNG
+$('snapBtn').addEventListener('click', () => {
+  const out = document.createElement('canvas');
+  out.width = W; out.height = H;
+  const c = out.getContext('2d');
+  c.drawImage(paintCv, 0, 0);
+  c.drawImage(overCv, 0, 0);
+  if ($('signit').checked) {
+    c.font = `${11*DPR}px ui-sans-serif, system-ui, sans-serif`;
+    c.fillStyle = 'rgba(232,230,223,0.45)';
+    c.textAlign = 'right';
+    c.fillText('corentinbel.com/flow-studio', W - 14*DPR, H - 12*DPR);
+  }
+  out.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `flow-studio-${seed}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }, 'image/png');
+});
+
+// drag vertically on the canvas = live AoA
+let dragging = false, dragY = 0, dragAoa = 0;
+addEventListener('pointerdown', e => {
+  if (e.target.closest('#panel, header, a, button, input, select, label')) return;
+  dragging = true; dragY = e.clientY; dragAoa = S.aoa;
+});
+addEventListener('pointermove', e => {
+  if (!dragging) return;
+  S.aoa = Math.min(28, Math.max(-28, dragAoa + (e.clientY - dragY) * 0.09));
+  S.aoa = Math.round(S.aoa * 2) / 2;
+  $('aoa').value = S.aoa;
+  refreshOutputs();
+  rebuildFoil();
+});
+addEventListener('pointerup', () => { dragging = false; });
+
+function updateCaption() {
+  $('caption').textContent =
+    `aoa ${fmt(S.aoa,'°')} · camber ${fmt(S.camber,'%')} · thickness ${fmt(S.thick,'%')}` +
+    ` · ${PRESETS[S.preset].name} · ${S.medium} · ${PALETTES[S.palette].name} · #${seed}`;
+}
+
+// ---------------- boot ----------------
+function resize() {
+  W = paintCv.width = overCv.width = innerWidth * DPR;
+  H = paintCv.height = overCv.height = innerHeight * DPR;
+  rebuildFoil();
+  clearPaint();
+}
+addEventListener('resize', resize);
+
+resize();
+refreshOutputs();
+rebuildStrokes();
+setPalette(0);
+syncDensity();
+step();
+</script>
+</body>
+</html>
