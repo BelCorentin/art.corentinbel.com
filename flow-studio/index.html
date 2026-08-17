@@ -285,6 +285,24 @@ const S = {
   frozen: false,
 };
 
+// hard limits (mirror the sliders) + defaults, so no mutation path can
+// push S out of range or leave a NaN behind (empty/garbage input → +'' etc.)
+const LIMITS = {
+  aoa:[-28,28], camber:[0,12], thick:[1,22], speed:[0.3,3],
+  density:[200,2600], persistence:[0,1], stroke:[0.4,3],
+};
+const DEFAULTS = Object.assign({}, S);
+function clampState() {
+  for (const k in LIMITS) {
+    if (!Number.isFinite(S[k])) S[k] = DEFAULTS[k];
+    S[k] = Math.min(LIMITS[k][1], Math.max(LIMITS[k][0], S[k]));
+  }
+  S.preset = Number.isFinite(S.preset)
+    ? Math.min(PRESETS.length - 1, Math.max(0, Math.round(S.preset))) : DEFAULTS.preset;
+  S.palette = Number.isFinite(S.palette)
+    ? Math.min(PALETTES.length - 1, Math.max(0, Math.round(S.palette))) : DEFAULTS.palette;
+}
+
 // foil placement + derived physics (rebuilt on param change)
 let chord, pivotX, pivotY, ca, sa;      // rotation of foil frame
 let vortices = [];                      // bound vortices {x,y,G} world coords
@@ -307,7 +325,11 @@ function halfThick(t) {
   return (S.thick/100) * PRESETS[S.preset].tFn(t);
 }
 
+let foilSig = null;   // silhouette signature — detects real geometry changes
+let settle = 0;       // frames of accelerated fade after a silhouette change
+
 function rebuildFoil() {
+  clampState();
   chord = Math.min(W, H) * 0.42;
   pivotX = W * 0.36;
   pivotY = H * 0.52;
@@ -336,6 +358,16 @@ function rebuildFoil() {
   }
   const R = Math.max(chord * (S.thick/100) * 0.9, 2);
   doubletR2 = R * R;
+
+  // silhouette changed? briefly dissolve the stale ghost the old foil left
+  // in the paint layer, and free any particles the new shape swallowed.
+  const sig = `${S.preset}|${S.aoa}|${S.camber}|${S.thick}|${W}|${H}`;
+  if (foilSig !== null && sig !== foilSig) {
+    settle = 45;
+    for (const p of parts) if (insideFoil(p.x, p.y, 0)) spawnPart(p, false);
+  }
+  foilSig = sig;
+
   drawFoil();
   updateCaption();
 }
@@ -481,7 +513,8 @@ function step() {
   if (S.frozen) return;
 
   // persistence: 1 = pure long exposure, lower = trails dissolve
-  const fade = (1 - S.persistence) * 0.09;
+  let fade = (1 - S.persistence) * 0.09;
+  if (settle > 0) { settle--; fade = Math.max(fade, 0.05); }
   if (fade > 0.0005) {
     const [r,g,b] = hexRgb(PALETTES[S.palette].bg);
     pctx.fillStyle = `rgba(${r},${g},${b},${fade})`;
@@ -571,10 +604,28 @@ function refreshOutputs() {
   $('strokeVal').textContent = fmt(S.stroke, '');
 }
 
+// S is the single source of truth — push it back into every control.
+// Called from every mutation path that doesn't originate in that control
+// (presets, shuffle, drag-to-tilt, boot), so sliders never snap stale values.
+function syncControls() {
+  presetSel.value = S.preset;
+  $('aoa').value = S.aoa;
+  $('camber').value = S.camber;
+  $('thickness').value = S.thick;
+  $('speed').value = S.speed;
+  $('density').value = S.density;
+  $('persistence').value = S.persistence;
+  $('stroke').value = S.stroke;
+  refreshOutputs();
+}
+
 function bindRange(id, key, onchange) {
   const el = $(id);
   el.addEventListener('input', () => {
-    S[key] = +el.value;
+    const v = +el.value;
+    if (Number.isFinite(v)) S[key] = v;
+    clampState();
+    if (+el.value !== S[key]) el.value = S[key];
     refreshOutputs();
     if (onchange) onchange();
   });
@@ -589,12 +640,10 @@ bindRange('stroke', 'stroke');
 
 presetSel.addEventListener('change', () => {
   S.preset = +presetSel.value;
-  const p = PRESETS[S.preset];
+  const p = PRESETS[Number.isFinite(S.preset) ? Math.min(PRESETS.length - 1, Math.max(0, Math.round(S.preset))) : 0];
   S.camber = p.camber; S.thick = p.thick;
-  $('camber').value = S.camber;
-  $('thickness').value = S.thick;
-  refreshOutputs();
-  rebuildFoil();
+  rebuildFoil();      // clamps S, rebuilds silhouette + vortices + doublet
+  syncControls();     // then reflect the final state into every control
 });
 
 function setMedium(mdm) {
@@ -632,13 +681,10 @@ $('shuffleBtn').addEventListener('click', () => {
   S.persistence = Math.round((0.75 + rand()*0.25) * 100) / 100;
   S.stroke = Math.round((0.5 + rand()*1.6) * 10) / 10;
   S.medium = rand() < 0.4 ? 'water' : 'air';
-  presetSel.value = S.preset;
-  $('aoa').value = S.aoa; $('camber').value = S.camber; $('thickness').value = S.thick;
-  $('speed').value = S.speed; $('persistence').value = S.persistence; $('stroke').value = S.stroke;
-  refreshOutputs();
-  setMedium(S.medium);
   wake = [];
-  setPalette((rand() * PALETTES.length) | 0);
+  setMedium(S.medium);                        // rebuilds strokes + foil (clamps S)
+  setPalette((rand() * PALETTES.length) | 0); // clears the paint layer
+  syncControls();
 });
 
 // 📷 snapshot: composite paint + foil (+ optional signature), download PNG
@@ -673,11 +719,12 @@ addEventListener('pointermove', e => {
   if (!dragging) return;
   S.aoa = Math.min(28, Math.max(-28, dragAoa + (e.clientY - dragY) * 0.09));
   S.aoa = Math.round(S.aoa * 2) / 2;
-  $('aoa').value = S.aoa;
-  refreshOutputs();
   rebuildFoil();
+  syncControls();
 });
 addEventListener('pointerup', () => { dragging = false; });
+addEventListener('pointercancel', () => { dragging = false; }); // mobile: gesture stolen mid-drag
+addEventListener('blur', () => { dragging = false; });          // tab switch mid-drag
 
 function updateCaption() {
   $('caption').textContent =
@@ -695,9 +742,9 @@ function resize() {
 addEventListener('resize', resize);
 
 resize();
-refreshOutputs();
 rebuildStrokes();
 setPalette(0);
+syncControls();
 syncDensity();
 step();
 </script>
