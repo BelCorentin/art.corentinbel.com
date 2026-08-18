@@ -1,0 +1,1569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>genesis · art.corentinbel.com</title>
+<meta name="description" content="A painted living world — sow seeds, dig lakes, drop creatures, press play and watch an ecosystem invent itself, generation by generation.">
+<style>
+  :root {
+    --bg:#07080c; --panel:#0a0e14; --fg:#e8e6df; --dim:#8a8fa3; --accent:#6ea8ff;
+    --teal:#38a3a5; --teal2:#8ceedd; --border:#232b3a; --glass:rgba(13,16,24,.72);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; }
+  body {
+    background:var(--bg); color:var(--fg);
+    font-family:ui-sans-serif,system-ui,sans-serif;
+  }
+  #world {
+    position:fixed; inset:0; width:100%; height:100%; display:block;
+    touch-action:none; cursor:crosshair;
+  }
+
+  header {
+    position:fixed; top:0; left:0; right:0; z-index:3;
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:1.2rem 1.6rem; pointer-events:none;
+    text-shadow:0 1px 6px rgba(0,0,0,.55);
+  }
+  header h1 { font-weight:300; font-size:1.05rem; letter-spacing:.06em; }
+  header h1 b { font-weight:600; }
+  header .sub { font-size:.72rem; color:#c9cbd6; letter-spacing:.06em; margin-top:.2rem; opacity:.85; }
+  header nav { display:flex; gap:1.1rem; }
+  header a { pointer-events:auto; color:#c9cbd6; text-decoration:none; font-size:.85rem; }
+  header a:hover { color:var(--teal2); }
+
+  #caption {
+    position:fixed; left:1.4rem; bottom:1.1rem; z-index:3;
+    color:#d6d8e2; font-size:.74rem; letter-spacing:.08em;
+    pointer-events:none; white-space:nowrap; text-shadow:0 1px 6px rgba(0,0,0,.6);
+  }
+
+  /* ---------- glass control panel ---------- */
+  #panel {
+    position:fixed; top:4.4rem; right:1rem; z-index:4; width:266px;
+    background:var(--glass); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border:1px solid var(--border); border-radius:12px;
+    max-height:calc(100vh - 6.5rem); overflow-y:auto; overscroll-behavior:contain;
+    font-size:.8rem;
+  }
+  .panel-head {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:.65rem .9rem; border-bottom:1px solid var(--border);
+    text-transform:uppercase; letter-spacing:.18em; font-size:.66rem; color:var(--dim);
+    cursor:pointer; user-select:none; position:sticky; top:0;
+    background:var(--glass); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  }
+  .panel-head button {
+    background:none; border:none; color:var(--dim); cursor:pointer;
+    font-size:1rem; line-height:1; padding:0 .2rem;
+  }
+  .panel-head button:hover { color:var(--fg); }
+  #panelBody { padding:.8rem .9rem 1rem; display:flex; flex-direction:column; gap:.9rem; }
+  #panel.collapsed #panelBody { display:none; }
+
+  .row { display:flex; flex-direction:column; gap:.45rem; }
+  .lab {
+    display:flex; justify-content:space-between; align-items:baseline;
+    text-transform:uppercase; letter-spacing:.14em; font-size:.62rem; color:var(--dim);
+  }
+  .lab output { color:var(--fg); font-size:.68rem; letter-spacing:.04em; text-transform:none; }
+
+  button.ctl {
+    background:rgba(255,255,255,.04); color:var(--fg);
+    border:1px solid var(--border); border-radius:8px;
+    padding:.42em .8em; font-size:.78rem; cursor:pointer;
+  }
+  button.ctl:hover { border-color:#31405a; background:rgba(255,255,255,.08); }
+  button.ctl.on { border-color:rgba(140,238,221,.45); color:var(--teal2); }
+
+  .transport { flex-direction:row; align-items:center; gap:.5rem; }
+  .transport #btnPlay { flex:1; }
+  .seg { display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .seg button {
+    flex:1; background:none; border:none; color:var(--dim);
+    padding:.4em .55em; font-size:.72rem; cursor:pointer;
+  }
+  .seg button.active { background:rgba(255,255,255,.07); color:var(--fg); }
+
+  .meta { flex-direction:row; align-items:center; gap:.7rem; color:var(--dim); font-size:.72rem; flex-wrap:wrap; }
+  .meta b { color:var(--fg); font-weight:500; font-variant-numeric:tabular-nums; }
+  .meta button { background:none; border:none; color:var(--accent); cursor:pointer; font-size:.9rem; padding:0; }
+  .meta button:hover { color:var(--teal2); }
+  .meta label { display:flex; align-items:center; gap:.35rem; cursor:pointer; margin-left:auto; }
+  .meta input[type=checkbox] { accent-color:var(--teal); }
+
+  .tools { display:grid; grid-template-columns:repeat(5,1fr); gap:.35rem; }
+  .tools button {
+    background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:8px;
+    font-size:1.05rem; line-height:1; padding:.4em 0; cursor:pointer;
+  }
+  .tools button:hover { border-color:#31405a; }
+  .tools button.active { border-color:rgba(110,168,255,.65); background:rgba(110,168,255,.12); }
+
+  input[type=range] {
+    -webkit-appearance:none; appearance:none; width:100%; height:18px;
+    background:transparent; cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+    height:2px; background:var(--border); border-radius:1px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:11px; height:11px;
+    border-radius:50%; background:var(--fg); margin-top:-4.5px;
+  }
+  input[type=range]::-moz-range-track { height:2px; background:var(--border); border-radius:1px; }
+  input[type=range]::-moz-range-thumb {
+    width:11px; height:11px; border-radius:50%; background:var(--fg); border:none;
+  }
+
+  .presets { display:flex; flex-wrap:wrap; gap:.35rem; }
+  .presets button {
+    background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:999px;
+    color:var(--dim); font-size:.7rem; padding:.34em .75em; cursor:pointer; letter-spacing:.04em;
+  }
+  .presets button:hover { color:var(--fg); border-color:#31405a; }
+
+  #spark {
+    width:100%; height:64px; display:block;
+    border:1px solid var(--border); border-radius:8px; background:rgba(0,0,0,.25);
+  }
+  #legend { display:flex; flex-wrap:wrap; gap:.25rem .6rem; font-size:.64rem; color:var(--dim); }
+  #legend span { display:flex; align-items:center; gap:.28rem; font-variant-numeric:tabular-nums; }
+  #legend i { width:7px; height:7px; border-radius:50%; display:inline-block; }
+
+  .actions { flex-direction:row; }
+  .actions button { flex:1; }
+
+  /* ---------- mobile: bottom sheet ---------- */
+  @media (max-width:760px) {
+    header { padding:.9rem 1rem; }
+    header .sub { display:none; }
+    #caption { display:none; }
+    #panel {
+      top:auto; left:0; right:0; bottom:0; width:auto;
+      border-radius:14px 14px 0 0; border-left:none; border-right:none; border-bottom:none;
+      max-height:56vh; transform:translateY(calc(100% - 2.45rem));
+      transition:transform .28s ease;
+    }
+    #panel.open { transform:none; }
+    .panel-head { padding:.75rem .9rem; }
+  }
+</style>
+</head>
+<body>
+<canvas id="world"></canvas>
+
+<header>
+  <div>
+    <h1><b>genesis</b> · art.corentinbel.com</h1>
+    <div class="sub">a painted ecosystem — sow it, flood it, let it dream</div>
+  </div>
+  <nav>
+    <a href="../">← art</a>
+    <a href="https://corentinbel.com">home</a>
+  </nav>
+</header>
+
+<div id="caption">genesis #<span id="seedCap"></span> · keep painting while it runs — the world reacts</div>
+
+<aside id="panel">
+  <div class="panel-head" id="panelHead">
+    <span>world garden</span>
+    <button id="panelToggle" title="collapse panel">–</button>
+  </div>
+  <div id="panelBody">
+    <div class="row transport">
+      <button class="ctl" id="btnPlay">⏸ pause</button>
+      <button class="ctl" id="btnStep" title="advance one generation">step</button>
+    </div>
+    <div class="row">
+      <div class="seg" id="speedSeg">
+        <button data-s="1" class="active">1×</button>
+        <button data-s="2">2×</button>
+        <button data-s="4">4×</button>
+        <button data-s="8">8×</button>
+      </div>
+    </div>
+    <div class="row meta">
+      <span>gen <b id="genV">0</b></span>
+      <span>seed <b id="seedV">0</b></span>
+      <button id="btnReroll" title="re-roll the seed">⟲</button>
+      <label title="hands-off mode: the world slowly reinvents itself"><input type="checkbox" id="dreamChk"> dream</label>
+    </div>
+    <div class="row">
+      <div class="lab"><span>paint</span><output id="toolName">grass seed</output></div>
+      <div class="tools" id="tools">
+        <button data-tool="water" title="water — spreads moisture">💧</button>
+        <button data-tool="rock" title="rock — blocks growth, grows moss">🪨</button>
+        <button data-tool="soil" title="fertile soil">🟫</button>
+        <button data-tool="grass" class="active" title="grass seed — fast, fragile">🌿</button>
+        <button data-tool="flower" title="flower seed — needs grass, feeds pollinators">🌸</button>
+        <button data-tool="tree" title="tree seed — slow, shades grass, feeds the soil">🌳</button>
+        <button data-tool="poll" title="pollinators — spread flowers">🐝</button>
+        <button data-tool="herb" title="herbivores — graze, multiply, starve">🐇</button>
+        <button data-tool="pred" title="predators — hunt herbivores">🦊</button>
+        <button data-tool="erase" title="erase life">⌫</button>
+      </div>
+      <div class="lab"><span>brush</span><output id="brushV">3</output></div>
+      <input type="range" id="brush" min="1" max="9" step="1" value="3">
+    </div>
+    <div class="row">
+      <div class="lab"><span>worlds</span></div>
+      <div class="presets" id="presets">
+        <button data-p="oasis">oasis</button>
+        <button data-p="archipelago">archipelago</button>
+        <button data-p="forest">forest</button>
+        <button data-p="barren">barren rock</button>
+        <button data-p="garden">garden</button>
+        <button data-p="blank">blank canvas</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="lab"><span>populations</span></div>
+      <canvas id="spark" width="232" height="64"></canvas>
+      <div id="legend"></div>
+    </div>
+    <div class="row actions">
+      <button class="ctl" id="btnPng">export png</button>
+    </div>
+  </div>
+</aside>
+
+<script>
+'use strict';
+/* ============================================================
+   GENESIS — a painted, deterministic ecosystem.
+   Part 1 is the pure simulation core (no DOM — runs headless
+   in node for testing); part 2 is the painterly renderer + UI.
+   ============================================================ */
+
+// ---------- deterministic PRNG ----------
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+// stable per-cell hash for visual variation (never touches sim rng)
+function cellHash(i) {
+  let h = (i + 0x9e3779b9) >>> 0;
+  h = Math.imul(h ^ h >>> 16, 0x45d9f3b) >>> 0;
+  h = Math.imul(h ^ h >>> 13, 0x45d9f3b) >>> 0;
+  return (h ^ h >>> 16) >>> 0;
+}
+
+// ---------- constants ----------
+const SOIL = 0, WATER = 1, ROCK = 2;
+const NONE = 0, GRASS = 1, FLOWER = 2, TREE = 3, MUSH = 4;
+const POLL = 0, HERB = 1, PRED = 2;
+
+// species: germ/grow/mature = age thresholds, life±jit = lifespan,
+// needM/needF = moisture+fertility to sprout, every/p/r = dispersal
+const SP = [null,
+  { germ: 4,  grow: 14,  mature: 26,  life: 150,  jit: 90,  needM: .13, needF: .10, every: 7,  p: .34, r: 2.5, biomass: .25 },
+  { germ: 10, grow: 26,  mature: 52,  life: 260,  jit: 120, needM: .17, needF: .15, every: 12, p: .22, r: 3.5, biomass: .30 },
+  { germ: 14, grow: 90,  mature: 260, life: 1500, jit: 700, needM: .19, needF: .22, every: 34, p: .60, r: 6,   biomass: 2.5 },
+  { germ: 6,  grow: 12,  mature: 24,  life: 120,  jit: 60,  needM: .15, needF: 0,   every: 16, p: .18, r: 2,   biomass: .08 },
+];
+const CR = [
+  { speed: .48, drain: .12, repro: 118, cost: 55, child: 45, start: 70, maxAge: 900,  cap: 120, emax: 130 },
+  { speed: .40, drain: .30, repro: 105, cost: 62, child: 50, start: 70, maxAge: 1400, cap: 220, emax: 170 },
+  { speed: .55, drain: .26, repro: 175, cost: 110, child: 55, start: 95, maxAge: 1100, cap: 30,  emax: 200 },
+];
+
+// ---------- world ----------
+function createWorld(seed, gw, gh) {
+  const n = gw * gh;
+  return {
+    seed, gw, gh, n, gen: 0,
+    rng: mulberry32(seed),
+    terrain: new Uint8Array(n),
+    fertility: new Float32Array(n),
+    moisture: new Float32Array(n),
+    m2: new Float32Array(n),
+    moss: new Float32Array(n),
+    plant: new Uint8Array(n),
+    stage: new Uint8Array(n),
+    age: new Uint16Array(n),
+    life: new Uint16Array(n),
+    dead: new Float32Array(n),
+    bank: new Float32Array(n), // dormant grass seed bank in the soil
+    shade: new Uint8Array(n),
+    polli: new Uint8Array(n),
+    creatures: [],
+    stats: { plantBirths: 0, plantDeaths: 0, eaten: 0, born: 0, died: 0 },
+    history: [],
+    dirty: [], dirtyFull: true,
+    terrainVer: 1, treesChanged: 1, shadeDirty: true,
+    dream: false,
+  };
+}
+
+function markDirty(w, i) {
+  if (w.dirtyFull) return;
+  if (w.dirty.length < 4000) w.dirty.push(i);
+  else { w.dirtyFull = true; w.dirty.length = 0; }
+}
+
+function initFertility(w, scale, lift) {
+  const c1 = 13, r1 = 9, c2 = 29, r2 = 19;
+  const g1 = [], g2 = [];
+  for (let k = 0; k < c1 * r1; k++) g1.push(w.rng());
+  for (let k = 0; k < c2 * r2; k++) g2.push(w.rng());
+  const samp = (g, cols, rows, x, y) => {
+    const fx = x * (cols - 1), fy = y * (rows - 1);
+    const x0 = fx | 0, y0 = fy | 0;
+    const x1 = Math.min(cols - 1, x0 + 1), y1 = Math.min(rows - 1, y0 + 1);
+    const tx = fx - x0, ty = fy - y0;
+    const a = g[y0 * cols + x0] * (1 - tx) + g[y0 * cols + x1] * tx;
+    const b = g[y1 * cols + x0] * (1 - tx) + g[y1 * cols + x1] * tx;
+    return a * (1 - ty) + b * ty;
+  };
+  for (let y = 0; y < w.gh; y++) for (let x = 0; x < w.gw; x++) {
+    const u = x / (w.gw - 1), v = y / (w.gh - 1);
+    const f = lift + (samp(g1, c1, r1, u, v) * 0.72 + samp(g2, c2, r2, u, v) * 0.28) * scale;
+    w.fertility[y * w.gw + x] = Math.min(1, Math.max(0, f));
+  }
+}
+
+function clearWorld(w) {
+  w.terrain.fill(SOIL); w.fertility.fill(0); w.moisture.fill(0); w.m2.fill(0);
+  w.moss.fill(0); w.plant.fill(NONE); w.stage.fill(0); w.age.fill(0);
+  w.life.fill(0); w.dead.fill(0); w.bank.fill(0); w.shade.fill(0); w.polli.fill(0);
+  w.creatures.length = 0; w.gen = 0;
+  w.stats = { plantBirths: 0, plantDeaths: 0, eaten: 0, born: 0, died: 0 };
+  w.history.length = 0;
+  w.dirty.length = 0; w.dirtyFull = true;
+  w.terrainVer++; w.treesChanged++; w.shadeDirty = true;
+}
+
+function plantSeed(w, i, type) {
+  const sp = SP[type];
+  w.plant[i] = type; w.stage[i] = 0; w.age[i] = 0;
+  w.life[i] = sp.life + (w.rng() * sp.jit) | 0;
+  w.stats.plantBirths++;
+  markDirty(w, i);
+  if (type === TREE) w.treesChanged++;
+}
+
+function killPlant(w, i, leaveCorpse) {
+  const type = w.plant[i];
+  if (type === NONE) return;
+  if (leaveCorpse) w.dead[i] = Math.min(4, w.dead[i] + SP[type].biomass * (0.4 + 0.6 * (w.stage[i] / 3)));
+  // a grass plant, however it dies, leaves dormant seeds in the soil
+  if (type === GRASS && w.stage[i] >= 2) w.bank[i] = Math.min(3, w.bank[i] + 0.5);
+  if (type === TREE) { w.treesChanged++; if (w.stage[i] >= 2) w.shadeDirty = true; }
+  if (type === FLOWER) w.polli[i] = 0;
+  w.plant[i] = NONE; w.stage[i] = 0; w.age[i] = 0; w.life[i] = 0;
+  w.stats.plantDeaths++;
+  markDirty(w, i);
+}
+
+function countCreatures(w) {
+  const c = [0, 0, 0];
+  for (const cr of w.creatures) if (cr.alive) c[cr.type]++;
+  return c;
+}
+
+function addCreature(w, type, x, y) {
+  if (countCreatures(w)[type] >= CR[type].cap) return false;
+  w.creatures.push({
+    type, x, y, px: x, py: y,
+    h: w.rng() * 6.2832,
+    energy: CR[type].start, age: 0, alive: true, trail: [],
+  });
+  w.stats.born++;
+  return true;
+}
+
+// ---------- painting primitives (used by presets, dream mode and the UI brush) ----------
+function setTerrain(w, i, t) {
+  if (w.terrain[i] === t) return;
+  if (w.plant[i] !== NONE) killPlant(w, i, false);
+  w.terrain[i] = t;
+  if (t === WATER) { w.moisture[i] = 1; w.moss[i] = 0; w.dead[i] = 0; }
+  if (t === ROCK) { w.moss[i] = 0; }
+  w.terrainVer++;
+  markDirty(w, i);
+}
+
+function blobFill(w, cx, cy, r, cb) {
+  const r2 = Math.ceil(r);
+  for (let dy = -r2; dy <= r2; dy++) for (let dx = -r2; dx <= r2; dx++) {
+    const x = cx + dx, y = cy + dy;
+    if (x < 0 || y < 0 || x >= w.gw || y >= w.gh) continue;
+    const i = y * w.gw + x;
+    const edge = r * (0.82 + ((cellHash(i) % 100) / 100) * 0.36);
+    if (dx * dx + dy * dy <= edge * edge) cb(i, x, y);
+  }
+}
+
+function scatterSeeds(w, type, count, cx, cy, radius) {
+  for (let k = 0; k < count; k++) {
+    let x, y;
+    if (radius == null) { x = (w.rng() * w.gw) | 0; y = (w.rng() * w.gh) | 0; }
+    else {
+      const a = w.rng() * 6.2832, d = Math.sqrt(w.rng()) * radius;
+      x = Math.round(cx + Math.cos(a) * d); y = Math.round(cy + Math.sin(a) * d);
+    }
+    if (x < 0 || y < 0 || x >= w.gw || y >= w.gh) continue;
+    const i = y * w.gw + x;
+    if (w.terrain[i] === SOIL && w.plant[i] === NONE) plantSeed(w, i, type);
+  }
+}
+
+function scatterCreatures(w, type, count, cx, cy, radius) {
+  for (let k = 0; k < count; k++) {
+    let x, y, tries = 0;
+    do {
+      if (radius == null) { x = w.rng() * w.gw; y = w.rng() * w.gh; }
+      else { const a = w.rng() * 6.2832, d = Math.sqrt(w.rng()) * radius; x = cx + Math.cos(a) * d; y = cy + Math.sin(a) * d; }
+      x = Math.min(w.gw - 1, Math.max(0, x)); y = Math.min(w.gh - 1, Math.max(0, y));
+    } while (w.terrain[(y | 0) * w.gw + (x | 0)] === WATER && ++tries < 8);
+    addCreature(w, type, x, y);
+  }
+}
+
+// ---------- presets ----------
+function applyPreset(w, name) {
+  clearWorld(w);
+  const gw = w.gw, gh = w.gh, rng = w.rng;
+  const mid = (fx, fy) => [Math.round(gw * fx), Math.round(gh * fy)];
+  if (name === 'barren') {
+    w.terrain.fill(ROCK);
+    w.terrainVer++;
+    return;
+  }
+  if (name === 'blank') {
+    initFertility(w, .5, .3);
+    return;
+  }
+  if (name === 'oasis') {
+    initFertility(w, .35, .05);
+    const [cx, cy] = mid(.5, .5);
+    blobFill(w, cx, cy, 7.5, i => setTerrain(w, i, WATER));
+    for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
+      const d = Math.hypot(x - cx, y - cy), i = y * gw + x;
+      if (d < 24 && w.terrain[i] === SOIL)
+        w.fertility[i] = Math.min(1, w.fertility[i] + (1 - d / 24) * 0.72);
+    }
+    for (let k = 0; k < 6; k++)
+      blobFill(w, (rng() * gw) | 0, (rng() * gh) | 0, 1.5 + rng() * 2, i => {
+        if (Math.hypot(i % gw - cx, (i / gw | 0) - cy) > 26) setTerrain(w, i, ROCK);
+      });
+    scatterSeeds(w, GRASS, 300, cx, cy, 20);
+    scatterSeeds(w, FLOWER, 46, cx, cy, 14);
+    scatterSeeds(w, TREE, 16, cx, cy, 12);
+    scatterCreatures(w, POLL, 8, cx, cy, 14);
+    scatterCreatures(w, HERB, 8, cx, cy, 16);
+    return;
+  }
+  if (name === 'archipelago') {
+    initFertility(w, .8, .15);
+    w.terrain.fill(WATER); w.moisture.fill(1); w.terrainVer++;
+    const isles = 8 + (rng() * 4) | 0;
+    for (let k = 0; k < isles; k++) {
+      const cx = 6 + (rng() * (gw - 12)) | 0, cy = 5 + (rng() * (gh - 10)) | 0;
+      const r = 3.5 + rng() * 6;
+      blobFill(w, cx, cy, r, i => { setTerrain(w, i, SOIL); w.moisture[i] = 0; });
+      scatterSeeds(w, GRASS, Math.round(r * r * 1.6), cx, cy, r);
+      scatterSeeds(w, FLOWER, Math.round(r * 1.6), cx, cy, r * .8);
+      scatterSeeds(w, TREE, Math.round(r * .9), cx, cy, r * .7);
+      if (rng() < .8) scatterCreatures(w, POLL, 2, cx, cy, r);
+      if (rng() < .6) scatterCreatures(w, HERB, 2, cx, cy, r * .7);
+    }
+    return;
+  }
+  if (name === 'garden') {
+    initFertility(w, .55, .35);
+    const [px, py] = mid(.3, .38);
+    blobFill(w, px, py, 4.5, i => setTerrain(w, i, WATER));
+    const [px2, py2] = mid(.74, .68);
+    blobFill(w, px2, py2, 3, i => setTerrain(w, i, WATER));
+    for (let k = 0; k < 4; k++)
+      blobFill(w, (rng() * gw) | 0, (rng() * gh) | 0, 1 + rng() * 1.4, i => setTerrain(w, i, ROCK));
+    scatterSeeds(w, GRASS, 380, null, null, null);
+    for (let k = 0; k < 11; k++) {
+      const cx = (rng() * gw) | 0, cy = (rng() * gh) | 0;
+      scatterSeeds(w, GRASS, 20, cx, cy, 4);
+      scatterSeeds(w, FLOWER, 16, cx, cy, 3);
+    }
+    scatterSeeds(w, TREE, 9, null, null, null);
+    scatterCreatures(w, POLL, 16);
+    scatterCreatures(w, HERB, 5);
+    return;
+  }
+  // forest (default)
+  initFertility(w, .75, .2);
+  for (let k = 0; k < 26; k++)
+    blobFill(w, (rng() * gw) | 0, (rng() * gh) | 0, 1 + rng() * 1.5, i => setTerrain(w, i, WATER));
+  for (let k = 0; k < 3; k++)
+    blobFill(w, (rng() * gw) | 0, (rng() * gh) | 0, 3 + rng() * 3, i => setTerrain(w, i, WATER));
+  for (let k = 0; k < 5; k++)
+    blobFill(w, (rng() * gw) | 0, (rng() * gh) | 0, 1.2 + rng() * 2, i => setTerrain(w, i, ROCK));
+  scatterSeeds(w, GRASS, 700);
+  scatterSeeds(w, FLOWER, 90);
+  scatterSeeds(w, TREE, 70);
+  scatterCreatures(w, POLL, 10);
+  scatterCreatures(w, HERB, 16);
+  scatterCreatures(w, PRED, 5);
+}
+
+// ---------- simulation ----------
+function tickMoisture(w) {
+  const { terrain, moisture, m2, gw, gh } = w;
+  for (let y = 0; y < gh; y++) {
+    const row = y * gw;
+    for (let x = 0; x < gw; x++) {
+      const i = row + x;
+      if (terrain[i] === WATER) { m2[i] = 1; continue; }
+      let mx = 0;
+      if (x > 0 && moisture[i - 1] > mx) mx = moisture[i - 1];
+      if (x < gw - 1 && moisture[i + 1] > mx) mx = moisture[i + 1];
+      if (y > 0 && moisture[i - gw] > mx) mx = moisture[i - gw];
+      if (y < gh - 1 && moisture[i + gw] > mx) mx = moisture[i + gw];
+      const carry = mx * (terrain[i] === ROCK ? 0.35 : 0.84);
+      let m = moisture[i] * 0.965;
+      if (carry > m) m = carry;
+      m2[i] = m < 0.004 ? 0 : m;
+    }
+  }
+  w.moisture = m2; w.m2 = moisture;
+}
+
+function recomputeShade(w) {
+  const { shade, plant, stage, gw, gh } = w;
+  shade.fill(0);
+  for (let i = 0; i < w.n; i++) {
+    if (plant[i] !== TREE || stage[i] < 2) continue;
+    const r = stage[i] === 3 ? 2 : 1;
+    const x = i % gw, y = (i / gw) | 0;
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= gw || ny >= gh) continue;
+      if (dx === 0 && dy === 0) continue;
+      const j = ny * gw + nx;
+      if (shade[j] < 250) shade[j] += 1;
+    }
+  }
+}
+
+function neighbors8(w, i, cb) {
+  const gw = w.gw, x = i % gw, y = (i / gw) | 0;
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    if (!dx && !dy) continue;
+    const nx = x + dx, ny = y + dy;
+    if (nx < 0 || ny < 0 || nx >= gw || ny >= w.gh) continue;
+    cb(ny * gw + nx);
+  }
+}
+
+function canSprout(w, i, type) {
+  const sp = SP[type];
+  if (w.moisture[i] < sp.needM || w.fertility[i] < sp.needF) return false;
+  let crowd = 0, grassNb = 0;
+  neighbors8(w, i, j => {
+    if (w.plant[j] !== NONE && w.stage[j] >= 1) crowd++;
+    if (w.plant[j] === GRASS && w.stage[j] >= 1) grassNb++;
+  });
+  if (crowd > 6) return false;
+  if (type === GRASS) return w.shade[i] === 0;
+  if (type === FLOWER) return grassNb >= 1;
+  if (type === TREE) {
+    if (w.shade[i] !== 0) return false;
+    const gw = w.gw, x = i % gw, y = (i / gw) | 0;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+      if (!dx && !dy) continue;
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= gw || ny >= w.gh) continue;
+      const j = ny * gw + nx;
+      if (w.plant[j] === TREE && w.stage[j] >= 1) return false;
+    }
+    return true;
+  }
+  return true; // mushroom: dead-matter gate already applied
+}
+
+function canopyFertilize(w, i) {
+  const gw = w.gw, x = i % gw, y = (i / gw) | 0;
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+    const nx = x + dx, ny = y + dy;
+    if (nx < 0 || ny < 0 || nx >= gw || ny >= w.gh) continue;
+    const j = ny * gw + nx;
+    if (w.terrain[j] !== SOIL) continue;
+    w.fertility[j] = Math.min(1, w.fertility[j] + 0.002);
+    w.dead[j] = Math.min(4, w.dead[j] + 0.0015);
+  }
+}
+
+function tickPlants(w) {
+  const { terrain, fertility, moisture, moss, plant, stage, age, life, dead, shade, polli, rng, gw, gh, n } = w;
+  if (w.shadeDirty) { recomputeShade(w); w.shadeDirty = false; }
+  for (let i = 0; i < n; i++) {
+    const t = terrain[i];
+    if (t === WATER) continue;
+    if (t === ROCK) {
+      if (moisture[i] > 0.12 && moss[i] < 1) moss[i] += 0.0015;
+      continue;
+    }
+    const d = dead[i];
+    if (d > 0.001) {
+      fertility[i] = Math.min(1, fertility[i] + d * 0.004);
+      dead[i] = Math.max(0, d * 0.996 - 0.0004);
+    }
+    const p = plant[i];
+    if (p === NONE) {
+      if (d > 0.35 && moisture[i] > 0.22 && rng() < 0.02) { plantSeed(w, i, MUSH); continue; }
+      // dormant seed bank germinates when conditions allow
+      const bk = w.bank[i];
+      if (bk > 0.05) {
+        w.bank[i] = bk * 0.9995;
+        if (moisture[i] >= SP[GRASS].needM && fertility[i] >= SP[GRASS].needF &&
+            shade[i] === 0 && rng() < 0.004 * Math.min(1, bk)) {
+          plantSeed(w, i, GRASS);
+          w.bank[i] = Math.max(0, bk - 0.5);
+        }
+      }
+      continue;
+    }
+    age[i]++;
+    const a = age[i], sp = SP[p];
+    if (stage[i] === 0) { // seed
+      if (a >= sp.germ) {
+        if (canSprout(w, i, p)) { stage[i] = 1; markDirty(w, i); if (p === TREE) w.treesChanged++; }
+        else if (a > sp.germ + 36) {
+          // quiet seed death: no corpse, but still counted
+          w.plant[i] = NONE; w.stage[i] = 0; w.age[i] = 0; w.life[i] = 0;
+          w.stats.plantDeaths++; markDirty(w, i);
+          if (p === TREE) w.treesChanged++;
+        }
+      }
+      continue;
+    }
+    if (stage[i] < 3) {
+      const th = stage[i] === 1 ? sp.grow : sp.mature;
+      if (a >= th) {
+        stage[i]++; markDirty(w, i);
+        if (p === TREE) { w.treesChanged++; if (stage[i] >= 2) w.shadeDirty = true; }
+      }
+    }
+    if (p === GRASS && shade[i] > 0 && rng() < 0.06) { killPlant(w, i, true); continue; }
+    if (moisture[i] < sp.needM * 0.3 && rng() < 0.02) { killPlant(w, i, true); continue; }
+    if (p === MUSH) {
+      dead[i] = Math.max(0, dead[i] - 0.012);
+      if (dead[i] <= 0 && rng() < 0.05) { killPlant(w, i, false); continue; }
+    }
+    if (a >= life[i]) { killPlant(w, i, true); continue; }
+    if (stage[i] >= (p === GRASS ? 2 : 3) && a % sp.every === 0) {
+      let pr = stage[i] === 3 ? sp.p : sp.p * 0.4;
+      if (p === FLOWER && polli[i] > 0) pr *= 3.5;
+      if (rng() < pr) {
+        const ang = rng() * 6.2832, dist = 1 + rng() * sp.r;
+        const tx = (i % gw) + Math.round(Math.cos(ang) * dist);
+        const ty = ((i / gw) | 0) + Math.round(Math.sin(ang) * dist);
+        if (tx >= 0 && ty >= 0 && tx < gw && ty < gh) {
+          const j = ty * gw + tx;
+          if (terrain[j] === SOIL && plant[j] === NONE) plantSeed(w, j, p);
+        }
+      }
+    }
+    if (p === TREE && stage[i] === 3 && a % 10 === 0) canopyFertilize(w, i);
+    if (p === FLOWER && polli[i] > 0) polli[i]--;
+  }
+}
+
+function tickCreatures(w) {
+  const { terrain, plant, stage, polli, dead, rng, gw, gh } = w;
+  const list = w.creatures;
+  const counts = [0, 0, 0];
+  for (const c of list) if (c.alive) counts[c.type]++;
+  const L = list.length;
+  let anyDead = false;
+  for (let k = 0; k < L; k++) {
+    const c = list[k];
+    if (!c.alive) continue;
+    const cf = CR[c.type];
+    c.px = c.x; c.py = c.y;
+    c.trail.push(c.x, c.y);
+    if (c.trail.length > 12) c.trail.splice(0, 2);
+    c.age++; c.energy -= cf.drain;
+    const cx = c.x | 0, cy = c.y | 0, ci = cy * gw + cx;
+    let sought = false;
+    if (c.type === POLL) {
+      if (plant[ci] === FLOWER && stage[ci] === 3) {
+        polli[ci] = 250;
+        c.energy = Math.min(cf.emax, c.energy + 6);
+        c.h += (rng() - 0.5) * 2.6;
+        sought = true;
+      } else {
+        for (let t = 0; t < 14; t++) {
+          const a = rng() * 6.2832, dd = 1 + rng() * 7;
+          const nx = Math.round(c.x + Math.cos(a) * dd), ny = Math.round(c.y + Math.sin(a) * dd);
+          if (nx < 0 || ny < 0 || nx >= gw || ny >= gh) continue;
+          const j = ny * gw + nx;
+          if (plant[j] === FLOWER && stage[j] === 3) {
+            c.h = Math.atan2(ny + 0.5 - c.y, nx + 0.5 - c.x);
+            sought = true; break;
+          }
+        }
+      }
+    } else if (c.type === HERB) {
+      // fear first: flee any predator within sight
+      let fleeing = false;
+      for (let m = 0; m < L; m++) {
+        const p2 = list[m];
+        if (!p2.alive || p2.type !== PRED) continue;
+        const dx = p2.x - c.x, dy = p2.y - c.y;
+        if (dx * dx + dy * dy < 12.25) {
+          c.h = Math.atan2(-dy, -dx) + (rng() - 0.5) * 0.6;
+          fleeing = true; sought = true;
+          break;
+        }
+      }
+      c.fleeing = fleeing;
+      const hungry = !fleeing && c.energy < cf.emax - 12; // satiated grazers spare the meadow
+      if (hungry && plant[ci] === GRASS && stage[ci] >= 1) {
+        const wasMature = stage[ci] >= 2;
+        c.energy = Math.min(cf.emax, c.energy + [0, 4, 6, 8][stage[ci]]);
+        killPlant(w, ci, false);
+        dead[ci] = Math.min(4, dead[ci] + 0.06); // droppings feed the soil
+        // grazing disperses seeds — the meadow's refuge against extinction
+        if (wasMature && rng() < 0.35) {
+          const sa = rng() * 6.2832, sd = 1 + rng() * 3;
+          const sx = Math.round(c.x + Math.cos(sa) * sd), sy = Math.round(c.y + Math.sin(sa) * sd);
+          if (sx >= 0 && sy >= 0 && sx < gw && sy < gh) {
+            const sj = sy * gw + sx;
+            if (terrain[sj] === SOIL && plant[sj] === NONE) plantSeed(w, sj, GRASS);
+          }
+        }
+        sought = true;
+      } else if (hungry) {
+        // few short probes: sparse grass is hard to find (low-density refuge)
+        for (let t = 0; t < 7; t++) {
+          const a = rng() * 6.2832, dd = 1 + rng() * 5;
+          const nx = Math.round(c.x + Math.cos(a) * dd), ny = Math.round(c.y + Math.sin(a) * dd);
+          if (nx < 0 || ny < 0 || nx >= gw || ny >= gh) continue;
+          const j = ny * gw + nx;
+          if (plant[j] === GRASS && stage[j] >= 1) {
+            c.h = Math.atan2(ny + 0.5 - c.y, nx + 0.5 - c.x);
+            sought = true; break;
+          }
+        }
+      }
+    } else { // PRED — hunts only when hungry, and hunts can fail
+      const hungry = c.energy < cf.emax * 0.8;
+      let best = null, bd = 100;
+      if (hungry) for (let m = 0; m < L; m++) {
+        const p2 = list[m];
+        if (!p2.alive || p2.type !== HERB) continue;
+        const dx = p2.x - c.x, dy = p2.y - c.y, d2 = dx * dx + dy * dy;
+        if (d2 >= bd) continue;
+        // grazers in tall grass are camouflaged: only spotted up close.
+        // On overgrazed bare ground they are exposed at long range.
+        const hi = (p2.y | 0) * gw + (p2.x | 0);
+        if (plant[hi] === GRASS && stage[hi] >= 2 && d2 > 3.6) continue;
+        bd = d2; best = p2;
+      }
+      c.burst = false;
+      if (best) {
+        c.burst = bd < 6.5; // pounce: short burst of speed to close on prey
+        if (bd < 0.8) {
+          if (rng() < 0.45) { // the lunge can miss
+            best.alive = false; anyDead = true;
+            counts[HERB]--; w.stats.eaten++; w.stats.died++;
+            c.energy = Math.min(cf.emax, c.energy + 38);
+          } else {
+            c.h = rng() * 6.2832; // prey slips away
+          }
+        } else {
+          c.h = Math.atan2(best.y - c.y, best.x - c.x);
+        }
+        sought = true;
+      }
+    }
+    if (!sought) c.h += (rng() - 0.5) * 0.8;
+    // move (land creatures refuse water; fear lends wings, hunger lends pounce)
+    const spd = cf.speed * (c.fleeing ? 1.3 : c.burst ? 1.7 : 1);
+    const nx = c.x + Math.cos(c.h) * spd;
+    const ny = c.y + Math.sin(c.h) * spd;
+    const bx = Math.min(gw - 0.01, Math.max(0, nx)), by = Math.min(gh - 0.01, Math.max(0, ny));
+    if (c.type !== POLL && terrain[(by | 0) * gw + (bx | 0)] === WATER) {
+      c.h += 2.4 + rng() * 1.4;
+    } else {
+      c.x = bx; c.y = by;
+      if (bx !== nx || by !== ny) c.h += 1.5 + rng();
+    }
+    // reproduce
+    if (c.energy > cf.repro && counts[c.type] < cf.cap && rng() < 0.05) {
+      c.energy -= cf.cost;
+      counts[c.type]++;
+      w.creatures.push({
+        type: c.type,
+        x: c.x, y: c.y, px: c.x, py: c.y,
+        h: rng() * 6.2832,
+        energy: cf.child, age: 0, alive: true, trail: [],
+      });
+      w.stats.born++;
+    }
+    // die
+    if (c.energy <= 0 || c.age > cf.maxAge) {
+      c.alive = false; anyDead = true; w.stats.died++;
+      if (c.type === HERB) dead[ci] = Math.min(4, dead[ci] + 0.4);
+    }
+  }
+  if (anyDead) w.creatures = w.creatures.filter(c => c.alive);
+}
+
+function countPlants(w) {
+  const c = { grass: 0, flower: 0, tree: 0, mush: 0 };
+  const { plant, stage, n } = w;
+  for (let i = 0; i < n; i++) {
+    if (stage[i] < 1) continue; // count sprouted life, not dormant seeds
+    if (plant[i] === GRASS) c.grass++;
+    else if (plant[i] === FLOWER) c.flower++;
+    else if (plant[i] === TREE) c.tree++;
+    else if (plant[i] === MUSH) c.mush++;
+  }
+  return c;
+}
+
+function dreamPulse(w) {
+  const r = w.rng();
+  const gw = w.gw, gh = w.gh;
+  const cx = (w.rng() * gw) | 0, cy = (w.rng() * gh) | 0;
+  if (r < 0.30) scatterSeeds(w, GRASS, 40, cx, cy, 12);
+  else if (r < 0.50) scatterSeeds(w, FLOWER, 18, cx, cy, 8);
+  else if (r < 0.64) scatterSeeds(w, TREE, 6, cx, cy, 9);
+  else if (r < 0.76) blobFill(w, cx, cy, 1.5 + w.rng() * 2, i => setTerrain(w, i, WATER));
+  else if (r < 0.86) scatterCreatures(w, POLL, 4, cx, cy, 8);
+  else if (r < 0.95) scatterCreatures(w, HERB, 3, cx, cy, 8);
+  else scatterCreatures(w, PRED, 2, cx, cy, 8);
+}
+
+function tick(w) {
+  w.gen++;
+  tickMoisture(w);
+  tickPlants(w);
+  tickCreatures(w);
+  if (w.dream && w.gen % 900 === 0) dreamPulse(w);
+  if (w.gen % 4 === 0) {
+    const p = countPlants(w), c = countCreatures(w);
+    w.history.push([p.grass, p.flower, p.tree, p.mush, c[POLL], c[HERB], c[PRED]]);
+    if (w.history.length > 400) w.history.shift();
+  }
+}
+
+// ---------- deterministic world hash (FNV-1a) ----------
+function hashWorld(w) {
+  let h = 0x811c9dc5;
+  const mix = b => { h ^= b & 255; h = Math.imul(h, 0x01000193) >>> 0; };
+  for (let i = 0; i < w.n; i++) {
+    mix(w.terrain[i]); mix(w.plant[i]); mix(w.stage[i]);
+    mix(w.age[i]); mix(w.age[i] >> 8);
+    mix((w.moisture[i] * 255) | 0); mix((w.fertility[i] * 255) | 0);
+    mix((w.moss[i] * 255) | 0); mix((w.dead[i] * 60) | 0);
+  }
+  for (const c of w.creatures) {
+    mix(c.type); mix((c.x * 64) | 0); mix((c.x * 64) >> 8);
+    mix((c.y * 64) | 0); mix((c.y * 64) >> 8); mix((c.energy * 16) | 0);
+  }
+  return h >>> 0;
+}
+
+// headless export for the test harness (harmless in the browser)
+globalThis.__genesis = {
+  mulberry32, createWorld, applyPreset, clearWorld, tick, hashWorld,
+  countPlants, countCreatures, addCreature, plantSeed, setTerrain,
+  initFertility, SP, CR, SOIL, WATER, ROCK, NONE, GRASS, FLOWER, TREE, MUSH,
+  POLL, HERB, PRED,
+};
+
+/* ============================================================
+   Part 2 — painterly renderer + UI (browser only)
+   ============================================================ */
+if (typeof document !== 'undefined' && document.getElementById('world')) (function () {
+
+  const cv = document.getElementById('world');
+  const ctx = cv.getContext('2d');
+  const dpr = () => Math.min(2.5, window.devicePixelRatio || 1);
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- world sizing: ~12600 cells shaped to the viewport ----
+  function gridDims() {
+    const a = Math.max(0.3, Math.min(3.4, innerWidth / Math.max(1, innerHeight)));
+    const N = 12600;
+    let gw = Math.round(Math.sqrt(N * a)), gh = Math.round(Math.sqrt(N / a));
+    gw = Math.min(190, Math.max(60, gw));
+    gh = Math.min(190, Math.max(60, gh));
+    return [gw, gh];
+  }
+
+  // ---- state ----
+  let world = null;
+  let presetName = 'forest';
+  let playing = false, speed = 1, acc = 0, lastTs = 0, tickFrac = 0;
+  let tool = 'grass', brushR = 3;
+  let uiRng = mulberry32((Math.random() * 1e9) >>> 0);
+  const TPS = 12;
+
+  // ---- layers ----
+  let cs = 8, ox = 0, oy = 0, worldW = 0, worldH = 0;
+  const terrainCv = document.createElement('canvas'), terrainCtx = terrainCv.getContext('2d');
+  const groundCv = document.createElement('canvas'), groundCtx = groundCv.getContext('2d');
+  const treeCv = document.createElement('canvas'), treeCtx = treeCv.getContext('2d');
+  let waterCells = [];
+  let seenTerrainVer = -1, seenTrees = -1;
+  let atlas = null, seasonIdx = -1;
+  let vignette = null;
+  let frameNo = 0;
+  let pointerCell = null; // brush preview
+
+  const DAY_S = 100, SEASONS = ['spring', 'summer', 'autumn', 'winter'];
+  const t0 = Date.now();
+  function dayPhase() { return ((Date.now() - t0) / 1000 / DAY_S + 0.08) % 1; }
+  function seasonOf() { return (((Date.now() - t0) / 1000 / (DAY_S * 4)) | 0) % 4; }
+  // foliage hue shift per season
+  const SEASON_SHIFT = [8, 0, -32, -12];
+  const SEASON_SAT = [1.05, 1, 0.9, 0.62];
+
+  function leaf(h, s, l, aa) {
+    const si = seasonIdx < 0 ? 1 : seasonIdx;
+    return `hsla(${h + SEASON_SHIFT[si]},${Math.round(s * SEASON_SAT[si])}%,${l}%,${aa == null ? 1 : aa})`;
+  }
+
+  // ---- sprite atlas (ground plants) ----
+  function bakeAtlas() {
+    const S = Math.ceil(cs * 1.5);
+    const mk = () => { const c = document.createElement('canvas'); c.width = S; c.height = S; return [c, c.getContext('2d')]; };
+    atlas = { S, grass: [], flower: [], mush: [], seed: [] };
+    // seeds: faint speck per species
+    const seedCol = [null, '#3d5232', '#5a4a52', '#4a3d2e', '#57503f'];
+    for (let sp2 = 1; sp2 <= 4; sp2++) {
+      const [c, g] = mk();
+      g.fillStyle = seedCol[sp2];
+      g.beginPath(); g.arc(S / 2, S / 2, Math.max(1, cs * 0.10), 0, 7); g.fill();
+      atlas.seed[sp2] = c;
+    }
+    // grass: 3 stages x 4 variants
+    for (let st = 1; st <= 3; st++) {
+      const row = [];
+      for (let v = 0; v < 4; v++) {
+        const [c, g] = mk();
+        const blades = 1 + st + (v % 2);
+        g.lineWidth = Math.max(1, cs * 0.09);
+        g.lineCap = 'round';
+        for (let b = 0; b < blades; b++) {
+          const bx = S / 2 + (b - blades / 2 + 0.5) * cs * 0.22;
+          const hgt = cs * (0.28 + st * 0.17) * (0.8 + ((v * 7 + b * 13) % 10) / 25);
+          const sway = ((v * 13 + b * 5) % 7 - 3) * cs * 0.05;
+          g.strokeStyle = leaf(100 + v * 9 + b * 4, 42 + st * 9, 30 + st * 7, 0.95);
+          g.beginPath();
+          g.moveTo(bx, S / 2 + cs * 0.42);
+          g.quadraticCurveTo(bx + sway * 0.4, S / 2 + cs * 0.42 - hgt * 0.6, bx + sway, S / 2 + cs * 0.42 - hgt);
+          g.stroke();
+        }
+        row.push(c);
+      }
+      atlas.grass[st] = row;
+    }
+    // flowers: stage 1 stem, 2 bud, 3 burst — 6 colourways
+    const petals = [
+      ['#ff8ca3', '#ffd166'], ['#e0c3fc', '#f9f7f3'], ['#ffd166', '#b25b1e'],
+      ['#f9f7f3', '#eda100'], ['#ff6b8a', '#fff1c9'], ['#8ec5fc', '#f7ede2'],
+    ];
+    for (let st = 1; st <= 3; st++) {
+      const row = [];
+      for (let v = 0; v < 6; v++) {
+        const [c, g] = mk();
+        const cxm = S / 2, base = S / 2 + cs * 0.42;
+        g.lineWidth = Math.max(1, cs * 0.08); g.lineCap = 'round';
+        g.strokeStyle = leaf(120, 40, 30, 0.95);
+        const top = base - cs * (st === 1 ? 0.35 : 0.62);
+        g.beginPath(); g.moveTo(cxm, base); g.quadraticCurveTo(cxm + cs * 0.08, (base + top) / 2, cxm, top); g.stroke();
+        if (st === 1) {
+          g.strokeStyle = leaf(115, 45, 34, 0.9);
+          g.beginPath(); g.moveTo(cxm, base - cs * 0.18); g.lineTo(cxm + cs * 0.18, base - cs * 0.28); g.stroke();
+        } else if (st === 2) {
+          g.fillStyle = petals[v][0];
+          g.beginPath(); g.arc(cxm, top, cs * 0.14, 0, 7); g.fill();
+        } else {
+          const np = 5 + (v % 2), pr = cs * 0.26;
+          g.fillStyle = petals[v][0];
+          for (let p = 0; p < np; p++) {
+            const a = p / np * 6.2832 + v;
+            g.beginPath();
+            g.ellipse(cxm + Math.cos(a) * pr * 0.6, top + Math.sin(a) * pr * 0.6,
+              pr * 0.42, pr * 0.24, a, 0, 7);
+            g.fill();
+          }
+          g.fillStyle = petals[v][1];
+          g.beginPath(); g.arc(cxm, top, cs * 0.11, 0, 7); g.fill();
+        }
+        row.push(c);
+      }
+      atlas.flower[st] = row;
+    }
+    // mushrooms: 2 variants x stages collapsed (draw stage 2+ same)
+    for (let st = 1; st <= 3; st++) {
+      const row = [];
+      for (let v = 0; v < 2; v++) {
+        const [c, g] = mk();
+        const cxm = S / 2, base = S / 2 + cs * 0.4;
+        const hh = cs * (0.16 + st * 0.10);
+        g.strokeStyle = '#d9cbb2'; g.lineWidth = Math.max(1, cs * 0.10); g.lineCap = 'round';
+        g.beginPath(); g.moveTo(cxm, base); g.lineTo(cxm, base - hh); g.stroke();
+        g.fillStyle = v ? '#c46a4a' : '#d8c27a';
+        g.beginPath(); g.ellipse(cxm, base - hh, cs * (0.14 + st * 0.05), cs * (0.08 + st * 0.03), 0, 3.1416, 0); g.fill();
+        row.push(c);
+      }
+      atlas.mush[st] = row;
+    }
+  }
+
+  // ---- terrain layer ----
+  function redrawTerrain() {
+    const w = world, g = terrainCtx;
+    g.clearRect(0, 0, worldW, worldH);
+    waterCells.length = 0;
+    for (let y = 0; y < w.gh; y++) for (let x = 0; x < w.gw; x++) {
+      const i = y * w.gw + x, h = cellHash(i);
+      const t = w.terrain[i];
+      let fill;
+      if (t === WATER) {
+        waterCells.push(i);
+        // lighter at the shore
+        let shore = false;
+        if (x > 0 && w.terrain[i - 1] !== WATER) shore = true;
+        else if (x < w.gw - 1 && w.terrain[i + 1] !== WATER) shore = true;
+        else if (y > 0 && w.terrain[i - w.gw] !== WATER) shore = true;
+        else if (y < w.gh - 1 && w.terrain[i + w.gw] !== WATER) shore = true;
+        const l = (shore ? 34 : 24) + h % 5;
+        fill = `hsl(${183 + h % 8},${52 + h % 10}%,${l}%)`;
+      } else if (t === ROCK) {
+        fill = `hsl(222,${7 + h % 5}%,${38 + h % 14}%)`;
+      } else {
+        const f = w.fertility[i], m = w.moisture[i];
+        const hue = 28 + f * 26, sat = 22 + f * 32;
+        const lig = 25 + f * 9 - m * 7 + (h % 7) - 3;
+        fill = `hsl(${hue},${sat}%,${Math.max(10, lig)}%)`;
+      }
+      g.fillStyle = fill;
+      g.fillRect(x * cs, y * cs, cs + 1, cs + 1);
+      if (t === ROCK) {
+        // facet highlight + moss
+        g.fillStyle = `hsla(222,8%,${52 + h % 12}%,.5)`;
+        g.fillRect(x * cs + cs * 0.12, y * cs + cs * 0.10, cs * 0.5, cs * 0.34);
+        const mo = w.moss[i];
+        if (mo > 0.02) {
+          g.fillStyle = `hsla(125,42%,34%,${Math.min(0.85, mo)})`;
+          g.beginPath();
+          g.arc(x * cs + cs * (0.3 + (h % 5) / 10), y * cs + cs * (0.3 + (h >> 3) % 5 / 10), cs * 0.34 * Math.min(1, mo + 0.35), 0, 7);
+          g.fill();
+        }
+      } else if (t === SOIL && w.dead[i] > 0.4) {
+        g.fillStyle = `hsla(28,30%,14%,${Math.min(0.5, w.dead[i] * 0.16)})`;
+        g.fillRect(x * cs, y * cs, cs + 1, cs + 1);
+      }
+    }
+  }
+
+  // ---- ground plant layer (grass / flowers / mushrooms + seeds) ----
+  function drawGroundCell(i) {
+    const w = world, p = w.plant[i];
+    if (p === NONE || p === TREE) return;
+    const x = i % w.gw, y = (i / w.gw) | 0, h = cellHash(i);
+    const st = w.stage[i];
+    let img;
+    if (st === 0) img = atlas.seed[p];
+    else if (p === GRASS) img = atlas.grass[st][h % 4];
+    else if (p === FLOWER) img = atlas.flower[st][h % 6];
+    else img = atlas.mush[st][h % 2];
+    const jx = ((h >> 4) % 7 - 3) * cs * 0.04, jy = ((h >> 7) % 7 - 3) * cs * 0.04;
+    groundCtx.drawImage(img, x * cs + cs / 2 - atlas.S / 2 + jx, y * cs + cs / 2 - atlas.S / 2 + jy);
+  }
+
+  function redrawGroundFull() {
+    groundCtx.clearRect(0, 0, worldW, worldH);
+    for (let i = 0; i < world.n; i++) drawGroundCell(i);
+  }
+
+  function redrawGroundCells(cells) {
+    const w = world, set = new Set();
+    for (const i of cells) {
+      set.add(i);
+      const x = i % w.gw, y = (i / w.gw) | 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx, ny = y + dy;
+        if (nx >= 0 && ny >= 0 && nx < w.gw && ny < w.gh) set.add(ny * w.gw + nx);
+      }
+    }
+    for (const i of set) {
+      const x = i % w.gw, y = (i / w.gw) | 0;
+      groundCtx.clearRect(x * cs, y * cs, cs, cs);
+    }
+    for (const i of set) drawGroundCell(i);
+  }
+
+  // ---- tree layer ----
+  function redrawTrees() {
+    const w = world, g = treeCtx;
+    g.clearRect(0, 0, worldW, worldH);
+    for (let y = 0; y < w.gh; y++) for (let x = 0; x < w.gw; x++) {
+      const i = y * w.gw + x;
+      if (w.plant[i] !== TREE) continue;
+      const st = w.stage[i], h = cellHash(i);
+      const bx = x * cs + cs / 2, by = y * cs + cs * 0.9;
+      if (st === 0) {
+        g.fillStyle = '#4a3d2e';
+        g.beginPath(); g.arc(bx, by - cs * 0.3, Math.max(1, cs * 0.1), 0, 7); g.fill();
+        continue;
+      }
+      const lean = ((h % 11) - 5) * 0.06;
+      if (st === 1) {
+        g.strokeStyle = '#5d4433'; g.lineWidth = Math.max(1, cs * 0.10); g.lineCap = 'round';
+        g.beginPath(); g.moveTo(bx, by); g.lineTo(bx + lean * cs, by - cs * 0.7); g.stroke();
+        g.fillStyle = leaf(110, 45, 36, 0.95);
+        g.beginPath(); g.arc(bx + lean * cs, by - cs * 0.8, cs * 0.3, 0, 7); g.fill();
+        continue;
+      }
+      const mature = st === 3;
+      const trunkH = cs * (mature ? 2.5 : 1.5);
+      const canopyR = cs * (mature ? 1.55 : 0.9);
+      const topX = bx + lean * trunkH, topY = by - trunkH;
+      // soft shadow
+      g.fillStyle = 'rgba(5,8,10,.20)';
+      g.beginPath(); g.ellipse(bx + cs * 0.3, by + cs * 0.06, canopyR * 1.05, cs * 0.4, 0, 0, 7); g.fill();
+      // trunk
+      g.strokeStyle = `hsl(22,${26 + h % 8}%,${22 + h % 8}%)`;
+      g.lineWidth = Math.max(1.2, cs * (mature ? 0.24 : 0.15)); g.lineCap = 'round';
+      g.beginPath(); g.moveTo(bx, by);
+      g.quadraticCurveTo(bx + lean * trunkH * 0.3, by - trunkH * 0.6, topX, topY + canopyR * 0.4);
+      g.stroke();
+      if (mature) {
+        g.lineWidth = Math.max(1, cs * 0.10);
+        g.beginPath(); g.moveTo(bx + lean * trunkH * 0.25, by - trunkH * 0.55);
+        g.lineTo(bx + cs * (0.7 + (h % 3) * 0.2), by - trunkH * 0.85); g.stroke();
+      }
+      // foliage: layered blobs, dark below / light top-left
+      const blobs = mature ? 5 : 3;
+      for (let b = 0; b < blobs; b++) {
+        const hb = (h >> (b * 3)) & 15;
+        const a2 = b / blobs * 6.2832 + hb;
+        const rr = canopyR * (0.42 + (hb % 5) / 10);
+        const fx = topX + Math.cos(a2) * canopyR * 0.5;
+        const fy = topY + Math.sin(a2) * canopyR * 0.38 - canopyR * 0.1;
+        const litUp = fy < topY - canopyR * 0.05 || (b === blobs - 1);
+        g.fillStyle = litUp ? leaf(102 + hb, 44, 40, 0.92) : leaf(126 + hb, 38, 27, 0.92);
+        g.beginPath(); g.arc(fx, fy, rr, 0, 7); g.fill();
+      }
+      g.fillStyle = leaf(92, 50, 48, 0.55);
+      g.beginPath(); g.arc(topX - canopyR * 0.35, topY - canopyR * 0.35, canopyR * 0.4, 0, 7); g.fill();
+    }
+  }
+
+  // ---- creatures ----
+  const CR_COLOR = ['#ffd166', '#cbb6e8', '#ff6b5e'];
+  function drawCreatures(g, frac) {
+    const w = world;
+    for (const c of w.creatures) {
+      if (!c.alive) continue;
+      const ix = (c.px + (c.x - c.px) * frac) * cs, iy = (c.py + (c.y - c.py) * frac) * cs;
+      // trail
+      if (c.trail.length >= 4) {
+        g.lineWidth = Math.max(0.6, cs * 0.06);
+        g.lineCap = 'round';
+        for (let t = 2; t < c.trail.length; t += 2) {
+          const a = (t / c.trail.length) * 0.22;
+          g.strokeStyle = c.type === POLL ? `rgba(255,209,102,${a})`
+            : c.type === HERB ? `rgba(226,220,240,${a * 0.8})` : `rgba(255,107,94,${a})`;
+          g.beginPath();
+          g.moveTo(c.trail[t - 2] * cs, c.trail[t - 1] * cs);
+          g.lineTo(c.trail[t] * cs, c.trail[t + 1] * cs);
+          g.stroke();
+        }
+      }
+      const r = cs * (c.type === POLL ? 0.16 : c.type === HERB ? 0.24 : 0.28);
+      g.fillStyle = 'rgba(0,0,0,.35)';
+      g.beginPath(); g.arc(ix + r * 0.4, iy + r * 0.5, r, 0, 7); g.fill();
+      g.fillStyle = CR_COLOR[c.type];
+      g.beginPath(); g.arc(ix, iy, r, 0, 7); g.fill();
+      if (c.type === POLL) {
+        const fl = Math.sin((frameNo + (c.age % 17)) * 0.9) * 0.5 + 0.5;
+        g.fillStyle = `rgba(255,244,214,${0.25 + fl * 0.4})`;
+        g.beginPath(); g.ellipse(ix, iy - r * 0.9, r * 1.1, r * 0.5, 0.6, 0, 7); g.fill();
+      } else {
+        g.fillStyle = 'rgba(20,14,10,.8)';
+        g.beginPath(); g.arc(ix + Math.cos(c.h) * r * 0.6, iy + Math.sin(c.h) * r * 0.6, r * 0.4, 0, 7); g.fill();
+      }
+    }
+  }
+
+  // ---- water shimmer ----
+  function drawWater(g, tSec) {
+    const n = waterCells.length;
+    if (!n) return;
+    const stride = n > 2600 ? Math.ceil(n / 2600) : 1;
+    const w = world;
+    for (let k = 0; k < n; k += stride) {
+      const i = waterCells[k], h = cellHash(i);
+      const x = i % w.gw, y = (i / w.gw) | 0;
+      const a = 0.05 + 0.09 * (0.5 + 0.5 * Math.sin(tSec * 1.6 + (h % 628) / 100));
+      g.fillStyle = `rgba(140,238,221,${a.toFixed(3)})`;
+      const wob = Math.sin(tSec * 0.7 + h) * cs * 0.18;
+      g.fillRect(x * cs + cs * 0.15 + wob, y * cs + ((h >> 5) % 3) * cs * 0.3, cs * 0.55, Math.max(1, cs * 0.09));
+    }
+  }
+
+  // ---- day/night + season light ----
+  const SKY = [
+    [0.00, 255, 170, 110, 0.10], // dawn
+    [0.22, 255, 244, 214, 0.03], // noon
+    [0.46, 255, 120, 80, 0.13],  // dusk
+    [0.60, 13, 19, 50, 0.34],    // night
+    [0.90, 13, 19, 50, 0.34],
+    [1.00, 255, 170, 110, 0.10],
+  ];
+  function drawLight(g, cw, ch) {
+    const ph = dayPhase();
+    let k = 0;
+    while (k < SKY.length - 2 && SKY[k + 1][0] < ph) k++;
+    const A = SKY[k], B = SKY[k + 1];
+    const t = (ph - A[0]) / (B[0] - A[0]);
+    const r = A[1] + (B[1] - A[1]) * t, gg = A[2] + (B[2] - A[2]) * t,
+      b = A[3] + (B[3] - A[3]) * t, al = A[4] + (B[4] - A[4]) * t;
+    g.fillStyle = `rgba(${r | 0},${gg | 0},${b | 0},${al.toFixed(3)})`;
+    g.fillRect(0, 0, cw, ch);
+    if (!vignette || vignette.w !== cw || vignette.h !== ch) {
+      const vc = document.createElement('canvas'); vc.width = cw; vc.height = ch;
+      const vg = vc.getContext('2d');
+      const grad = vg.createRadialGradient(cw / 2, ch / 2, Math.min(cw, ch) * 0.42, cw / 2, ch / 2, Math.hypot(cw, ch) * 0.62);
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(1, 'rgba(3,4,8,.42)');
+      vg.fillStyle = grad; vg.fillRect(0, 0, cw, ch);
+      vignette = { cv: vc, w: cw, h: ch };
+    }
+    g.drawImage(vignette.cv, 0, 0);
+  }
+
+  // ---- layout / resize (grid survives; render rescales) ----
+  function layout() {
+    const d = dpr();
+    cv.width = Math.max(2, Math.round(cv.clientWidth * d));
+    cv.height = Math.max(2, Math.round(cv.clientHeight * d));
+    if (!world) return;
+    cs = Math.max(3, Math.max(cv.width / world.gw, cv.height / world.gh));
+    worldW = Math.ceil(world.gw * cs); worldH = Math.ceil(world.gh * cs);
+    ox = Math.round((cv.width - worldW) / 2); oy = Math.round((cv.height - worldH) / 2);
+    for (const c of [terrainCv, groundCv, treeCv]) { c.width = worldW; c.height = worldH; }
+    bakeAtlas();
+    seenTerrainVer = -1; seenTrees = -1;
+    world.dirtyFull = true; world.dirty.length = 0;
+    vignette = null;
+  }
+  addEventListener('resize', layout);
+
+  // ---- layer sync + composite ----
+  function syncLayers() {
+    const w = world;
+    const si = seasonOf();
+    if (si !== seasonIdx) {
+      seasonIdx = si;
+      bakeAtlas();
+      w.dirtyFull = true; seenTrees = -1;
+    }
+    if (seenTerrainVer !== w.terrainVer || frameNo % 50 === 0) {
+      redrawTerrain(); seenTerrainVer = w.terrainVer;
+    }
+    if (w.dirtyFull) { redrawGroundFull(); w.dirtyFull = false; w.dirty.length = 0; }
+    else if (w.dirty.length) { redrawGroundCells(w.dirty); w.dirty.length = 0; }
+    if (seenTrees !== w.treesChanged) { redrawTrees(); seenTrees = w.treesChanged; }
+  }
+
+  function renderScene(g, cw, ch, frac) {
+    g.fillStyle = '#07080c';
+    g.fillRect(0, 0, cw, ch);
+    g.save();
+    g.translate(ox, oy);
+    g.drawImage(terrainCv, 0, 0);
+    drawWater(g, (Date.now() - t0) / 1000);
+    g.drawImage(groundCv, 0, 0);
+    g.drawImage(treeCv, 0, 0);
+    drawCreatures(g, frac);
+    g.restore();
+    drawLight(g, cw, ch);
+  }
+
+  // ---- main loop ----
+  function frame(ts) {
+    requestAnimationFrame(frame);
+    frameNo++;
+    const dt = Math.min(120, ts - lastTs || 16);
+    lastTs = ts;
+    if (playing) {
+      acc += dt * speed;
+      const step = 1000 / TPS;
+      let nT = 0;
+      while (acc >= step && nT < 40) { tick(world); acc -= step; nT++; }
+      if (nT === 40) acc = 0;
+      tickFrac = Math.min(1, acc / step);
+      if (nT) uiDirty = true;
+    }
+    syncLayers();
+    renderScene(ctx, cv.width, cv.height, playing ? tickFrac : 1);
+    if (pointerCell) {
+      ctx.save(); ctx.translate(ox, oy);
+      ctx.strokeStyle = 'rgba(232,230,223,.55)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc((pointerCell[0] + 0.5) * cs, (pointerCell[1] + 0.5) * cs, (brushR + 0.2) * cs, 0, 7);
+      ctx.stroke(); ctx.restore();
+    }
+    if (uiDirty && frameNo % 12 === 0) { updateHud(); uiDirty = false; }
+  }
+
+  // ---- HUD / sparkline ----
+  let uiDirty = true;
+  const genV = document.getElementById('genV'), seedV = document.getElementById('seedV'),
+    seedCap = document.getElementById('seedCap');
+  const spark = document.getElementById('spark'), sctx = spark.getContext('2d');
+  const legend = document.getElementById('legend');
+  const SERIES = [
+    ['grass', '#7bd389'], ['flowers', '#ff8ca3'], ['trees', '#38a3a5'], ['fungi', '#d8c27a'],
+    ['bees', '#ffd166'], ['grazers', '#cbb6e8'], ['hunters', '#ff6b5e'],
+  ];
+  function updateHud() {
+    genV.textContent = world.gen;
+    const hist = world.history;
+    const W2 = spark.width, H2 = spark.height;
+    sctx.clearRect(0, 0, W2, H2);
+    const win = hist.slice(-160);
+    if (win.length >= 2) {
+      for (let s = 0; s < 7; s++) {
+        let max = 8;
+        for (const r of win) if (r[s] > max) max = r[s];
+        sctx.strokeStyle = SERIES[s][1];
+        sctx.globalAlpha = 0.9; sctx.lineWidth = 1;
+        sctx.beginPath();
+        for (let k = 0; k < win.length; k++) {
+          const x = k / (win.length - 1) * (W2 - 4) + 2;
+          const y = H2 - 3 - (win[k][s] / max) * (H2 - 8);
+          if (k) sctx.lineTo(x, y); else sctx.moveTo(x, y);
+        }
+        sctx.stroke();
+      }
+      sctx.globalAlpha = 1;
+    }
+    const p = countPlants(world), cc = countCreatures(world);
+    const vals = [p.grass, p.flower, p.tree, p.mush, cc[0], cc[1], cc[2]];
+    legend.innerHTML = '';
+    for (let s = 0; s < 7; s++) {
+      const sp2 = document.createElement('span');
+      const dot = document.createElement('i'); dot.style.background = SERIES[s][1];
+      sp2.append(dot, `${SERIES[s][0]} ${vals[s]}`);
+      legend.append(sp2);
+    }
+  }
+
+  // ---- world lifecycle ----
+  function newWorld(seed, preset) {
+    const [gw, gh] = gridDims();
+    world = createWorld(seed, gw, gh);
+    applyPreset(world, preset);
+    presetName = preset;
+    seedV.textContent = seed; seedCap.textContent = seed;
+    layout();
+    uiDirty = true;
+    try { history.replaceState(null, '', `#s=${seed}&p=${preset}`); } catch (e) { /* file:// */ }
+  }
+
+  function readHash() {
+    const m = /s=(\d+)/.exec(location.hash), p = /p=([a-z]+)/.exec(location.hash);
+    return {
+      seed: m ? (+m[1] >>> 0) : null,
+      preset: p && ['oasis', 'archipelago', 'forest', 'barren', 'garden', 'blank'].includes(p[1]) ? p[1] : null,
+    };
+  }
+
+  // ---- painting ----
+  const toolBtns = document.querySelectorAll('#tools button');
+  const toolNames = {
+    water: 'water', rock: 'rock', soil: 'fertile soil', grass: 'grass seed',
+    flower: 'flower seed', tree: 'tree seed', poll: 'pollinators',
+    herb: 'herbivores', pred: 'predators', erase: 'erase',
+  };
+  toolBtns.forEach(b => b.addEventListener('click', () => {
+    toolBtns.forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    tool = b.dataset.tool;
+    document.getElementById('toolName').textContent = toolNames[tool];
+  }));
+  const brushEl = document.getElementById('brush');
+  brushEl.addEventListener('input', () => {
+    brushR = +brushEl.value;
+    document.getElementById('brushV').textContent = brushR;
+  });
+
+  function eventCell(e) {
+    const r = cv.getBoundingClientRect(), d = dpr();
+    const wx = ((e.clientX - r.left) * d - ox) / cs;
+    const wy = ((e.clientY - r.top) * d - oy) / cs;
+    return [wx, wy];
+  }
+
+  function paintAt(wx, wy, isDown) {
+    const w = world;
+    const cx = Math.round(wx), cy = Math.round(wy);
+    if (tool === 'poll' || tool === 'herb' || tool === 'pred') {
+      if (!isDown && frameNo % 8 !== 0) return;
+      const type = tool === 'poll' ? POLL : tool === 'herb' ? HERB : PRED;
+      const nAdd = isDown ? 3 : 1;
+      for (let k = 0; k < nAdd; k++)
+        addCreature(w, type,
+          Math.min(w.gw - 0.1, Math.max(0, wx + (uiRng() - 0.5) * brushR)),
+          Math.min(w.gh - 0.1, Math.max(0, wy + (uiRng() - 0.5) * brushR)));
+      uiDirty = true;
+      return;
+    }
+    const rr = brushR;
+    for (let dy = -rr; dy <= rr; dy++) for (let dx = -rr; dx <= rr; dx++) {
+      if (dx * dx + dy * dy > rr * rr) continue;
+      const x = cx + dx, y = cy + dy;
+      if (x < 0 || y < 0 || x >= w.gw || y >= w.gh) continue;
+      const i = y * w.gw + x;
+      switch (tool) {
+        case 'water': setTerrain(w, i, WATER); break;
+        case 'rock': setTerrain(w, i, ROCK); break;
+        case 'soil':
+          setTerrain(w, i, SOIL);
+          w.fertility[i] = Math.min(1, 0.8 + uiRng() * 0.2);
+          break;
+        case 'erase':
+          if (w.plant[i] !== NONE) killPlant(w, i, false);
+          w.dead[i] = 0;
+          break;
+        case 'grass': case 'flower': case 'tree': {
+          const dens = tool === 'grass' ? 0.42 : tool === 'flower' ? 0.3 : 0.07;
+          if (w.terrain[i] === SOIL && w.plant[i] === NONE && uiRng() < dens) {
+            const type = tool === 'grass' ? GRASS : tool === 'flower' ? FLOWER : TREE;
+            plantSeed(w, i, type);
+            // a hand-planted seed lands in tended ground
+            w.fertility[i] = Math.max(w.fertility[i], 0.35);
+            w.moisture[i] = Math.max(w.moisture[i], SP[type].needM + 0.05);
+          }
+          break;
+        }
+      }
+    }
+    uiDirty = true;
+  }
+
+  let painting = false, lastPaint = null;
+  cv.addEventListener('pointerdown', e => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    painting = true;
+    cv.setPointerCapture(e.pointerId);
+    const [wx, wy] = eventCell(e);
+    lastPaint = [wx, wy];
+    paintAt(wx, wy, true);
+    e.preventDefault();
+  });
+  cv.addEventListener('pointermove', e => {
+    const [wx, wy] = eventCell(e);
+    pointerCell = [Math.round(wx), Math.round(wy)];
+    if (!painting) return;
+    // interpolate strokes so fast drags leave no gaps
+    const [lx, ly] = lastPaint;
+    const d = Math.hypot(wx - lx, wy - ly);
+    const steps = Math.max(1, Math.ceil(d / Math.max(1, brushR * 0.6)));
+    for (let s = 1; s <= steps; s++)
+      paintAt(lx + (wx - lx) * s / steps, ly + (wy - ly) * s / steps, false);
+    lastPaint = [wx, wy];
+  });
+  const endPaint = () => { painting = false; lastPaint = null; };
+  cv.addEventListener('pointerup', endPaint);
+  cv.addEventListener('pointercancel', endPaint);
+  cv.addEventListener('pointerleave', () => { pointerCell = null; });
+
+  // ---- transport ----
+  const btnPlay = document.getElementById('btnPlay');
+  function setPlaying(p) {
+    playing = p;
+    btnPlay.textContent = p ? '⏸ pause' : '▶ play';
+  }
+  btnPlay.addEventListener('click', () => setPlaying(!playing));
+  document.getElementById('btnStep').addEventListener('click', () => {
+    setPlaying(false); tick(world); uiDirty = true; updateHud();
+  });
+  document.querySelectorAll('#speedSeg button').forEach(b =>
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#speedSeg button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      speed = +b.dataset.s;
+    }));
+  addEventListener('keydown', e => {
+    if (e.target.closest('input, textarea, select, button')) return;
+    if (e.key === ' ') { e.preventDefault(); setPlaying(!playing); }
+    if (e.key === 's') { setPlaying(false); tick(world); uiDirty = true; updateHud(); }
+  });
+
+  // ---- seed / presets / dream ----
+  document.getElementById('btnReroll').addEventListener('click', () => {
+    newWorld((Math.random() * 1e9) >>> 0, presetName);
+    world.dream = dreamChk.checked;
+  });
+  document.querySelectorAll('#presets button').forEach(b =>
+    b.addEventListener('click', () => {
+      newWorld(world ? world.seed : (Math.random() * 1e9) >>> 0, b.dataset.p);
+      world.dream = dreamChk.checked;
+    }));
+  const dreamChk = document.getElementById('dreamChk');
+  dreamChk.addEventListener('change', () => { world.dream = dreamChk.checked; });
+
+  // ---- export png ----
+  document.getElementById('btnPng').addEventListener('click', () => {
+    const tc = document.createElement('canvas');
+    tc.width = cv.width; tc.height = cv.height;
+    renderScene(tc.getContext('2d'), tc.width, tc.height, 1);
+    const a = document.createElement('a');
+    a.download = `genesis-${world.seed}-gen${world.gen}.png`;
+    a.href = tc.toDataURL('image/png');
+    a.click();
+  });
+
+  // ---- panel collapse / mobile sheet ----
+  const panel = document.getElementById('panel');
+  const isMobile = () => matchMedia('(max-width:760px)').matches;
+  document.getElementById('panelHead').addEventListener('click', () => {
+    if (isMobile()) panel.classList.toggle('open');
+    else panel.classList.toggle('collapsed');
+    document.getElementById('panelToggle').textContent =
+      (panel.classList.contains('collapsed')) ? '+' : '–';
+  });
+  if (isMobile()) panel.classList.remove('open');
+
+  // ---- boot ----
+  const fromHash = readHash();
+  const bootSeed = fromHash.seed != null ? fromHash.seed : (Math.random() * 1e9) >>> 0;
+  const bootPreset = fromHash.preset ||
+    ['forest', 'oasis', 'garden'][(Math.random() * 3) | 0];
+  newWorld(bootSeed, bootPreset);
+  if (reducedMotion) {
+    // pre-grown, paused world instead of animation
+    for (let k = 0; k < 700; k++) tick(world);
+    setPlaying(false);
+    updateHud();
+  } else {
+    world.dream = true;
+    dreamChk.checked = true;
+    setPlaying(true);
+  }
+  requestAnimationFrame(ts => { lastTs = ts; frame(ts); });
+})();
+</script>
+</body>
+</html>
