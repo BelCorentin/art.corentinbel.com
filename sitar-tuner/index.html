@@ -199,6 +199,7 @@
     <div class="ctl-row">
       <label>strings
         <select id="presetSel">
+          <option value="mysitar" selected>my sitar · sa=d gandhar-ish</option>
           <option value="kharaj">ravi shankar · kharaj-pancham</option>
           <option value="gandhar">vilayat khan · gandhar-pancham</option>
           <option value="free">free mode · just tell me the swara</option>
@@ -256,6 +257,20 @@
   // Playing-string presets. Each string: semi = swara semitone above Sa,
   // oct = octave shift relative to middle Sa. freq = sa * 2^(semi/12) * 2^oct.
   const PRESETS = {
+    // Corentin's own sitar, measured 2026-08: 198 / 150 / 188 / 223 / 295 / 295 Hz
+    // = gandhar-pancham-style layout with Sa = D3 (146.8), uniformly ~+23 cents
+    // sharp of A440 targets (set a4 ≈ 446 to match the current tuning instead).
+    mysitar: {
+      name: 'my sitar · sa = d · gandhar-ish',
+      strings: [
+        { id:'m1', label:'1 · baj',        swara:'ma',      semi:5, oct:0  },
+        { id:'m2', label:'2 · jod',        swara:'Sa',      semi:0, oct:0  },
+        { id:'m3', label:'3 · gandhar',    swara:'Ga',      semi:4, oct:0  },
+        { id:'m4', label:'4 · pancham',    swara:'Pa',      semi:7, oct:0  },
+        { id:'m5', label:'5 · chikari',    swara:'Sa high', semi:0, oct:1  },
+        { id:'m6', label:'6 · chikari',    swara:'Sa high', semi:0, oct:1  },
+      ],
+    },
     kharaj: {
       name: 'ravi shankar · kharaj-pancham',
       strings: [
@@ -468,9 +483,9 @@
 
   // ---------- state ----------
   const cfg = {
-    saPc: 1,            // C#
+    saPc: 2,            // D — matches the 'my sitar' preset
     a4: 440,
-    preset: 'kharaj',   // 'kharaj' | 'gandhar' | 'free'
+    preset: 'mysitar',  // 'mysitar' | 'kharaj' | 'gandhar' | 'free'
     tarab: false,
     raga: 'yaman',
   };
@@ -573,7 +588,7 @@
   S.NOTE_NAMES.forEach((n, i) => {
     const o = document.createElement('option');
     o.value = i; o.textContent = n.toLowerCase();
-    if (i === 1) o.selected = true;
+    if (i === cfg.saPc) o.selected = true;
     saSel.append(o);
   });
 
