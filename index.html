@@ -4,375 +4,484 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>art · Corentin Bel</title>
-<meta name="description" content="Brain × art projects and generative playthings.">
+<meta name="description" content="An explorable world of generative art projects — pick a place to visit.">
 <style>
   :root {
-    --bg:#07080c; --panel:#0a0e14; --fg:#e8e6df; --dim:#8a8fa3; --accent:#6ea8ff;
-    --border:#232b3a; --teal:#8ceedd; --amber:#eda100;
+    --fg:#f3ead9; --dim:#c9bfae; --faint:#8b8398; --accent:#ffd27a;
+    --glass:rgba(18,14,28,.62); --radius:14px;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
-  html { scroll-behavior:smooth; }
-  body { background:var(--bg); color:var(--fg); font-family:ui-sans-serif,system-ui,sans-serif; }
-  canvas { position:fixed; inset:0; display:block; z-index:0; }
-
-  /* ---------- hero (live flow field) ---------- */
-  .hero {
-    position:relative; height:85vh; z-index:1; cursor:crosshair;
+  html, body { height:100%; overscroll-behavior:none; }
+  body {
+    background:#17102b; color:var(--fg); overflow:hidden;
+    font-family:ui-sans-serif,system-ui,"Inter",sans-serif;
   }
-  header {
-    position:absolute; top:0; left:0; right:0;
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+
+  #scene { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  #scene.hot { cursor:pointer; }
+
+  .glass {
+    background:var(--glass); border:1px solid rgba(255,210,122,.18);
+    border-radius:var(--radius); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  }
+
+  header#top {
+    position:fixed; top:0; left:0; right:0; z-index:20;
     display:flex; justify-content:space-between; align-items:baseline;
-    padding:1.4rem 2rem; pointer-events:none; mix-blend-mode:difference;
+    padding:1rem 1.3rem; pointer-events:none; mix-blend-mode:screen;
   }
-  header nav { display:flex; gap:1.2rem; }
-  header a { pointer-events:auto; color:var(--dim); text-decoration:none; font-size:.9rem; }
-  header a:hover { color:var(--accent); }
-  h1 { font-weight:300; font-size:1.4rem; letter-spacing:.06em; }
-  h1 b { font-weight:600; }
+  header#top h1 { font-weight:300; font-size:1.15rem; letter-spacing:.05em; }
+  header#top h1 b { font-weight:650; }
+  header#top nav { display:flex; gap:1.1rem; pointer-events:auto; }
+  header#top nav a { color:var(--dim); font-size:.85rem; text-decoration:none; }
+  header#top nav a:hover { color:var(--accent); }
+
   #hint {
-    position:absolute; bottom:3.4rem; width:100%; text-align:center;
-    color:#565b6e; font-size:.8rem; pointer-events:none; mix-blend-mode:difference;
-  }
-  .scroll-ind {
-    position:absolute; bottom:.7rem; left:50%; transform:translateX(-50%);
-    color:var(--dim); text-decoration:none; font-size:1.1rem; line-height:1;
-    padding:.4rem .8rem; animation:bob 2.2s ease-in-out infinite;
-  }
-  .scroll-ind:hover { color:var(--fg); }
-  @keyframes bob {
-    0%, 100% { transform:translateX(-50%) translateY(0); opacity:.6; }
-    50%      { transform:translateX(-50%) translateY(6px); opacity:1; }
+    position:fixed; top:3.4rem; left:1.3rem; z-index:20;
+    font-size:.78rem; color:var(--dim); mix-blend-mode:screen; pointer-events:none;
   }
 
-  /* ---------- projects panel ---------- */
-  .projects {
-    position:relative; z-index:1; background:var(--panel);
-    border-top:1px solid var(--border);
-    padding:4rem 2rem 5rem; min-height:15vh;
+  #tip {
+    position:fixed; z-index:22; padding:.35rem .7rem; font-size:.82rem;
+    pointer-events:none; transform:translate(-50%, -140%); white-space:nowrap;
+    opacity:0; transition:opacity .15s;
   }
-  .projects-inner { max-width:1060px; margin:0 auto; }
-  .kicker {
-    text-transform:uppercase; letter-spacing:.22em; font-size:.72rem;
-    color:var(--dim); margin-bottom:.6rem;
-  }
-  .projects h2 { font-weight:300; font-size:1.7rem; margin-bottom:2.2rem; }
-  .grid {
-    display:grid; gap:1.2rem;
-    grid-template-columns:repeat(auto-fill, minmax(290px, 1fr));
-  }
-  .card {
-    border:1px solid var(--border); border-radius:12px;
-    padding:1.4rem; background:rgba(255,255,255,0.015);
-    display:flex; flex-direction:column; gap:.8rem;
-    transition:background .25s, border-color .25s, transform .25s;
-  }
-  .card:hover {
-    background:rgba(255,255,255,0.045); border-color:#31405a;
-    backdrop-filter:blur(6px); transform:translateY(-2px);
-  }
-  .card-top { display:flex; align-items:center; justify-content:space-between; }
-  .card .emoji { font-size:2rem; line-height:1; }
-  .badge {
-    text-transform:uppercase; letter-spacing:.14em; font-size:.62rem;
-    padding:.28em .7em; border-radius:999px; border:1px solid var(--border);
-    color:var(--dim); white-space:nowrap;
-  }
-  .badge.live { color:var(--teal); border-color:rgba(140,238,221,.35); }
-  .badge.in-progress { color:var(--amber); border-color:rgba(237,161,0,.35); }
-  .card h3 { font-weight:500; font-size:1.05rem; letter-spacing:.02em; }
-  .card p { color:var(--dim); font-size:.88rem; line-height:1.55; flex:1; }
-  .card-links { display:flex; gap:1rem; }
-  .card-links a { color:var(--accent); font-size:.82rem; text-decoration:none; }
-  .card-links a:hover { text-decoration:underline; }
+  #tip.show { opacity:1; }
 
-  /* media strip: real media if present, shimmer placeholder otherwise */
-  .media-strip { display:flex; gap:.5rem; overflow-x:auto; }
-  .media-strip img, .media-strip video {
-    height:110px; border-radius:8px; border:1px solid var(--border);
-    max-width:100%; object-fit:cover;
+  #card {
+    position:fixed; z-index:30; padding:1.3rem 1.4rem 1.4rem; overflow-y:auto;
+    top:5.4rem; right:.8rem; bottom:.8rem; width:min(360px, calc(100vw - 1.6rem));
+    transform:translateX(115%); transition:transform .35s cubic-bezier(.2,.8,.2,1);
+    visibility:hidden;
   }
-  .media-placeholder {
-    height:64px; border-radius:8px; border:1px dashed var(--border);
-    display:flex; align-items:center; justify-content:center;
-    color:#565b6e; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase;
-    background:linear-gradient(100deg, transparent 30%, rgba(232,230,223,.05) 50%, transparent 70%);
-    background-size:250% 100%; animation:shimmer 2.8s linear infinite;
+  #card.open { transform:translateX(0); visibility:visible; }
+  @media (max-width:640px) {
+    #card {
+      top:auto; left:.6rem; right:.6rem; bottom:.6rem; width:auto; max-height:58vh;
+      transform:translateY(115%);
+    }
+    #card.open { transform:translateY(0); }
   }
-  @keyframes shimmer { from { background-position:120% 0; } to { background-position:-120% 0; } }
+  #cardClose {
+    position:absolute; top:.6rem; right:.7rem; background:none; border:none; color:var(--dim);
+    font-size:1.3rem; cursor:pointer; line-height:1; padding:.2rem .4rem; font-family:inherit;
+  }
+  #cardClose:hover { color:var(--fg); }
+  #cardBadge {
+    display:inline-block; text-transform:uppercase; letter-spacing:.14em; font-size:.62rem;
+    padding:.28em .7em; border-radius:999px; border:1px solid rgba(255,210,122,.3);
+    color:var(--dim); margin-bottom:.8rem;
+  }
+  #cardBadge.live { color:#8ceedd; border-color:rgba(140,238,221,.4); }
+  #cardBadge.locked { color:#8b8398; }
+  #card h2 { font-size:1.25rem; font-weight:650; line-height:1.35; }
+  #card h2 .em { margin-right:.5rem; }
+  #cardDesc { color:#d8d2c6; font-size:.92rem; line-height:1.65; margin-top:.8rem; }
+  #cardLinks { margin-top:1.1rem; }
+  #cardLinks a {
+    display:inline-block; font-size:.85rem; border:1px solid rgba(255,210,122,.3);
+    border-radius:999px; padding:.45rem 1.1rem; transition:border-color .2s, background .2s;
+  }
+  #cardLinks a:hover { border-color:var(--accent); background:rgba(255,210,122,.08); text-decoration:none; }
+
+  #legend {
+    position:fixed; bottom:.9rem; left:.9rem; z-index:20; padding:.55rem .8rem;
+    font-size:.72rem; color:var(--faint); max-width:220px; line-height:1.5;
+  }
+  #legend b { color:var(--dim); }
 
   footer {
-    position:relative; z-index:1; background:var(--panel);
-    text-align:center; padding:0 2rem 2.5rem; color:#565b6e; font-size:.78rem;
+    position:fixed; bottom:.9rem; right:.9rem; z-index:20;
+    font-size:.76rem; color:var(--faint); mix-blend-mode:screen;
   }
-  footer a { color:var(--dim); text-decoration:none; }
-  footer a:hover { color:var(--accent); }
+
+  noscript .fallback { position:fixed; inset:0; display:grid; place-items:center; padding:2rem; text-align:center; }
+  @media (prefers-reduced-motion: reduce) { #card, #tip { transition:none; } }
 </style>
 </head>
 <body>
-<canvas id="c"></canvas>
 
-<section class="hero" id="top">
-  <header>
-    <h1><b>art</b>.corentinbel.com</h1>
-    <nav>
-      <a href="https://corentinbel.com">home</a>
-      <a href="https://lab.corentinbel.com">lab</a>
-      <a href="https://aboutme.corentinbel.com">about me</a>
-    </nav>
-  </header>
-  <div id="hint">flow field #<span id="seedn"></span> · click for a new one</div>
-  <a class="scroll-ind" href="#projects" aria-label="scroll to projects">↓</a>
-</section>
+<canvas id="scene"></canvas>
 
-<section class="projects" id="projects">
-  <div class="projects-inner">
-    <div class="kicker">brain × art</div>
-    <h2>Projects</h2>
-    <div class="grid" id="grid"></div>
-  </div>
-</section>
+<header id="top">
+  <h1><b>art</b>.corentinbel.com</h1>
+  <nav>
+    <a href="https://corentinbel.com">home</a>
+    <a href="https://lab.corentinbel.com">lab</a>
+    <a href="https://aboutme.corentinbel.com">about me</a>
+  </nav>
+</header>
+<div id="hint">a world of brain × art things — click a place to visit it</div>
+<div id="tip" class="glass"></div>
 
-<footer>
-  <a href="https://corentinbel.com">corentinbel.com</a> · decoding brains, rendering the noise
-</footer>
+<aside id="card" class="glass" role="dialog" aria-labelledby="cardTitle" tabindex="-1">
+  <button id="cardClose" type="button" aria-label="close">×</button>
+  <div id="cardBadge"></div>
+  <h2 id="cardTitle"></h2>
+  <div id="cardDesc"></div>
+  <div id="cardLinks"></div>
+</aside>
+
+<div id="legend" class="glass">🔓 near shore — open now &nbsp; 🌫️ far islands — still being built</div>
+<footer><a href="https://corentinbel.com">corentinbel.com</a></footer>
+
+<noscript><div class="fallback glass"><p>This map needs JavaScript.</p></div></noscript>
 
 <script>
-// ============================================================
-// PROJECTS — add a project = one object.
-// status: "live" | "in progress" | "concept"
-// media:  paths under media/ (images or .mp4/.webm) → rendered as a strip
-// links:  [{label, href}]  ("#top" scrolls back to the flow field)
-// ============================================================
-const PROJECTS = [
-  {
-    id: 'neural-music',
-    emoji: '🎼',
-    title: 'Neural music spectacle',
-    status: 'in progress',
-    description: 'Live EEG/OPM decoding of what music does to a listening brain, projected as visuals during a concert — the audience watches the listener\'s cortex dance.',
-    media: [],
-    links: [],
-  },
-  {
-    id: 'music-to-images',
-    emoji: '🎨',
-    title: 'Music → images',
-    status: 'in progress',
-    description: 'Feeding decoded auditory features into image diffusion: what a song looks like, noise and all. Examples coming as the pipeline stabilises.',
-    media: [],
-    links: [],
-  },
-  {
-    id: 'petit-prince-imaged',
-    emoji: '🎬',
-    title: 'Le Petit Prince, imaged',
-    status: 'concept',
-    description: 'People listened to Le Petit Prince inside an fMRI scanner. Turning each listener\'s brain responses into their own private film of the story — one image sequence per brain.',
-    media: [],
-    links: [],
-  },
-  {
-    id: 'flow-studio',
-    emoji: '🌬️',
-    title: 'Flow studio',
-    status: 'live',
-    description: 'Paint with fluid dynamics: long-exposure particle trails around a foil section — tilt it, stall it, shed chaotic vortices, then snapshot the canvas.',
-    media: [],
-    links: [{ label: 'open the studio', href: 'flow-studio/' }],
-  },
-  {
-    id: 'fractals',
-    emoji: '❄️',
-    title: 'Fractal studio',
-    status: 'live',
-    description: 'Mandelbrot, Julia, Burning Ship, Newton basins and a Barnsley fern — deep zoom, drag the Julia seed, seven colour themes, export the frame.',
-    media: [],
-    links: [{ label: 'open the studio', href: 'fractals/' }],
-  },
-  {
-    id: 'genesis',
-    emoji: '🌱',
-    title: 'Genesis garden',
-    status: 'live',
-    description: 'Paint water, rocks and seeds, press play, and watch a world invent itself — ecosystems, seasons, predator-prey waves.',
-    media: [],
-    links: [{ label: 'grow a world', href: 'genesis/' }],
-  },
-  {
-    id: 'sitar-tuner',
-    emoji: '🪕',
-    title: 'Sitar tuner',
-    status: 'live',
-    description: 'Plug in your ears, pluck a string — a mandala blooms when you hit the swara. YIN pitch tracking, kharaj-pancham presets, tarab checklists, a tanpura drone.',
-    media: [],
-    links: [{ label: 'tune up', href: 'sitar-tuner/' }],
-  },
-  {
-    id: 'flow-fields',
-    emoji: '🌊',
-    title: 'Flow fields',
-    status: 'live',
-    description: 'The generative piece behind this page: seeded particle trails in a layered-sine flow field. Click the background for a new one.',
-    media: [],
-    links: [{ label: 'see it', href: '#top' }],
-  },
+"use strict";
+/* ============================================================
+   art.corentinbel.com — the gallery as a little painted world.
+   Live projects sit on the near shore as buildings you can walk
+   up to; in-progress/concept ones are misty islands further out —
+   distance = how far from shipped. Click a place, read the card,
+   follow the link (or come back later for the foggy ones).
+   ============================================================ */
+
+const LOCATIONS = [
+  { id:'flow-studio', emoji:'🌬️', title:'Flow studio', status:'live', kind:'mill',
+    x:.15, y:.70, scale:1,
+    desc:'Paint with fluid dynamics: long-exposure particle trails around a foil section — tilt it, stall it, shed chaotic vortices, then snapshot the canvas.',
+    href:'flow-studio/' },
+  { id:'genesis', emoji:'🌱', title:'Genesis garden', status:'live', kind:'tree',
+    x:.32, y:.82, scale:1,
+    desc:'Paint water, rocks and seeds, press play, and watch a world invent itself — ecosystems, seasons, predator-prey waves.',
+    href:'genesis/' },
+  { id:'fractals', emoji:'❄️', title:'Fractal studio', status:'live', kind:'crystal',
+    x:.50, y:.60, scale:1,
+    desc:'Mandelbrot, Julia, Burning Ship, Newton basins and a Barnsley fern — deep zoom, drag the Julia seed, seven colour themes, export the frame.',
+    href:'fractals/' },
+  { id:'sitar-tuner', emoji:'🪕', title:'Sitar tuner', status:'live', kind:'pavilion',
+    x:.68, y:.79, scale:1,
+    desc:'Plug in your ears, pluck a string — a mandala blooms when you hit the swara. YIN pitch tracking, kharaj-pancham presets, tarab checklists, a tanpura drone.',
+    href:'sitar-tuner/' },
+  { id:'neural-music', emoji:'🎼', title:'Neural music spectacle', status:'concept', kind:'mist',
+    x:.83, y:.56, scale:.85,
+    desc:'Live EEG/OPM decoding of what music does to a listening brain, projected as visuals during a concert — the audience watches the listener\'s cortex dance.' },
+  { id:'music-to-images', emoji:'🎨', title:'Music → images', status:'concept', kind:'mist',
+    x:.90, y:.38, scale:.78,
+    desc:'Feeding decoded auditory features into image diffusion: what a song looks like, noise and all. Examples coming as the pipeline stabilises.' },
+  { id:'petit-prince-imaged', emoji:'🎬', title:'Le Petit Prince, imaged', status:'concept', kind:'mist',
+    x:.95, y:.20, scale:.7,
+    desc:'People listened to Le Petit Prince inside an fMRI scanner. Turning each listener\'s brain responses into their own private film of the story — one image sequence per brain.' },
 ];
-
-function renderProjects() {
-  const grid = document.getElementById('grid');
-  for (const p of PROJECTS) {
-    const card = document.createElement('article');
-    card.className = 'card';
-    card.id = p.id;
-
-    const top = document.createElement('div');
-    top.className = 'card-top';
-    const em = document.createElement('span');
-    em.className = 'emoji'; em.textContent = p.emoji;
-    const badge = document.createElement('span');
-    badge.className = 'badge ' + p.status.replace(/\s+/g, '-');
-    badge.textContent = p.status;
-    top.append(em, badge);
-
-    const h3 = document.createElement('h3');
-    h3.textContent = p.title;
-    const desc = document.createElement('p');
-    desc.textContent = p.description;
-
-    const strip = document.createElement('div');
-    if (p.media.length) {
-      strip.className = 'media-strip';
-      for (const src of p.media) {
-        if (/\.(mp4|webm|mov)$/i.test(src)) {
-          const v = document.createElement('video');
-          v.src = src; v.muted = true; v.loop = true; v.autoplay = true;
-          v.playsInline = true; v.controls = false;
-          strip.append(v);
-        } else {
-          const img = document.createElement('img');
-          img.src = src; img.loading = 'lazy'; img.alt = p.title;
-          strip.append(img);
-        }
-      }
-    } else {
-      strip.className = 'media-placeholder';
-      strip.textContent = 'media coming';
-    }
-
-    card.append(top, h3, desc, strip);
-
-    if (p.links.length) {
-      const links = document.createElement('div');
-      links.className = 'card-links';
-      for (const l of p.links) {
-        const a = document.createElement('a');
-        a.href = l.href; a.textContent = l.label + ' →';
-        links.append(a);
-      }
-      card.append(links);
-    }
-    grid.append(card);
-  }
-}
-renderProjects();
-</script>
-
-<script>
-// Flow-field particles. Field = curl of layered sines; each seed gets its own
-// field constants + palette. Trails accumulate (no clear, translucent fade).
-const cv = document.getElementById('c');
-const ctx = cv.getContext('2d');
-let W, H;
+const TRAIL = ['flow-studio', 'genesis', 'fractals', 'sitar-tuner'];
 
 const PALETTES = [
-  ['#6ea8ff', '#b48ce8', '#e8e6df', '#ff8ca3'],
-  ['#f4a259', '#f25c54', '#efe9e0', '#7d8cc4'],
-  ['#7bd389', '#38a3a5', '#e2f0cb', '#22577a'],
-  ['#ffd166', '#ef476f', '#f7ede2', '#118ab2'],
-  ['#e0c3fc', '#8ec5fc', '#f9f7f3', '#5e60ce'],
-  ['#d9ed92', '#76c893', '#f6fff8', '#1a759f'],
+  { name:'dusk', sky:['#150c29','#3a2757','#9a4a6c','#e2834f','#f6c584'], stars:.9, sun:'#ffdca0' },
+  { name:'night', sky:['#070512','#120a26','#241a45','#3a2a5e','#4a3672'], stars:1, sun:'#cfe0ff' },
+  { name:'dawn', sky:['#0f1a33','#274066','#5c7aa0','#e8b489','#fbe3b8'], stars:.45, sun:'#ffe9b8' },
 ];
+let palIdx = 0;
 
-let seed, K, palette, parts;
-function rand() { // mulberry32
-  seed |= 0; seed = seed + 0x6D2B79F5 | 0;
-  let z = Math.imul(seed ^ seed >>> 15, 1 | seed);
-  z = z + Math.imul(z ^ z >>> 7, 61 | z) ^ z;
-  return ((z ^ z >>> 14) >>> 0) / 4294967296;
-}
-
-function field(x, y) {
-  // angle from layered sines; K holds per-seed frequencies/phases
-  const nx = x / W - 0.5, ny = y / H - 0.5;
-  const a =
-    Math.sin(nx * K[0] + K[1] + Math.sin(ny * K[2] + K[3]) * K[8]) * 2 +
-    Math.cos(ny * K[4] + K[5] + Math.sin(nx * K[6] + K[7]) * K[9]) * 2;
-  return a * Math.PI * 0.5;
-}
-
-function reset(newSeed) {
-  seed = newSeed;
-  document.getElementById('seedn').textContent = newSeed;
-  K = [];
-  for (let i = 0; i < 8; i++) K.push(rand() * 8 + 1.5);
-  K.push(rand() * 2, rand() * 2);
-  palette = PALETTES[(rand() * PALETTES.length) | 0];
-  parts = [];
-  for (let i = 0; i < 900; i++) spawn();
-  ctx.fillStyle = '#07080c';
-  ctx.fillRect(0, 0, W, H);
-}
-
-function spawn() {
-  parts.push({
-    x: rand() * W, y: rand() * H,
-    c: palette[(rand() * palette.length) | 0],
-    life: 100 + rand() * 300,
-    speed: 0.6 + rand() * 1.4
-  });
-}
-
+const scene = document.getElementById('scene');
+const ctx = scene.getContext('2d');
+let dpr = 1, vw = 0, vh = 0;
 function resize() {
-  W = cv.width = innerWidth * devicePixelRatio;
-  H = cv.height = innerHeight * devicePixelRatio;
-  if (K) { ctx.fillStyle = '#07080c'; ctx.fillRect(0, 0, W, H); }
+  dpr = Math.min(devicePixelRatio || 1, 2);
+  vw = scene.clientWidth; vh = scene.clientHeight;
+  scene.width = Math.round(vw * dpr); scene.height = Math.round(vh * dpr);
 }
 addEventListener('resize', resize); resize();
-reset((Math.random() * 1e6) | 0);
 
-// Only clicks on the hero regenerate — never the projects panel,
-// and never the header links / scroll arrow inside the hero.
-document.getElementById('top').addEventListener('pointerdown', e => {
-  if (e.target.closest('a')) return;
-  reset((Math.random() * 1e6) | 0);
-});
-addEventListener('keydown', e => {
-  if (e.key === ' ' && !e.target.closest('a, button, input, textarea')) {
-    e.preventDefault();
-    reset((Math.random() * 1e6) | 0);
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rnd = mulberry32(20260820);
+
+const STARS = Array.from({ length: 90 }, () => ({
+  x: rnd(), y: rnd() * 0.55, s: .5 + rnd() * 1.3, ph: rnd() * Math.PI * 2, sp: .5 + rnd(),
+}));
+const CLOUDS = Array.from({ length: 5 }, (_, i) => ({
+  x: rnd(), y: .1 + rnd() * .28, w: .12 + rnd() * .12, drift: .003 + rnd() * .006,
+  dir: i % 2 ? -1 : 1,
+}));
+const TREES = Array.from({ length: 26 }, () => ({
+  x: rnd(), y: .58 + rnd() * .38, s: .5 + rnd() * .8, hue: 95 + rnd() * 45,
+}));
+const FIREFLIES = Array.from({ length: 34 }, () => ({
+  x: rnd(), y: .55 + rnd() * .4, ph: rnd() * Math.PI * 2, r: 6 + rnd() * 40, sp: .2 + rnd() * .3,
+}));
+
+function hexA(hex, a) {
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+/* ---------- decor ---------- */
+function drawSky(t) {
+  const pal = PALETTES[palIdx];
+  const g = ctx.createLinearGradient(0, 0, 0, vh);
+  const stops = pal.sky;
+  stops.forEach((c, i) => g.addColorStop(i / (stops.length - 1), c));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, vw, vh);
+
+  // sun/moon — also the "click empty sky to change the light" hotspot
+  const sx = vw * .8, sy = vh * .16, sr = vh * .075;
+  const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 4.5);
+  sg.addColorStop(0, hexA(pal.sun, .9));
+  sg.addColorStop(.25, hexA(pal.sun, .35));
+  sg.addColorStop(1, hexA(pal.sun, 0));
+  ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx, sy, sr * 4.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = pal.sun; ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
+  for (const s of STARS) {
+    const tw = .4 + .6 * Math.sin(t * .0012 * s.sp + s.ph);
+    ctx.fillStyle = `rgba(255,255,255,${(pal.stars * tw * .8).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(s.x * vw, s.y * vh, s.s, 0, Math.PI * 2); ctx.fill();
   }
-});
+  for (const c of CLOUDS) {
+    const cx = ((c.x + t * 0.00001 * c.drift * c.dir) % 1.3 - .15) * vw;
+    const cy = c.y * vh, cw = c.w * vw;
+    const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, cw);
+    cg.addColorStop(0, 'rgba(255,255,255,.14)');
+    cg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = cg;
+    ctx.beginPath(); ctx.ellipse(cx, cy, cw, cw * .35, 0, 0, Math.PI * 2); ctx.fill();
+  }
+}
 
-function step() {
-  // gentle fade so trails persist but don't saturate
-  ctx.fillStyle = 'rgba(7,8,12,0.035)';
-  ctx.fillRect(0, 0, W, H);
-  ctx.lineWidth = devicePixelRatio * 0.8;
-  for (const p of parts) {
-    const a = field(p.x, p.y);
-    const nx = p.x + Math.cos(a) * p.speed * devicePixelRatio * 1.5;
-    const ny = p.y + Math.sin(a) * p.speed * devicePixelRatio * 1.5;
-    ctx.strokeStyle = p.c + '55';
-    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(nx, ny); ctx.stroke();
-    p.x = nx; p.y = ny; p.life--;
-    if (p.life <= 0 || p.x < 0 || p.x > W || p.y < 0 || p.y > H) {
-      p.x = rand() * W; p.y = rand() * H;
-      p.life = 100 + rand() * 300;
+function ridge(y0, y1, amp, seedOff, fill) {
+  const rr = mulberry32(seedOff);
+  ctx.beginPath(); ctx.moveTo(0, vh);
+  ctx.lineTo(0, y0 * vh);
+  const pts = 7;
+  for (let i = 0; i <= pts; i++) {
+    const x = (i / pts) * vw;
+    const y = (y0 + (rr() - .3) * amp) * vh;
+    ctx.lineTo(x, y);
+  }
+  ctx.lineTo(vw, vh); ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+}
+
+function drawGround() {
+  ridge(.62, .95, .07, 7, 'rgba(30,20,48,.9)');
+  ridge(.70, .95, .06, 13, 'rgba(38,26,56,.95)');
+  const g = ctx.createLinearGradient(0, vh * .74, 0, vh);
+  g.addColorStop(0, '#3d5238'); g.addColorStop(1, '#212c1f');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.moveTo(0, vh);
+  const rr = mulberry32(31);
+  for (let i = 0; i <= 8; i++) ctx.lineTo((i / 8) * vw, (.78 + (rr() - .5) * .05) * vh);
+  ctx.lineTo(vw, vh); ctx.closePath(); ctx.fill();
+
+  // brush-stroke texture on the meadow
+  ctx.globalAlpha = .07;
+  const rr2 = mulberry32(41);
+  for (let i = 0; i < 40; i++) {
+    const x = rr2() * vw, y = vh * (.8 + rr2() * .18);
+    ctx.strokeStyle = rr2() < .5 ? '#e8e6df' : '#0c0f0a';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 18, y - 3); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawTrail() {
+  ctx.setLineDash([6, 9]);
+  ctx.strokeStyle = 'rgba(243,234,217,.35)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  TRAIL.forEach((id, i) => {
+    const L = LOCATIONS.find(l => l.id === id);
+    const x = L.x * vw, y = L.y * vh + vh * .05;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke(); ctx.setLineDash([]);
+}
+
+function drawTrees(t) {
+  for (const tr of TREES) {
+    const x = tr.x * vw, y = tr.y * vh, s = tr.s * vh * .035;
+    const sway = Math.sin(t * .0008 + x) * 1.5;
+    ctx.fillStyle = `hsla(${tr.hue},28%,14%,.9)`;
+    ctx.beginPath(); ctx.ellipse(x, y - s * .3, s * .16, s * .8, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `hsla(${tr.hue},38%,${20 + tr.s * 10}%,.92)`;
+    for (const [dx, dy, r] of [[0, -1.1, .95], [-.55, -.55, .7], [.55, -.55, .7]]) {
+      ctx.beginPath(); ctx.arc(x + dx * s + sway * .3, y + dy * s, s * r, 0, Math.PI * 2); ctx.fill();
     }
   }
-  requestAnimationFrame(step);
 }
-step();
+
+/* ---------- buildings ---------- */
+function haloFor(status) { return status === 'live' ? 'rgba(140,238,221,.55)' : 'rgba(138,143,163,.4)'; }
+
+function drawMill(x, y, s, t, hover) {
+  ctx.fillStyle = '#1e1a2e';
+  ctx.beginPath(); ctx.moveTo(x - s * .22, y); ctx.lineTo(x - s * .12, y - s * 1.4); ctx.lineTo(x + s * .12, y - s * 1.4); ctx.lineTo(x + s * .22, y); ctx.closePath(); ctx.fill();
+  const hubY = y - s * 1.4;
+  ctx.save(); ctx.translate(x, hubY);
+  const ang = t * .0012;
+  ctx.fillStyle = hexA('#e8e6df', hover ? .95 : .8);
+  for (let i = 0; i < 3; i++) {
+    ctx.save(); ctx.rotate(ang + i * Math.PI * 2 / 3);
+    ctx.beginPath(); ctx.ellipse(0, -s * .55, s * .12, s * .55, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  ctx.fillStyle = '#6ea8ff'; ctx.beginPath(); ctx.arc(0, 0, s * .09, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function drawTree(x, y, s, t, hover) {
+  const sway = Math.sin(t * .0009) * s * .04;
+  ctx.fillStyle = '#3b2a1c';
+  ctx.beginPath(); ctx.moveTo(x - s * .08, y); ctx.lineTo(x - s * .05, y - s * .7); ctx.lineTo(x + s * .05, y - s * .7); ctx.lineTo(x + s * .08, y); ctx.closePath(); ctx.fill();
+  const cols = ['#7bd389', '#57b06a', '#38a35c'];
+  cols.forEach((c, i) => {
+    ctx.fillStyle = hexA(c, hover ? .95 : .85);
+    ctx.beginPath();
+    ctx.arc(x + sway * (i - 1), y - s * (.85 + i * .18), s * (.55 - i * .06), 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.fillStyle = '#ffd27a';
+  for (const [dx, dy] of [[-.5, -1.5], [.5, -1.6], [.15, -1.9]]) {
+    ctx.beginPath(); ctx.arc(x + dx * s * .3, y + dy * s * .3, s * .04, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function drawCrystal(x, y, s, t, hover) {
+  const cols = ['#8ceedd', '#6ea8ff', '#b48ce8'];
+  cols.forEach((c, i) => {
+    const bx = x + (i - 1) * s * .3, h = s * (1 + i % 2 * .3);
+    ctx.save(); ctx.translate(bx, y);
+    ctx.rotate(Math.sin(t * .0006 + i) * .04);
+    ctx.beginPath(); ctx.moveTo(0, -h); ctx.lineTo(s * .14, 0); ctx.lineTo(-s * .14, 0); ctx.closePath();
+    ctx.fillStyle = hexA(c, hover ? .8 : .6); ctx.fill();
+    ctx.strokeStyle = hexA(c, .9); ctx.lineWidth = 1; ctx.stroke();
+    ctx.restore();
+  });
+  const sp = (Math.sin(t * .003) + 1) / 2;
+  ctx.fillStyle = `rgba(255,255,255,${.4 + sp * .4})`;
+  ctx.beginPath(); ctx.arc(x, y - s * 1.1, s * .04, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawPavilion(x, y, s, t, hover) {
+  ctx.fillStyle = '#eda100';
+  ctx.fillRect(x - s * .32, y - s * .55, s * .1, s * .55);
+  ctx.fillRect(x + s * .22, y - s * .55, s * .1, s * .55);
+  ctx.beginPath(); ctx.arc(x, y - s * .55, s * .34, Math.PI, 0); ctx.fillStyle = hexA('#eda100', hover ? 1 : .85); ctx.fill();
+  const pulse = .5 + .5 * Math.sin(t * .0018);
+  ctx.strokeStyle = `rgba(237,161,0,${.25 + pulse * .25})`; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(x, y - s * .55, s * (.5 + pulse * .2), 0, Math.PI * 2); ctx.stroke();
+}
+
+function drawMist(x, y, s, t, hover, L) {
+  const puls = 1 + .04 * Math.sin(t * .0007 + x);
+  const g = ctx.createRadialGradient(x, y, 0, x, y, s * 1.3 * puls);
+  g.addColorStop(0, `rgba(160,160,180,${hover ? .3 : .22})`);
+  g.addColorStop(1, 'rgba(160,160,180,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, s * 1.3 * puls, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = `rgba(210,208,222,${hover ? .5 : .32})`;
+  ctx.beginPath(); ctx.arc(x, y, s * .55, 0, Math.PI * 2); ctx.fill();
+}
+
+const BUILD = { mill: drawMill, tree: drawTree, crystal: drawCrystal, pavilion: drawPavilion, mist: drawMist };
+
+/* ---------- interaction ---------- */
+let hoverId = null, selectedId = null;
+const card = document.getElementById('card');
+const tip = document.getElementById('tip');
+
+function screenPos(L) { return [L.x * vw, L.y * vh]; }
+function hitRadius(L) { return Math.max(20, vh * .045 * L.scale); }
+
+function hitTest(px, py) {
+  let best = null, bd = Infinity;
+  for (const L of LOCATIONS) {
+    const [x, y] = screenPos(L);
+    const d = Math.hypot(px - x, py - (y - vh * .05));
+    if (d < hitRadius(L) * 1.6 && d < bd) { bd = d; best = L; }
+  }
+  return best;
+}
+
+scene.addEventListener('pointermove', e => {
+  const hit = hitTest(e.clientX, e.clientY);
+  hoverId = hit ? hit.id : null;
+  scene.classList.toggle('hot', !!hit);
+  if (hit) {
+    tip.textContent = hit.status === 'live' ? hit.title : hit.title + ' — coming';
+    tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px';
+    tip.classList.add('show');
+  } else {
+    tip.classList.remove('show');
+  }
+});
+scene.addEventListener('pointerleave', () => { hoverId = null; tip.classList.remove('show'); });
+
+scene.addEventListener('click', e => {
+  const hit = hitTest(e.clientX, e.clientY);
+  if (hit) { openCard(hit); return; }
+  palIdx = (palIdx + 1) % PALETTES.length;
+});
+
+function openCard(L) {
+  selectedId = L.id;
+  const badge = document.getElementById('cardBadge');
+  badge.textContent = L.status === 'live' ? 'open now' : 'in the works';
+  badge.className = L.status === 'live' ? 'live' : 'locked';
+  document.getElementById('cardTitle').innerHTML = `<span class="em">${L.emoji}</span>${L.title}`;
+  document.getElementById('cardDesc').textContent = L.desc;
+  const links = document.getElementById('cardLinks');
+  links.innerHTML = L.href ? `<a href="${L.href}">visit →</a>` : '<span style="color:var(--faint); font-size:.85rem;">still being built — come back later</span>';
+  card.classList.add('open');
+  card.focus({ preventScroll: true });
+}
+function closeCard() { selectedId = null; card.classList.remove('open'); }
+document.getElementById('cardClose').addEventListener('click', closeCard);
+addEventListener('keydown', e => { if (e.key === 'Escape') closeCard(); });
+
+/* ---------- render loop ---------- */
+function render(t) {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawSky(t);
+  drawGround();
+  drawTrail();
+  drawTrees(t);
+
+  const pal = PALETTES[palIdx];
+  for (const f of FIREFLIES) {
+    const x = f.x * vw + Math.cos(t * .0005 * f.sp + f.ph) * f.r;
+    const y = f.y * vh + Math.sin(t * .0007 * f.sp + f.ph) * f.r * .6;
+    const a = .3 + .5 * Math.sin(t * .002 + f.ph);
+    ctx.fillStyle = hexA(pal.sun, a * .7);
+    ctx.beginPath(); ctx.arc(x, y, 1.6, 0, Math.PI * 2); ctx.fill();
+  }
+
+  const sorted = [...LOCATIONS].sort((a, b) => a.y - b.y);
+  for (const L of sorted) {
+    const [x0, y0] = screenPos(L);
+    const y = y0 - vh * .05;
+    const s = vh * .1 * L.scale;
+    const hover = hoverId === L.id || selectedId === L.id;
+    if (hover) {
+      ctx.save();
+      ctx.shadowColor = haloFor(L.status); ctx.shadowBlur = 22;
+      ctx.fillStyle = haloFor(L.status).replace(/[\d.]+\)$/, '.12)');
+      ctx.beginPath(); ctx.arc(x0, y, hitRadius(L), 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+    BUILD[L.kind](x0, y, s, t, hover, L);
+    ctx.font = `${Math.max(16, s * .5)}px ui-sans-serif,system-ui,sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = L.status === 'live' ? 1 : .75;
+    ctx.fillText(L.emoji, x0, y - s * 1.5 - (L.kind === 'mist' ? -s * .3 : 0));
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = L.status === 'live' ? 'rgba(243,234,217,.85)' : 'rgba(201,191,174,.55)';
+    ctx.font = '11px ui-sans-serif,system-ui,sans-serif';
+    ctx.fillText(L.title, x0, y + 14);
+  }
+
+  requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
 </script>
 </body>
 </html>
