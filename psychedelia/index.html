@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>psychedelia · Corentin Bel</title>
+<meta name="description" content="A generative sampler of fractals, kaleidoscopes, tunnels and vision illusions — click for a new one.">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; background:#050308; }
+  body { font-family:ui-sans-serif,system-ui,sans-serif; color:#f3ead9; cursor:crosshair; }
+  canvas { position:fixed; inset:0; display:block; }
+  #bg { z-index:0; }
+  #fx { z-index:1; image-rendering:pixelated; }
+
+  header {
+    position:fixed; top:0; left:0; right:0; z-index:10;
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:1rem 1.3rem; pointer-events:none; mix-blend-mode:difference;
+  }
+  header nav { display:flex; gap:1.1rem; pointer-events:auto; }
+  header a { color:#aab1c8; text-decoration:none; font-size:.85rem; }
+  header a:hover { color:#fff; }
+  h1 { font-weight:300; font-size:1.1rem; letter-spacing:.05em; }
+  h1 b { font-weight:650; }
+
+  #hud {
+    position:fixed; bottom:1rem; left:50%; transform:translateX(-50%); z-index:10;
+    display:flex; gap:.7rem; align-items:center; pointer-events:none;
+    mix-blend-mode:difference; text-align:center;
+  }
+  #hud span { font-size:.78rem; color:#aab1c8; letter-spacing:.05em; }
+  #hud b { color:#fff; }
+
+  #panel {
+    position:fixed; top:.8rem; right:.8rem; z-index:10;
+    display:flex; flex-direction:column; gap:.35rem; align-items:flex-end;
+  }
+  #panel button {
+    font: inherit; font-size:.76rem; letter-spacing:.05em; color:#c9c7bf;
+    background:rgba(15,10,24,.55); border:1px solid rgba(255,255,255,.12);
+    border-radius:999px; padding:.4rem .9rem; cursor:pointer;
+    backdrop-filter:blur(8px);
+  }
+  #panel button:hover { border-color:rgba(255,255,255,.4); color:#fff; }
+  #panel button.active { border-color:#8ceedd; color:#8ceedd; }
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+<canvas id="fx"></canvas>
+
+<header>
+  <h1><b>psyche</b>delia</h1>
+  <nav>
+    <a href="../">art</a>
+    <a href="https://corentinbel.com">home</a>
+  </nav>
+</header>
+
+<div id="hud"><span>pattern: <b id="modeName"></b> · click / space = new one · A = auto-cycle <b id="autoState"></b></span></div>
+<div id="panel">
+  <button id="autoBtn" type="button">auto-cycle</button>
+  <button id="pauseBtn" type="button">pause</button>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   psychedelia — a generative sampler: fractals, kaleidoscopes,
+   warp tunnels and classic vision illusions, click-randomized.
+   No strobing: every mode is continuous motion, nothing flashes
+   faster than a couple of Hz, so it's safe for photosensitivity.
+   ============================================================ */
+
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const bg = document.getElementById("bg"), bgx = bg.getContext("2d");
+const fx = document.getElementById("fx"), fxx = fx.getContext("2d", { alpha: true });
+let dpr = 1, vw = 0, vh = 0;
+function resize() {
+  dpr = Math.min(devicePixelRatio || 1, reduced ? 1 : 2);
+  vw = innerWidth; vh = innerHeight;
+  bg.width = fx.width = Math.round(vw * dpr);
+  bg.height = fx.height = Math.round(vh * dpr);
+  bgx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+addEventListener("resize", resize); resize();
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const PALETTES = [
+  ["#ff5c8a", "#ffb26e", "#8ceedd", "#6ea8ff", "#b48ce8"],
+  ["#f7ff6e", "#ff7a3d", "#ff3d7a", "#3dfff2", "#7a3dff"],
+  ["#7bd389", "#38a3a5", "#e2f0cb", "#22577a", "#f4a259"],
+  ["#e0c3fc", "#8ec5fc", "#f9f7f3", "#5e60ce", "#ff6f91"],
+  ["#00f5d4", "#00bbf9", "#9b5de5", "#f15bb5", "#fee440"],
+];
+
+const MODES = ["flow", "kaleido", "tunnel", "moire", "julia", "spiral", "grid"];
+let mode, seed, rnd, pal, t0, mouseX = .5, mouseY = .5, autoCycle = !reduced, paused = false;
+
+function hexToRgb(hex) {
+  return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+}
+function hexA(hex, a) { const [r,g,b] = hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; }
+function lerpHex(a, b, u) {
+  const A = hexToRgb(a), B = hexToRgb(b);
+  return [0,1,2].map(i => Math.round(A[i] + (B[i]-A[i]) * u));
+}
+
+let state = {};
+function pick(newSeed, forceMode) {
+  seed = newSeed >>> 0;
+  rnd = mulberry32(seed);
+  mode = forceMode || MODES[Math.floor(rnd() * MODES.length)];
+  pal = PALETTES[Math.floor(rnd() * PALETTES.length)];
+  t0 = performance.now();
+  state = { rnd: mulberry32(seed ^ 0x9e3779b9), a: rnd()*Math.PI*2, b: 3+Math.floor(rnd()*5),
+    dir: rnd()<.5?-1:1, warp: .6+rnd()*.9 };
+  document.getElementById("modeName").textContent = mode;
+  bgx.fillStyle = "#050308"; bgx.fillRect(0, 0, vw, vh);
+}
+pick((Math.random()*1e9)|0);
+
+/* ---------- interaction ---------- */
+addEventListener("pointermove", e => { mouseX = e.clientX / vw; mouseY = e.clientY / vh; });
+addEventListener("click", () => pick((Math.random()*1e9)|0));
+addEventListener("keydown", e => {
+  if (e.key === " ") { e.preventDefault(); pick((Math.random()*1e9)|0); }
+  else if (e.key.toLowerCase() === "a") toggleAuto();
+  else if (e.key.toLowerCase() === "p") togglePause();
+});
+document.getElementById("autoBtn").addEventListener("click", toggleAuto);
+document.getElementById("pauseBtn").addEventListener("click", togglePause);
+function toggleAuto() {
+  autoCycle = !autoCycle;
+  document.getElementById("autoState").textContent = autoCycle ? "on" : "off";
+  document.getElementById("autoBtn").classList.toggle("active", autoCycle);
+}
+function togglePause() {
+  paused = !paused;
+  document.getElementById("pauseBtn").textContent = paused ? "resume" : "pause";
+}
+document.getElementById("autoState").textContent = autoCycle ? "on" : "off";
+document.getElementById("autoBtn").classList.toggle("active", autoCycle);
+
+let lastAuto = performance.now();
+
+/* ---------- low-res offscreen for per-pixel modes (tunnel, julia) ---------- */
+const LOW_W = 200, LOW_H = 120;
+const low = document.createElement("canvas"); low.width = LOW_W; low.height = LOW_H;
+const lowx = low.getContext("2d");
+const img = lowx.createImageData(LOW_W, LOW_H);
+
+function drawTunnel(t) {
+  const cx = LOW_W/2 + (mouseX-.5)*LOW_W*.4, cy = LOW_H/2 + (mouseY-.5)*LOW_H*.4;
+  const depth = t * .00035 * state.warp;
+  const rings = state.b;
+  const d = img.data;
+  for (let y = 0; y < LOW_H; y++) {
+    for (let x = 0; x < LOW_W; x++) {
+      const dx = x - cx, dy = (y - cy) * 1.6;
+      const r = Math.hypot(dx, dy) + 0.0001;
+      const a = Math.atan2(dy, dx);
+      const u = (1 / r) * 26 + depth * state.dir;
+      const v = a * rings / Math.PI + depth * 2;
+      const c = (Math.sin(u) + Math.sin(v)) * .5;
+      const hueU = (c * .5 + .5 + depth * .1) % 1;
+      const idx = Math.min(pal.length - 1, Math.floor(hueU * pal.length));
+      const idx2 = (idx + 1) % pal.length;
+      const [rr, gg, bb] = lerpHex(pal[idx], pal[idx2], (hueU * pal.length) % 1);
+      const fog = Math.max(0, 1 - r / (LOW_W * .75));
+      const p = (y * LOW_W + x) * 4;
+      d[p] = rr * fog; d[p+1] = gg * fog; d[p+2] = bb * fog; d[p+3] = 255;
+    }
+  }
+  lowx.putImageData(img, 0, 0);
+  bgx.imageSmoothingEnabled = false;
+  bgx.drawImage(low, 0, 0, vw, vh);
+}
+
+function juliaColor(cx, cy, zx0, zy0) {
+  let zx = zx0, zy = zy0, i = 0;
+  const max = 40;
+  while (zx*zx + zy*zy < 4 && i < max) {
+    const nx = zx*zx - zy*zy + cx;
+    zy = 2*zx*zy + cy; zx = nx; i++;
+  }
+  return i;
+}
+function drawJulia(t) {
+  const ang = t * .00012 * state.dir;
+  const cx = Math.cos(ang) * .7885, cy = Math.sin(ang) * .7885;
+  const zoom = 1.6 + Math.sin(t * .0003) * .5;
+  const d = img.data;
+  for (let y = 0; y < LOW_H; y++) {
+    const zy0 = (y / LOW_H - .5) * 2.4 / zoom;
+    for (let x = 0; x < LOW_W; x++) {
+      const zx0 = (x / LOW_W - .5) * 3.4 / zoom + (mouseX-.5)*.3;
+      const i = juliaColor(cx, cy, zx0, zy0);
+      const p = (y * LOW_W + x) * 4;
+      if (i >= 40) { d[p]=6; d[p+1]=4; d[p+2]=10; d[p+3]=255; continue; }
+      const u = (i / 40 + t * .00005) % 1;
+      const idx = Math.floor(u * pal.length), idx2 = (idx+1) % pal.length;
+      const [rr, gg, bb] = lerpHex(pal[idx], pal[idx2], (u * pal.length) % 1);
+      d[p]=rr; d[p+1]=gg; d[p+2]=bb; d[p+3]=255;
+    }
+  }
+  lowx.putImageData(img, 0, 0);
+  bgx.imageSmoothingEnabled = false;
+  bgx.drawImage(low, 0, 0, vw, vh);
+}
+
+/* ---------- vector modes on the fx canvas (transparent, over trailing bg) ---------- */
+function fade(alpha) { fxx.setTransform(dpr,0,0,dpr,0,0); fxx.fillStyle = `rgba(5,3,8,${alpha})`; fxx.fillRect(0,0,vw,vh); }
+
+function drawFlow(t) {
+  fade(.05);
+  const cx = vw*.5 + (mouseX-.5)*vw*.3, cy = vh*.5 + (mouseY-.5)*vh*.3;
+  fxx.lineWidth = 1.4;
+  if (!state.parts) { state.parts = []; for (let i=0;i<500;i++) state.parts.push({x:rnd()*vw,y:rnd()*vh,l:rnd()*200}); }
+  for (const p of state.parts) {
+    const nx = (p.x-cx)/vw, ny = (p.y-cy)/vh;
+    const a = Math.sin(nx*state.b*4 + t*.0004*state.dir + Math.sin(ny*6+t*.0002)*2) * Math.PI;
+    const ox = p.x, oy = p.y;
+    p.x += Math.cos(a)*2.4; p.y += Math.sin(a)*2.4; p.l--;
+    const hueU = ((Math.hypot(nx,ny)*2 + t*.00015) % 1);
+    const idx = Math.floor(hueU*pal.length), idx2 = (idx+1)%pal.length;
+    fxx.strokeStyle = `rgba(${lerpHex(pal[idx],pal[idx2],(hueU*pal.length)%1).join(",")},.6)`;
+    fxx.beginPath(); fxx.moveTo(ox,oy); fxx.lineTo(p.x,p.y); fxx.stroke();
+    if (p.l<=0 || p.x<0||p.x>vw||p.y<0||p.y>vh) { p.x=rnd()*vw; p.y=rnd()*vh; p.l=100+rnd()*200; }
+  }
+}
+
+function drawKaleido(t) {
+  fade(.08);
+  const N = state.b + 3;
+  const cx = vw/2, cy = vh/2;
+  const R = Math.hypot(vw,vh)/2;
+  fxx.save(); fxx.translate(cx, cy);
+  for (let i = 0; i < N; i++) {
+    fxx.save();
+    fxx.rotate(i * Math.PI*2/N + t*.00008*state.dir);
+    if (i % 2) fxx.scale(1, -1);
+    for (let k = 0; k < 5; k++) {
+      const ang = state.a + k*1.3 + t*.0003 + (mouseX-.5)*3;
+      const rr = R * (.15 + k*.16) + Math.sin(t*.0006+k)*R*.05 + (mouseY-.5)*R*.2;
+      const x = Math.cos(ang)*rr, y = Math.sin(ang*1.7)*rr*.6;
+      const u = ((k/5 + t*.0001) % 1);
+      const idx = Math.floor(u*pal.length), idx2=(idx+1)%pal.length;
+      fxx.fillStyle = `rgba(${lerpHex(pal[idx],pal[idx2],(u*pal.length)%1).join(",")},.55)`;
+      fxx.beginPath(); fxx.arc(x, y, 10+k*4, 0, Math.PI*2); fxx.fill();
+    }
+    fxx.restore();
+  }
+  fxx.restore();
+}
+
+function drawMoire(t) {
+  fxx.setTransform(dpr,0,0,dpr,0,0); fxx.clearRect(0,0,vw,vh);
+  const cx1 = vw*.5 + Math.sin(t*.0002)*vw*.15, cy1 = vh*.5;
+  const cx2 = vw*.5 - Math.sin(t*.0002)*vw*.15 + (mouseX-.5)*vw*.4, cy2 = vh*.5 + (mouseY-.5)*vh*.4;
+  fxx.lineWidth = 1.1;
+  function grid(cx, cy, spacing, rot, color) {
+    fxx.strokeStyle = color; fxx.save(); fxx.translate(cx,cy); fxx.rotate(rot);
+    const R = Math.hypot(vw,vh);
+    for (let r = spacing; r < R; r += spacing) { fxx.beginPath(); fxx.arc(0,0,r,0,Math.PI*2); fxx.stroke(); }
+    fxx.restore();
+  }
+  grid(cx1, cy1, 14, t*.0002*state.dir, hexA(pal[0], .5));
+  grid(cx2, cy2, 15, -t*.00015, hexA(pal[2], .5));
+  grid(vw/2, vh/2, 22, t*.00008, hexA(pal[4], .35));
+}
+
+function drawSpiral(t) {
+  fxx.setTransform(dpr,0,0,dpr,0,0); fxx.clearRect(0,0,vw,vh);
+  const cx = vw/2, cy = vh/2, arms = state.b;
+  const R = Math.hypot(vw,vh)/2;
+  fxx.save(); fxx.translate(cx,cy); fxx.rotate(t*.00025*state.dir);
+  for (let a = 0; a < arms; a++) {
+    const off = a * Math.PI*2/arms;
+    fxx.beginPath();
+    for (let r = 0; r < R; r += 3) {
+      const ang = off + r*.02 + Math.sin(r*.01 + t*.0003)*.3 + (mouseX-.5)*2;
+      const x = Math.cos(ang)*r, y = Math.sin(ang)*r;
+      r === 0 ? fxx.moveTo(x,y) : fxx.lineTo(x,y);
+    }
+    const u = (a/arms + t*.00006) % 1;
+    const idx = Math.floor(u*pal.length), idx2=(idx+1)%pal.length;
+    fxx.strokeStyle = `rgba(${lerpHex(pal[idx],pal[idx2],(u*pal.length)%1).join(",")},.75)`;
+    fxx.lineWidth = 3; fxx.stroke();
+  }
+  fxx.restore();
+}
+
+function drawGrid(t) {
+  fxx.setTransform(dpr,0,0,dpr,0,0); fxx.clearRect(0,0,vw,vh);
+  const spacing = 34;
+  const drift = (mouseX-.5)*10;
+  for (let y = spacing/2; y < vh; y += spacing) {
+    for (let x = spacing/2; x < vw; x += spacing) {
+      const dx = x - vw/2, dy = y - vh/2;
+      const ph = Math.atan2(dy,dx) + Math.hypot(dx,dy)*.01 + t*.0015;
+      const flick = .35 + .35 * Math.sin(ph*2 + drift*.1);
+      const u = ((Math.hypot(dx,dy)*.003 + t*.00008) % 1);
+      const idx = Math.floor(u*pal.length), idx2=(idx+1)%pal.length;
+      fxx.fillStyle = `rgba(${lerpHex(pal[idx],pal[idx2],(u*pal.length)%1).join(",")},${flick})`;
+      fxx.beginPath(); fxx.arc(x,y, 3.2, 0, Math.PI*2); fxx.fill();
+    }
+  }
+}
+
+const DRAW = { flow: drawFlow, kaleido: drawKaleido, tunnel: drawTunnel, moire: drawMoire, julia: drawJulia, spiral: drawSpiral, grid: drawGrid };
+const USES_BG = new Set(["tunnel", "julia"]);
+const USES_FX = new Set(["flow", "kaleido", "moire", "spiral", "grid"]);
+
+function frame(t) {
+  if (!paused) {
+    if (autoCycle && t - lastAuto > 16000) { lastAuto = t; pick((Math.random()*1e9)|0); }
+    if (USES_BG.has(mode)) { fxx.setTransform(dpr,0,0,dpr,0,0); fxx.clearRect(0,0,vw,vh); DRAW[mode](t - t0); }
+    else { bgx.fillStyle = "#050308"; bgx.fillRect(0,0,vw,vh); DRAW[mode](t - t0); }
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

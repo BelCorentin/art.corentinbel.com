@@ -148,6 +148,10 @@ const LOCATIONS = [
     x:.32, y:.82, scale:1,
     desc:'Paint water, rocks and seeds, press play, and watch a world invent itself — ecosystems, seasons, predator-prey waves.',
     href:'genesis/' },
+  { id:'psychedelia', emoji:'🌀', title:'Psychedelia', status:'live', kind:'orb',
+    x:.42, y:.90, scale:.9,
+    desc:'A generative sampler of fractals, kaleidoscopes, warp tunnels and classic vision illusions — click for a new one, no two trips alike.',
+    href:'psychedelia/' },
   { id:'fractals', emoji:'❄️', title:'Fractal studio', status:'live', kind:'crystal',
     x:.50, y:.60, scale:1,
     desc:'Mandelbrot, Julia, Burning Ship, Newton basins and a Barnsley fern — deep zoom, drag the Julia seed, seven colour themes, export the frame.',
@@ -166,7 +170,7 @@ const LOCATIONS = [
     x:.95, y:.20, scale:.7,
     desc:'People listened to Le Petit Prince inside an fMRI scanner. Turning each listener\'s brain responses into their own private film of the story — one image sequence per brain.' },
 ];
-const TRAIL = ['flow-studio', 'genesis', 'fractals', 'sitar-tuner'];
+const TRAIL = ['flow-studio', 'genesis', 'psychedelia', 'fractals', 'sitar-tuner'];
 
 const PALETTES = [
   { name:'dusk', sky:['#150c29','#3a2757','#9a4a6c','#e2834f','#f6c584'], stars:.9, sun:'#ffdca0' },
@@ -382,7 +386,25 @@ function drawMist(x, y, s, t, hover, L) {
   ctx.beginPath(); ctx.arc(x, y, s * .55, 0, Math.PI * 2); ctx.fill();
 }
 
-const BUILD = { mill: drawMill, tree: drawTree, crystal: drawCrystal, pavilion: drawPavilion, mist: drawMist };
+function drawOrb(x, y, s, t, hover) {
+  const cols = ['#ff5c8a', '#8ceedd', '#b48ce8', '#ffd27a'];
+  cols.forEach((c, i) => {
+    const rr = s * (.35 + i * .17) + Math.sin(t * .0012 + i) * s * .05;
+    ctx.save(); ctx.translate(x, y);
+    ctx.rotate(t * .0006 * (i % 2 ? -1 : 1) + i);
+    ctx.strokeStyle = hexA(c, hover ? .8 : .55); ctx.lineWidth = 2;
+    ctx.setLineDash([s * .18, s * .12]);
+    ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  });
+  ctx.setLineDash([]);
+  const g = ctx.createRadialGradient(x, y, 0, x, y, s * .4);
+  g.addColorStop(0, hexA('#ff5c8a', hover ? .5 : .35));
+  g.addColorStop(1, hexA('#ff5c8a', 0));
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, s * .4, 0, Math.PI * 2); ctx.fill();
+}
+
+const BUILD = { mill: drawMill, tree: drawTree, crystal: drawCrystal, pavilion: drawPavilion, mist: drawMist, orb: drawOrb };
 
 /* ---------- interaction ---------- */
 let hoverId = null, selectedId = null;
