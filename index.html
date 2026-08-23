@@ -156,6 +156,10 @@ const LOCATIONS = [
     x:.50, y:.60, scale:1,
     desc:'Mandelbrot, Julia, Burning Ship, Newton basins and a Barnsley fern — deep zoom, drag the Julia seed, seven colour themes, export the frame.',
     href:'fractals/' },
+  { id:'waves', emoji:'🌊', title:'The perfect wave', status:'live', kind:'wave',
+    x:.59, y:.71, scale:1,
+    desc:'A raymarched ocean driven by real swell physics — drag period, height, wind and seabed slope and watch spilling, plunging and surging breakers form, with the Iribarren number doing the explaining.',
+    href:'waves/' },
   { id:'sitar-tuner', emoji:'🪕', title:'Sitar tuner', status:'live', kind:'pavilion',
     x:.68, y:.79, scale:1,
     desc:'Plug in your ears, pluck a string — a mandala blooms when you hit the swara. YIN pitch tracking, kharaj-pancham presets, tarab checklists, a tanpura drone.',
@@ -170,7 +174,7 @@ const LOCATIONS = [
     x:.95, y:.20, scale:.7,
     desc:'People listened to Le Petit Prince inside an fMRI scanner. Turning each listener\'s brain responses into their own private film of the story — one image sequence per brain.' },
 ];
-const TRAIL = ['flow-studio', 'genesis', 'psychedelia', 'fractals', 'sitar-tuner'];
+const TRAIL = ['flow-studio', 'genesis', 'psychedelia', 'fractals', 'waves', 'sitar-tuner'];
 
 const PALETTES = [
   { name:'dusk', sky:['#150c29','#3a2757','#9a4a6c','#e2834f','#f6c584'], stars:.9, sun:'#ffdca0' },
@@ -404,7 +408,36 @@ function drawOrb(x, y, s, t, hover) {
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, s * .4, 0, Math.PI * 2); ctx.fill();
 }
 
-const BUILD = { mill: drawMill, tree: drawTree, crystal: drawCrystal, pavilion: drawPavilion, mist: drawMist, orb: drawOrb };
+function drawWave(x, y, s, t, hover) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, s * .5);
+  g.addColorStop(0, hexA('#6ea8ff', hover ? .35 : .22));
+  g.addColorStop(1, hexA('#6ea8ff', 0));
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, s * .5, s * .16, 0, 0, Math.PI * 2); ctx.fill();
+
+  const roll = Math.sin(t * .0011) * s * .04;
+  ctx.save(); ctx.translate(x, y);
+  ['#8ceedd', '#6ea8ff'].forEach((col, i) => {
+    const off = i * s * .16 - s * .08;
+    ctx.beginPath();
+    ctx.moveTo(-s * .42, -s * .05 + off);
+    ctx.quadraticCurveTo(-s * .1, -s * .95 + off + roll, s * .12, -s * .5 + off);
+    ctx.quadraticCurveTo(s * .28, -s * .3 + off, s * .1, -s * .12 + off);
+    ctx.quadraticCurveTo(-s * .05, -s * .22 + off, -s * .2, -s * .1 + off);
+    ctx.closePath();
+    ctx.fillStyle = hexA(col, hover ? .85 : .65);
+    ctx.fill();
+  });
+  ctx.restore();
+
+  ctx.fillStyle = `rgba(232,242,240,${hover ? .9 : .7})`;
+  for (let i = 0; i < 5; i++) {
+    const fx = x - s * .1 + Math.sin(t * .002 + i) * s * .12;
+    const fy = y - s * .5 - i * s * .06 + Math.cos(t * .0025 + i) * s * .02;
+    ctx.beginPath(); ctx.arc(fx, fy, s * (.035 - i * .003), 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+const BUILD = { mill: drawMill, tree: drawTree, crystal: drawCrystal, pavilion: drawPavilion, mist: drawMist, orb: drawOrb, wave: drawWave };
 
 /* ---------- interaction ---------- */
 let hoverId = null, selectedId = null;
