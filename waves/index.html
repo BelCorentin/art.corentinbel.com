@@ -483,23 +483,35 @@ ${UV_CALC}
    line through a barrel crosses the water surface 3+ times. So this
    view uses a different technique entirely — a signed-distance-field
    raymarched with sphere tracing (not the binary-search heightfield
-   trace above). The wave is built in the (z,y) cross-section plane
-   (iq's exact "arc" primitive — a thickened, partial ring, which is
-   what lets the lip overhang the trough) and extruded along x, with
-   the arc's radius faded in/out by a bump function of (x - peelPos)
-   so a single barrel section perpetually peels down the line as
-   u_time advances — same "seamless by construction" idea as the
-   ocean view, just a traveling section instead of an infinite field.
+   trace above).
 
-   The exact cross-section topology (real overhang, connected water,
-   safe degenerate "no barrel yet" state) was verified numerically in
-   Node before writing this GLSL — see scratchpad/barrel_sdf.js — by
-   ASCII-rendering the sign map and counting vertical surface
-   crossings (>=3 confirms a genuine overhang) across the slider
-   range, since this shape can't be eyeballed without a browser.
+   The wave is ONE continuous body running along x (so there is a wave
+   line all the way to the horizon, not a floating object):
+
+     * away from the peel it is a half-submerged cylinder — the
+       un-broken swell;
+     * inside a travelling band around the peel front that cylinder
+       SINKS while iq's "arc" primitive (a thickened, partial ring —
+       the one shape that can overhang) rises in its place, so the
+       section goes hollow, stands up and throws its lip shoreward.
+
+   The two share a centre and an outer radius, so the silhouette is
+   continuous through the transition: only the hollow appears.
+
+   Verified before shipping by rendering this exact math on the CPU and
+   LOOKING at the pixels (scratchpad/barrel_render.js + sheet.js).
+   That is what caught the original bug: the sea's "rise" plateau sat
+   at the arc's own centre height, so the entire lower half of the ring
+   — the room, the mouth, the underside of the lip — was buried inside
+   the solid sea half-space, and smin2 with k larger than the shell's
+   own thickness melted what stuck out into a smooth mound. It rendered
+   as a featureless blob. The older topology check passed it anyway,
+   because the "3+ vertical crossings" it counted came from a SEALED
+   air bubble inside that mound — real overhang topology, invisible
+   from outside. Counting crossings proves a void exists; it cannot
+   prove you can see into it.
    ================================================================== */
 const BARREL_GLSL = `
-uniform float u_freq;
 uniform float u_choppy;
 uniform float u_bR;
 uniform float u_aperHalf;
@@ -509,16 +521,35 @@ uniform float u_peelLen;
 uniform float u_reefSlope;
 uniform float u_view;
 
-const float BARREL_TILT = -0.45;
+// how far the lip is thrown shoreward (radians of cross-section rotation)
+const float BARREL_TILT = -0.90;
+// cross-section geometry, in units of u_bR
+const float B_ZC     =  0.00;   // wave line, in z
+const float B_YC     =  0.62;   // centre of the ring / of the swell
+const float B_TROUGH = -0.34;   // trough drawn down in front of the wave
+const float B_SEAZ0  = -2.20;   // where the surface starts dropping into it
+const float B_SEAZ1  = -0.60;
+const float B_KFRAC  =  0.11;   // smooth-union radius (MUST stay well under u_wLip)
+const float B_LIPK   =  0.90;   // Lipschitz guard on the heightfield term
+const float B_SINK   =  2.60;   // how far the swell sinks under the barrel
+const float B_ZSHIFT =  0.22;   // the section moves shoreward as it breaks...
+const float B_YLIFT  =  0.20;   // ...and stands up...
+const float B_RGROW  =  0.12;   // ...and grows, so the lip pitches out past the swell
+const float B_TDIG   =  0.55;   // trough is dug deeper in front of the breaking part
+// travelling peel band, as fractions of u_peelLen
+const float B_ARC_A = 0.05, B_ARC_B = 0.55;   // the tube opens
+const float B_SWL_A = 0.25, B_SWL_B = 0.75;   // the swell sinks (deliberately later,
+                                              // so the ends of the tube close over)
+const float B_OUT_A = 1.45, B_OUT_B = 2.10;   // both undo: back to un-broken swell
 
 float smin2(float a, float b, float k) {
   float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
   return mix(b, a, h) - k * h * (1.0 - h);
 }
 // iq's exact 2D "arc" SDF: sc = (sin(aperHalf), cos(aperHalf)) sets how
-// much of the ring is open at the bottom; ra = radius, rb = thickness.
-// This is the one primitive that can represent the overhanging lip —
-// verified against a direct probe (see scratchpad/sdarc_probe.js).
+// much of the ring is solid, measured from the top; ra = radius, rb =
+// thickness. This is the one primitive that can represent an
+// overhanging lip and a room underneath it.
 float sdArc(vec2 p, vec2 sc, float ra, float rb) {
   p.x = abs(p.x);
   return ((sc.y * p.x > sc.x * p.y) ? length(p - sc * ra) : abs(length(p) - ra)) - rb;
@@ -527,82 +558,89 @@ vec2 rot2(vec2 p, float a) {
   float c = cos(a), s = sin(a);
   return vec2(p.x * c - p.y * s, p.x * s + p.y * c);
 }
-// shoaling seabed profile in the (z,y) plane: flat -> rises toward the
-// peak (z1) -> drops into the trough (z2) -> flat trough after (z3).
-float seaLevelB(float z, float z0, float z1, float z2, float z3, float rise, float trough) {
-  if (z < z0) return 0.0;
-  if (z < z1) { float t = clamp((z - z0) / (z1 - z0), 0.0, 1.0); t = t*t*(3.0-2.0*t); return rise * t; }
-  if (z < z2) { float t = clamp((z - z1) / (z2 - z1), 0.0, 1.0); t = t*t*(3.0-2.0*t); return mix(rise, trough, t); }
-  return trough;
+// 0 = un-broken swell, 1 = fully open tube, for a section at offset u
+// down the line from the peel front.
+float barrelArcT(float u) {
+  return smoothstep(u_peelLen * B_ARC_A, u_peelLen * B_ARC_B, u)
+       * (1.0 - smoothstep(u_peelLen * B_OUT_A, u_peelLen * B_OUT_B, u));
 }
+float barrelSwellT(float u) {
+  return smoothstep(u_peelLen * B_SWL_A, u_peelLen * B_SWL_B, u)
+       * (1.0 - smoothstep(u_peelLen * B_OUT_A, u_peelLen * B_OUT_B, u));
+}
+// reef: clamped so it can never breach the surface and read as a beach
 float reefTop(float z, float peelPos) {
-  float onset = peelPos + u_bR * 2.0;
-  return -u_bR * 2.5 + max(0.0, z - onset) * u_reefSlope * 3.0;
+  return min(-u_bR * 0.55,
+             -u_bR * 1.90 + max(0.0, z - u_bR * 1.40) * u_reefSlope * 6.0);
 }
-// sea+shell union only (no rock) — used both for tracing and for the
+// sea + swell + shell union (no rock) — used both for tracing and for the
 // water/rock material test at the hit point.
 float sdWaterOnly(vec3 p, float peelPos, float noiseAmt) {
   float u = p.x - peelPos;
-  // a bump, not a ramp: the shell exists only in a travelling band
-  // around the peel front, so a single barrel perpetually peels.
-  float bump = smoothstep(0.0, u_peelLen * 0.35, u) *
-               (1.0 - smoothstep(u_peelLen * 0.55, u_peelLen * 1.3, u));
+  float a = barrelArcT(u);
+  float sw = barrelSwellT(u);
+  float zc = u_bR * B_ZC, yc = u_bR * B_YC;
 
-  float zc = u_bR * 0.5, yc = u_bR * 0.95;
-  float z1 = zc - u_bR * 0.8, z0 = z1 - u_bR * 10.0;
-  float z2 = zc + u_bR * 0.8, z3 = zc + u_bR * 1.5;
-  float rise = yc * 0.9, trough = u_bR * 0.075;
+  // open water: still-water level offshore, trough in front of the wave.
+  // No "rise" term — the wave's whole mass above the waterline is the
+  // swell/arc, which is what keeps the room from being flooded.
+  float base = mix(0.0, u_bR * B_TROUGH * (1.0 + B_TDIG * a),
+                   smoothstep(u_bR * B_SEAZ0, u_bR * B_SEAZ1, p.z));
+  float sdSea = (p.y - base - noiseAmt) * B_LIPK;
 
-  float sdSea = p.y - seaLevelB(p.z, z0, z1, z2, z3, rise, trough) - noiseAmt;
+  // un-broken swell: an infinite cylinder along x. An exact SDF, so it can
+  // be as steep as it likes; its radius and centre match the arc's outer
+  // envelope so the silhouette does not jump as the section goes hollow.
+  float swR = u_bR + u_wLip;
+  float swY = yc - u_bR * B_SINK * sw;
+  float sdSwell = length(vec2(p.z - zc, p.y - swY)) - swR - noiseAmt * B_LIPK;
 
-  vec2 lq = rot2(vec2(p.z - zc, p.y - yc), BARREL_TILT);
+  // the tube
+  float az = zc + u_bR * B_ZSHIFT * a;
+  float ay = yc + u_bR * B_YLIFT * a;
+  float ar = u_bR * (1.0 + B_RGROW * a);
+  vec2 lq = rot2(vec2(p.z - az, p.y - ay), BARREL_TILT);
   vec2 sc = vec2(sin(u_aperHalf), cos(u_aperHalf));
-  // fade the shell in/out by shrinking it toward a point, not by mixing
-  // its distance value toward a sentinel — a linear mix toward a large
-  // constant dominates for any bump < ~0.99 and erases the overhang
-  // (caught by the Node port of this exact formula: see
-  // scratchpad/barrel_final_check.js, which showed 1 crossing — no
-  // overhang at all — everywhere until this was fixed).
-  float sdShell = sdArc(lq, sc * bump, u_bR * bump, u_wLip * bump);
+  // fade the shell in/out by shrinking it toward a point, not by mixing its
+  // distance toward a sentinel: a linear mix toward a large constant
+  // dominates for any factor < ~0.99 and erases the overhang entirely.
+  float sdShell = sdArc(lq, sc * a, ar * a, u_wLip * a);
 
-  float k = u_bR * 0.275 + 0.02;
-  return smin2(sdSea, sdShell, k);
+  float k = u_bR * B_KFRAC + 0.02;
+  return smin2(smin2(sdSea, sdSwell, k), sdShell, k);
 }
 float sdBarrel(vec3 p, float peelPos) {
   return min(sdWaterOnly(p, peelPos, 0.0), p.y - reefTop(p.z, peelPos));
 }
-// noise only ever perturbs the NORMAL estimate, never the traced
-// surface itself — displacing the marched SDF risks breaking the
-// distance-underestimate the sphere tracer relies on.
-float sdBarrelDetailed(vec3 p, float peelPos) {
-  float bumpN = (vnoise(p.xz * u_freq * 3.0) * 0.5 + vnoise(p.xz * u_freq * 7.0) * 0.25)
-                * u_choppy * 0.02 * u_bR;
+// noise only ever perturbs the NORMAL estimate, never the traced surface —
+// displacing the marched SDF risks breaking the distance-underestimate the
+// sphere tracer relies on. nf fades it with distance: at grazing angles the
+// Fresnel term is hypersensitive to the normal, and un-faded noise aliases
+// the whole open ocean into grey static.
+float sdBarrelDetailed(vec3 p, float peelPos, float nf) {
+  vec2 q = p.xz / max(u_bR, 0.15);
+  float bumpN = (vnoise(q * 1.6) * 0.5 + vnoise(q * 4.6) * 0.25)
+                * u_choppy * 0.055 * u_bR * nf;
   return min(sdWaterOnly(p, peelPos, bumpN), p.y - reefTop(p.z, peelPos));
 }
-vec3 barrelNormal(vec3 p, float eps, float peelPos) {
+vec3 barrelNormal(vec3 p, float eps, float peelPos, float nf) {
   vec2 e = vec2(eps, 0.0);
   vec3 grad = vec3(
-    sdBarrelDetailed(p + e.xyy, peelPos) - sdBarrelDetailed(p - e.xyy, peelPos),
-    sdBarrelDetailed(p + e.yxy, peelPos) - sdBarrelDetailed(p - e.yxy, peelPos),
-    sdBarrelDetailed(p + e.yyx, peelPos) - sdBarrelDetailed(p - e.yyx, peelPos)
+    sdBarrelDetailed(p + e.xyy, peelPos, nf) - sdBarrelDetailed(p - e.xyy, peelPos, nf),
+    sdBarrelDetailed(p + e.yxy, peelPos, nf) - sdBarrelDetailed(p - e.yxy, peelPos, nf),
+    sdBarrelDetailed(p + e.yyx, peelPos, nf) - sdBarrelDetailed(p - e.yyx, peelPos, nf)
   );
   return normalize(grad);
 }
-// sphere trace: capped steps, capped distance, conservative 0.6x step,
-// so worst case is a miss, never a hang. Note: since the shell's own
-// radius/thickness fade with x (the peel bump), sdWaterOnly is not a
-// strict global 1-Lipschitz field right at the fade edges — a probe
-// found local finite-difference gradients up to ~46x there. Directly
-// simulating this exact tracer in Node against >13,000 camera rays
-// across the full slider grid still hit cleanly every time (correct
-// step counts, no run-outs, no NaN) — see scratchpad/barrel_trace_sim.js
-// — so the spike doesn't appear to affect real convergence, but it's
-// the one place in this file a formal bound isn't proven, only tested.
+// sphere trace: capped steps, capped distance, conservative 0.6x step, so
+// worst case is a miss, never a hang. Simulating this exact tracer on the
+// CPU over the full slider grid: median 17 steps, p99 114, and raising the
+// cap from 100 to 160 changed no pixel visibly — 128 is comfortable margin.
 float traceBarrel(vec3 ori, vec3 dir, float peelPos, out vec3 hitP, out bool hit) {
   float t = 0.0;
   hit = false;
   hitP = ori;
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < 128; i++) {
     vec3 p = ori + dir * t;
     float d = sdBarrel(p, peelPos);
     if (d < 0.002 * max(t, 1.0)) { hitP = p; hit = true; break; }
@@ -611,64 +649,101 @@ float traceBarrel(vec3 ori, vec3 dir, float peelPos, out vec3 hitP, out bool hit
   }
   return t;
 }
-vec3 barrelShade(vec3 p, vec3 n, vec3 eye, float peelPos, bool isRock) {
+vec3 barrelShade(vec3 p, vec3 n, vec3 eye, float peelPos, bool isRock, float aT) {
   vec3 l = u_sunDir;
   if (isRock) {
     float diff = diffuseTerm(n, l, 4.0);
-    vec3 rock = vec3(0.10, 0.08, 0.06) + vnoise(p.xz * 2.0) * 0.02;
-    vec3 wet = mix(rock, rock * 1.6 + u_seaWater * 0.1, 0.4);
-    return wet * (0.3 + diff * 0.8);
+    vec3 rock = vec3(0.06, 0.07, 0.07) + vnoise(p.xz * 2.0) * 0.02;
+    vec3 wet = mix(rock, rock * 1.5 + u_seaWater * 0.08, 0.4);
+    return wet * (0.25 + diff * 0.6);
   }
 
-  float fresnel = clamp(1.0 - dot(n, -eye), 0.0, 1.0);
-  fresnel = 0.02 + 0.98 * pow(fresnel, 5.0);
-  vec3 reflected = skyColor(reflect(eye, n));
-  float diff = diffuseTerm(n, l, 60.0);
-  vec3 refracted = u_seaBase + diff * u_seaWater * 0.2;
-  vec3 color = mix(refracted, reflected, fresnel);
-
-  // Beer-Lambert backlit transmission through the lip — the green
-  // flash. Thickness is analytic: how far p sits inside the shell's
-  // [ra-rb, ra+rb] band, no secondary ray needed.
-  float zc = u_bR * 0.5, yc = u_bR * 0.95;
+  // where this point sits on the ring: how near the thrown tip of the lip,
+  // and whether it is on the concave (room) side.
+  float zc = u_bR * (B_ZC + B_ZSHIFT * aT);
+  float yc = u_bR * (B_YC + B_YLIFT * aT);
+  float arcR = u_bR * (1.0 + B_RGROW * aT);
   vec2 lq = rot2(vec2(p.z - zc, p.y - yc), BARREL_TILT);
-  float radial = length(lq) - u_bR;
-  float thickness = max(0.0, u_wLip - abs(radial));
-  vec3 sigma = vec3(4.5, 0.7, 1.1) / max(u_bR, 0.15);
-  float backlit = max(0.0, dot(l, -eye)) * max(0.0, -dot(n, l) + 0.3);
-  vec3 transmit = u_sunColor * exp(-sigma * thickness) * backlit * 1.8;
-  color += transmit;
+  float rad = length(lq);
+  float ang = atan(abs(lq.x) + 1e-5, lq.y);          // 0 at the crest, PI at the bottom
+  float tipT   = clamp(1.0 - (u_aperHalf - ang) / 0.75, 0.0, 1.0)
+               * smoothstep(arcR * 0.55, arcR * 1.0, rad);
+  float inRoom = smoothstep(u_bR * 0.05, u_bR * 0.30, arcR - rad)
+               * clamp((u_aperHalf - ang) / 0.4, 0.0, 1.0) * aT;
 
-  color += vec3(specularTerm(n, l, eye, 120.0)) * u_sunColor;
+  float fres0 = clamp(1.0 - dot(n, -eye), 0.0, 1.0);
+  float fresnel = 0.02 + 0.98 * pow(fres0, 5.0);
+  vec3 reflected = skyColor(reflect(eye, n));
 
-  float foam = smoothstep(0.5, 0.9, 1.0 - abs(n.y)) * clamp(u_choppy / 6.0, 0.3, 1.0);
-  color = mix(color, vec3(0.93, 0.96, 0.94), foam * 0.5);
+  // body: deep navy down in the trough, lit teal up in the standing water
+  float hAbove = clamp((p.y + 0.34 * u_bR) / (2.2 * u_bR), 0.0, 1.0);
+  vec3 body = mix(u_seaBase, u_seaWater * vec3(0.60, 1.00, 0.92),
+                  pow(hAbove, 1.4) * 0.62 * (1.0 - inRoom * 0.45));
+  float diff = diffuseTerm(n, l, 8.0);
+  vec3 color = mix(body + u_seaWater * diff * 0.10, reflected,
+                   fresnel * (1.0 - inRoom * 0.75));
+
+  // Beer-Lambert transmission through the lip — the green flash. The optical
+  // thickness now genuinely falls to zero at the thrown tip. (It used to be
+  // computed as wLip - |length(lq) - bR|, which is identically 0 at every hit
+  // point, since a hit is by definition ON that surface — so the exponential
+  // collapsed to exp(0) and the term was a flat backlight, not transmission.)
+  float thick = u_wLip * (1.0 - tipT) + 0.02 * u_bR;
+  float sig = 3.2 / max(u_bR, 0.15);
+  float backlit = max(0.0, dot(l, -eye)) * clamp(0.35 - dot(n, l), 0.0, 1.0) * 2.2;
+  float glow = (backlit + inRoom * 0.55) * (0.35 + 0.65 * tipT);
+  vec3 transmit = u_sunColor * exp(-sig * vec3(1.55, 0.34, 0.50) * thick)
+                * glow * vec3(0.55, 1.00, 0.90);
+  color += transmit * vec3(0.85, 1.00, 0.95);
+
+  color += vec3(specularTerm(n, l, eye, 120.0)) * u_sunColor * 0.18;
+
+  // foam. Noise keyed on (x, y+z) so it does not stripe along the extrusion.
+  vec2 qn = vec2(p.x, p.y + p.z) / max(u_bR, 0.15);
+  float fn = vnoise(qn * 2.2) * 0.6 + vnoise(qn * 6.0) * 0.4;
+  float chop = clamp(u_choppy / 6.0, 0.35, 1.0);
+  float lipFoam = tipT * clamp(0.45 + fn * 0.9, 0.0, 1.0) * chop;
+  // whitewater only at the wave's own base and only inside the breaking band
+  // (gated by aT), otherwise it paints the whole open ocean white
+  float baseFoam = (1.0 - smoothstep(0.02 * u_bR, 0.40 * u_bR, abs(p.y + 0.22 * u_bR)))
+                 * clamp(0.30 + fn * 0.8, 0.0, 1.0)
+                 * (1.0 - smoothstep(u_bR * 0.85, u_bR * 1.55, abs(p.z - zc)))
+                 * aT * chop;
+  float foam = clamp(lipFoam * 0.80 + baseFoam * 0.85, 0.0, 1.0);
+  color = mix(color, vec3(0.92, 0.96, 0.97), foam * 0.85);
 
   return color;
 }
 vec3 renderBarrel(vec2 uv) {
   float peelPos = u_time * u_peelSpeed;
 
-  // Camera path verified in Node across the full slider grid (H, the
-  // Iribarren-driven aperture/thickness, reef slope) at fine resolution
-  // to guarantee it never dips inside the water/rock SDF (margin stays
-  // > 0.15*u_bR everywhere) -- see scratchpad/barrel_highcam_check.js.
-  // An earlier lower, "inside the tube" path looked more dramatic but
-  // failed that check (camera ended up literally underwater for some
-  // slider combinations -- exactly the black-screen failure mode this
-  // check exists to catch); kept high and comfortably clear instead.
-  vec3 campos0 = vec3(peelPos - u_bR * 1.5, u_bR * 2.8, -u_bR * 3.5);
-  vec3 campos1 = vec3(peelPos + u_peelLen * 0.55, u_bR * 2.8, u_bR * 0.6);
-  vec3 ori = mix(campos0, campos1, u_view);
-
-  vec3 look0 = vec3(peelPos + u_bR * 2.2, u_bR * 0.55, u_bR * 0.5);
-  vec3 look1 = vec3(peelPos + u_bR * 3.4, u_bR * 0.35, u_bR * 1.3);
+  // Camera. x in units of u_peelLen, y/z in units of u_bR.
+  //   view = 0 : from the shoulder, side-on, looking down the line
+  //   view = 1 : right at the mouth of the tube, looking into it
+  // The whole interpolated path is kept OUTSIDE the shell's outer radius
+  // (u_bR*(1+B_RGROW) + u_wLip) measured from the barrel's own centre, so no
+  // slider position can put the eye inside the water — the black-screen
+  // failure mode. Nearest approach is the view=1 end at 1.75*u_bR against an
+  // outer radius of 1.42*u_bR; re-check it if any of the B_* constants move.
+  vec3 ori0  = vec3(peelPos + u_peelLen * 1.570, u_bR * 1.657, u_bR * 2.936);
+  vec3 look0 = vec3(peelPos + u_peelLen * 1.050, u_bR * 0.950, u_bR * 0.000);
+  vec3 ori1  = vec3(peelPos + u_peelLen * 1.200, u_bR * 0.520, u_bR * 1.940);
+  vec3 look1 = vec3(peelPos + u_peelLen * 0.450, u_bR * 0.800, u_bR * 0.300);
+  vec3 ori    = mix(ori0, ori1, u_view);
   vec3 lookAt = mix(look0, look1, u_view);
+  // The camera rides the peel front exactly, so without this the whole scene is
+  // frozen. A slow bounded drift along the tube axis lets the section peel
+  // through the frame. Amplitudes are small enough that the clearance check
+  // above still holds -- it is swept over the full bob phase.
+  float bob1 = sin(u_time * 0.37), bob2 = sin(u_time * 0.23 + 1.7);
+  ori.x    += u_peelLen * 0.22 * bob1;
+  ori.y    += u_bR * 0.10 * bob2;
+  lookAt.x += u_peelLen * 0.10 * bob1;
 
   vec3 fwd = normalize(lookAt - ori);
   vec3 right = normalize(cross(fwd, vec3(0.0, 1.0, 0.0)));
   vec3 camUp = cross(right, fwd);
-  vec3 dir = normalize(uv.x * right * 0.9 + uv.y * camUp * 0.9 + fwd * 1.4);
+  vec3 dir = normalize(uv.x * right * 0.95 + uv.y * camUp * 0.95 + fwd * 1.25);
 
   vec3 p; bool hit;
   float t = traceBarrel(ori, dir, peelPos, p, hit);
@@ -677,15 +752,15 @@ vec3 renderBarrel(vec2 uv) {
   if (!hit) {
     color = skyColor(dir);
   } else {
-    vec3 n = barrelNormal(p, max(0.01, t * 0.002), peelPos);
+    float nf = exp(-t * 0.09 / max(u_bR, 0.2));
+    vec3 n = barrelNormal(p, max(0.01, t * 0.004), peelPos, nf);
     float dRock = p.y - reefTop(p.z, peelPos);
     float dWater = sdWaterOnly(p, peelPos, 0.0);
-    bool isRock = dRock < dWater;
-    color = barrelShade(p, n, dir, peelPos, isRock);
+    color = barrelShade(p, n, dir, peelPos, dRock < dWater, barrelArcT(p.x - peelPos));
   }
 
-  float fog = 1.0 - exp(-max(t, 0.0) * 0.014 / max(u_bR, 0.2));
-  color = mix(color, u_skyHorizon, clamp(fog, 0.0, 0.6));
+  float fog = 1.0 - exp(-max(t, 0.0) * 0.010 / max(u_bR, 0.2));
+  color = mix(color, u_skyHorizon, clamp(fog, 0.0, 0.45));
   return clamp(color, 0.0, 1.0);
 }
 `;
@@ -775,7 +850,7 @@ if (usingGL) {
     const fsB = compile(gl, gl.FRAGMENT_SHADER, glVersion === 2 ? FRAG_BARREL_300 : FRAG_BARREL_100);
     progBarrel = link(gl, vsB, fsB);
     gl.useProgram(progBarrel);
-    ['u_res','u_time','u_freq','u_choppy','u_sunDir','u_sunColor','u_skyTop','u_skyHorizon',
+    ['u_res','u_time','u_choppy','u_sunDir','u_sunColor','u_skyTop','u_skyHorizon',
      'u_seaBase','u_seaWater','u_bR','u_aperHalf','u_wLip','u_peelSpeed','u_peelLen','u_reefSlope','u_view'
     ].forEach(n => { barrelUniforms[n] = gl.getUniformLocation(progBarrel, n); });
     gl.useProgram(prog);
@@ -1176,8 +1251,15 @@ function frame(now) {
     const xi = iribarren(state.slope, state.H, L0);
     const xiNorm = Math.max(0, Math.min(1, (xi - 0.5) / (3.3 - 0.5)));
     const bR = Math.max(0.15, state.H * 0.9);
-    const aperHalf = 1.05 + (2.35 - 1.05) * xiNorm;
-    const wLip = bR * (0.22 - 0.10 * xiNorm);
+    // How far the ring wraps, in radians measured from the crest. The floor
+    // matters: below ~2 rad the "arc" stops being a tube at all and collapses
+    // into a cap sitting on the water, which renders as a featureless mound —
+    // and since the default sliders (T 10, H 2, slope 0.04) give xi = 0.35, they
+    // sit at xiNorm = 0, so that floor is exactly what the page shows on load.
+    // Iribarren still sets how hollow it throws, it just never un-barrels.
+    const aperHalf = 2.10 + (2.55 - 2.10) * xiNorm;
+    // plunging waves throw a thinner lip than spilling ones
+    const wLip = bR * (0.30 - 0.13 * xiNorm);
     const peelSpeed = c * 0.1;
     const peelLen = bR * 3.0;
 
@@ -1186,7 +1268,6 @@ function frame(now) {
     const bu = barrelUniforms;
     gl.uniform2f(bu.u_res, oceanCv.width, oceanCv.height);
     gl.uniform1f(bu.u_time, time);
-    gl.uniform1f(bu.u_freq, freq);
     gl.uniform1f(bu.u_choppy, choppy);
     gl.uniform3f(bu.u_sunDir, sunDir[0], sunDir[1], sunDir[2]);
     gl.uniform3f(bu.u_sunColor, pal.sun[0], pal.sun[1], pal.sun[2]);

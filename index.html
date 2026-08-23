@@ -164,6 +164,10 @@ const LOCATIONS = [
     x:.68, y:.79, scale:1,
     desc:'Plug in your ears, pluck a string — a mandala blooms when you hit the swara. YIN pitch tracking, kharaj-pancham presets, tarab checklists, a tanpura drone.',
     href:'sitar-tuner/' },
+  { id:'ringout', emoji:'🥊', title:'Ringout', status:'live', kind:'arena',
+    x:.76, y:.68, scale:1,
+    desc:'A browser platform fighter built from scratch — NIX and BRAM trade percent-based knockback on a floating arena, with a chiptune arena loop synthesised live in the Web Audio API.',
+    href:'ringout/' },
   { id:'neural-music', emoji:'🎼', title:'Neural music spectacle', status:'concept', kind:'mist',
     x:.83, y:.56, scale:.85,
     desc:'Live EEG/OPM decoding of what music does to a listening brain, projected as visuals during a concert — the audience watches the listener\'s cortex dance.' },
@@ -174,7 +178,7 @@ const LOCATIONS = [
     x:.95, y:.20, scale:.7,
     desc:'People listened to Le Petit Prince inside an fMRI scanner. Turning each listener\'s brain responses into their own private film of the story — one image sequence per brain.' },
 ];
-const TRAIL = ['flow-studio', 'genesis', 'psychedelia', 'fractals', 'waves', 'sitar-tuner'];
+const TRAIL = ['flow-studio', 'genesis', 'psychedelia', 'fractals', 'waves', 'sitar-tuner', 'ringout'];
 
 const PALETTES = [
   { name:'dusk', sky:['#150c29','#3a2757','#9a4a6c','#e2834f','#f6c584'], stars:.9, sun:'#ffdca0' },
@@ -437,7 +441,48 @@ function drawWave(x, y, s, t, hover) {
   }
 }
 
-const BUILD = { mill: drawMill, tree: drawTree, crystal: drawCrystal, pavilion: drawPavilion, mist: drawMist, orb: drawOrb, wave: drawWave };
+function drawArena(x, y, s, t, hover) {
+  // a floating fight stage: slab, two side platforms, two little fighters
+  const bob = Math.sin(t * .0013) * s * .03;
+  ctx.save(); ctx.translate(x, y - s * .06 + bob);
+
+  // the main slab, seen slightly from the front
+  ctx.fillStyle = hexA('#6ea8ff', hover ? .3 : .2);
+  ctx.beginPath();
+  ctx.moveTo(-s * .62, 0); ctx.lineTo(s * .62, 0);
+  ctx.lineTo(s * .46, s * .18); ctx.lineTo(-s * .46, s * .18);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = hexA('#8ceedd', hover ? .95 : .75);
+  ctx.fillRect(-s * .62, -s * .04, s * 1.24, s * .04);
+
+  // two floating platforms above
+  ctx.fillStyle = hexA('#b48ce8', hover ? .7 : .5);
+  for (const dx of [-.4, .4]) {
+    ctx.fillRect(dx * s - s * .16, -s * (.58 + Math.sin(t * .0016 + dx) * .02), s * .32, s * .045);
+  }
+
+  // the fighters — teal on the left, amber on the right, lunging in time
+  const lunge = Math.sin(t * .0034) * s * .07;
+  const pairs = [[-.26 + lunge, '#8ceedd', 1], [.26 - lunge, '#ffd27a', -1]];
+  for (const [px, col, dir] of pairs) {
+    ctx.fillStyle = hexA(col, hover ? 1 : .85);
+    ctx.beginPath();
+    ctx.moveTo(px * s + dir * s * .07, -s * .30);
+    ctx.lineTo(px * s - dir * s * .05, -s * .04);
+    ctx.lineTo(px * s + dir * s * .09, -s * .04);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(px * s, -s * .34, s * .055, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // the impact spark between them
+  const flash = Math.max(0, Math.sin(t * .0034));
+  ctx.strokeStyle = `rgba(255,255,255,${(flash * (hover ? .9 : .6)).toFixed(3)})`;
+  ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.arc(0, -s * .2, s * (.06 + flash * .12), 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+}
+
+const BUILD = { mill: drawMill, tree: drawTree, crystal: drawCrystal, pavilion: drawPavilion, mist: drawMist, orb: drawOrb, wave: drawWave, arena: drawArena };
 
 /* ---------- interaction ---------- */
 let hoverId = null, selectedId = null;
