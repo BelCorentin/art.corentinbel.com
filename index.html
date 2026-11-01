@@ -2,586 +2,590 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>art · Corentin Bel</title>
-<meta name="description" content="An explorable world of generative art projects — pick a place to visit.">
+<meta name="description" content="Art: a little harbour at dusk where every generative piece is moored somewhere — flow fields, fractals, waves, a sitar tuner, a platform fighter.">
+<meta name="theme-color" content="#1a1030">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400;1,9..144,600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --fg:#f3ead9; --dim:#c9bfae; --faint:#8b8398; --accent:#ffd27a;
-    --glass:rgba(18,14,28,.62); --radius:14px;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  html, body { height:100%; overscroll-behavior:none; }
-  body {
-    background:#17102b; color:var(--fg); overflow:hidden;
-    font-family:ui-sans-serif,system-ui,"Inter",sans-serif;
-  }
-  a { color:var(--accent); text-decoration:none; }
-  a:hover { text-decoration:underline; }
+  :root { --bg: #1a1030; --cream: #fbeedd; --dim: #c9b3c4; --ink: #160d1c; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: var(--bg); color: var(--cream); }
+  body { font-family: "Inter", ui-sans-serif, system-ui, sans-serif; overflow: hidden; -webkit-tap-highlight-color: transparent; }
 
-  #scene { position:fixed; inset:0; width:100%; height:100%; display:block; }
-  #scene.hot { cursor:pointer; }
+  #stage { position: fixed; inset: 0; overflow: hidden; }
+  #scene { width: 100%; height: 100%; display: block; overflow: visible; }
+  @media (max-aspect-ratio: 6/5) {
+    #stage { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+    #stage::-webkit-scrollbar { display: none; }
+    #scene { width: 165vh; height: 100%; }
+    .title h1 { font-size: 24px; }
+    .title p { font-size: 12px; background: rgba(26,16,48,.6); padding: 2px 6px; border-radius: 6px; margin-left: -6px; }
+    .hint .wide { display: none; }
+    .hint .narrow { display: inline; }
+  }
+  .hint .narrow { display: none; }
 
-  .glass {
-    background:var(--glass); border:1px solid rgba(255,210,122,.18);
-    border-radius:var(--radius); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-  }
+  .ink { stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+  .thin { stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+  .door, .ghost { cursor: pointer; outline: none; }
+  .door > g, .ghost > g { transition: filter .25s, transform .25s; transform-box: fill-box; transform-origin: 50% 100%; }
+  .door:hover > g, .door:focus-visible > g { filter: drop-shadow(0 0 10px rgba(255, 210, 150, .8)) brightness(1.15); transform: translateY(-3px); }
+  .ghost:hover > g, .ghost:focus-visible > g { filter: drop-shadow(0 0 8px rgba(220, 200, 255, .7)); opacity: 1; }
+  .sign text { font-family: "Fraunces", Georgia, serif; font-style: italic; font-size: 13px; font-weight: 600; fill: #3a1e10; }
+  .door:hover .sign rect { fill: #ffe6b0; }
 
-  header#top {
-    position:fixed; top:0; left:0; right:0; z-index:20;
-    display:flex; justify-content:space-between; align-items:baseline;
-    padding:1rem 1.3rem; pointer-events:none; mix-blend-mode:screen;
-  }
-  header#top h1 { font-weight:300; font-size:1.15rem; letter-spacing:.05em; }
-  header#top h1 b { font-weight:650; }
-  header#top nav { display:flex; gap:1.1rem; pointer-events:auto; }
-  header#top nav a { color:var(--dim); font-size:.85rem; text-decoration:none; }
-  header#top nav a:hover { color:var(--accent); }
+  .bob { animation: bob 4s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+  @keyframes bob { from { transform: translateY(-2px) rotate(-1.4deg); } to { transform: translateY(3px) rotate(1.4deg); } }
+  .glow { animation: glow 3s ease-in-out infinite; }
+  @keyframes glow { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+  .twinkle { animation: glow 2.4s ease-in-out infinite; }
+  .flow { stroke-dasharray: 16 12; animation: flow 1.4s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset: -28; } }
+  .note { animation: note 3.6s ease-out infinite; }
+  @keyframes note { 0% { transform: translate(0, 0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(24px, -90px); opacity: 0; } }
+  .spin { animation: spin 9s linear infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .ghost > g { opacity: .55; }
 
-  #hint {
-    position:fixed; top:3.4rem; left:1.3rem; z-index:20;
-    font-size:.78rem; color:var(--dim); mix-blend-mode:screen; pointer-events:none;
-  }
+  .title { position: fixed; left: clamp(14px, 2.4vw, 34px); top: clamp(12px, 2.2vw, 30px); z-index: 5; pointer-events: none; text-shadow: 0 2px 12px rgba(0,0,0,.7); }
+  .title a { pointer-events: auto; color: var(--dim); text-decoration: none; font-size: 13px; }
+  .title a:hover { color: var(--cream); }
+  .title h1 { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: clamp(26px, 3.4vw, 46px); line-height: 1; margin-top: 6px; }
+  .title p { margin-top: 8px; color: var(--dim); font-size: clamp(12px, 1.05vw, 15px); max-width: 30ch; line-height: 1.45; }
+  .title p em { font-family: "Fraunces", Georgia, serif; color: var(--cream); }
 
-  #tip {
-    position:fixed; z-index:22; padding:.35rem .7rem; font-size:.82rem;
-    pointer-events:none; transform:translate(-50%, -140%); white-space:nowrap;
-    opacity:0; transition:opacity .15s;
-  }
-  #tip.show { opacity:1; }
+  #listBtn { position: fixed; right: clamp(12px, 2vw, 28px); top: clamp(12px, 2vw, 26px); z-index: 6; background: rgba(30,18,46,.78); color: var(--cream); border: 1px solid rgba(255,200,150,.4); border-radius: 999px; padding: 8px 14px; font: 600 13px "Inter", sans-serif; cursor: pointer; backdrop-filter: blur(6px); }
+  #list { position: fixed; right: clamp(12px, 2vw, 28px); top: 62px; max-height: calc(100% - 80px); overflow-y: auto; z-index: 6; background: rgba(26,16,40,.95); border: 1px solid rgba(255,200,150,.3); border-radius: 14px; padding: 10px; display: none; width: min(340px, calc(100vw - 24px)); box-shadow: 0 18px 50px rgba(0,0,0,.6); }
+  #list.open { display: block; }
+  #list h3 { font: 600 11px "Inter", sans-serif; letter-spacing: .12em; text-transform: uppercase; color: #e0a87a; padding: 10px 12px 4px; }
+  #list a, #list span { display: block; padding: 8px 12px; border-radius: 9px; color: var(--cream); text-decoration: none; }
+  #list span { color: var(--dim); }
+  #list a:hover { background: rgba(255,200,150,.12); }
+  #list small { display: block; color: var(--dim); font-size: 12px; margin-top: 2px; }
 
-  #card {
-    position:fixed; z-index:30; padding:1.3rem 1.4rem 1.4rem; overflow-y:auto;
-    top:5.4rem; right:.8rem; bottom:.8rem; width:min(360px, calc(100vw - 1.6rem));
-    transform:translateX(115%); transition:transform .35s cubic-bezier(.2,.8,.2,1);
-    visibility:hidden;
-  }
-  #card.open { transform:translateX(0); visibility:visible; }
-  @media (max-width:640px) {
-    #card {
-      top:auto; left:.6rem; right:.6rem; bottom:.6rem; width:auto; max-height:58vh;
-      transform:translateY(115%);
-    }
-    #card.open { transform:translateY(0); }
-  }
-  #cardClose {
-    position:absolute; top:.6rem; right:.7rem; background:none; border:none; color:var(--dim);
-    font-size:1.3rem; cursor:pointer; line-height:1; padding:.2rem .4rem; font-family:inherit;
-  }
-  #cardClose:hover { color:var(--fg); }
-  #cardBadge {
-    display:inline-block; text-transform:uppercase; letter-spacing:.14em; font-size:.62rem;
-    padding:.28em .7em; border-radius:999px; border:1px solid rgba(255,210,122,.3);
-    color:var(--dim); margin-bottom:.8rem;
-  }
-  #cardBadge.live { color:#8ceedd; border-color:rgba(140,238,221,.4); }
-  #cardBadge.locked { color:#8b8398; }
-  #card h2 { font-size:1.25rem; font-weight:650; line-height:1.35; }
-  #card h2 .em { margin-right:.5rem; }
-  #cardDesc { color:#d8d2c6; font-size:.92rem; line-height:1.65; margin-top:.8rem; }
-  #cardLinks { margin-top:1.1rem; }
-  #cardLinks a {
-    display:inline-block; font-size:.85rem; border:1px solid rgba(255,210,122,.3);
-    border-radius:999px; padding:.45rem 1.1rem; transition:border-color .2s, background .2s;
-  }
-  #cardLinks a:hover { border-color:var(--accent); background:rgba(255,210,122,.08); text-decoration:none; }
+  #tip { position: fixed; z-index: 7; pointer-events: none; background: rgba(26,16,40,.94); border: 1px solid rgba(255,200,150,.45); border-radius: 10px; padding: 7px 11px; font-size: 13px; opacity: 0; transform: translate(-50%, -130%); transition: opacity .15s; max-width: 340px; }
+  #tip b { font-family: "Fraunces", Georgia, serif; font-size: 15px; color: #ffd9a0; font-weight: 600; }
+  #tip span { color: var(--dim); display: block; margin-top: 2px; }
+  #tip.on { opacity: 1; }
 
-  #legend {
-    position:fixed; bottom:.9rem; left:.9rem; z-index:20; padding:.55rem .8rem;
-    font-size:.72rem; color:var(--faint); max-width:220px; line-height:1.5;
-  }
-  #legend b { color:var(--dim); }
+  #pane { position: fixed; z-index: 8; left: clamp(12px, 2.4vw, 34px); bottom: clamp(12px, 2.4vw, 34px); width: min(380px, calc(100vw - 24px)); background: linear-gradient(#2a1a3e, #1c1230); border: 1px solid rgba(255,200,150,.45); border-radius: 16px; padding: 16px 18px 18px; box-shadow: 0 24px 60px rgba(0,0,0,.65); transform: translateY(14px); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+  #pane.open { opacity: 1; transform: none; pointer-events: auto; }
+  #pane h2 { font-family: "Fraunces", Georgia, serif; font-size: 22px; font-weight: 600; color: #ffd9a0; padding-right: 26px; }
+  #pane .latin { font-family: "Fraunces", Georgia, serif; font-style: italic; color: var(--dim); font-size: 14px; margin-top: 2px; }
+  #pane p { margin-top: 10px; font-size: 14px; line-height: 1.55; color: #f0e2e8; }
+  #pane .x { position: absolute; right: 12px; top: 10px; background: none; border: 0; color: var(--dim); font-size: 22px; cursor: pointer; }
 
-  footer {
-    position:fixed; bottom:.9rem; right:.9rem; z-index:20;
-    font-size:.76rem; color:var(--faint); mix-blend-mode:screen;
-  }
-
-  noscript .fallback { position:fixed; inset:0; display:grid; place-items:center; padding:2rem; text-align:center; }
-  @media (prefers-reduced-motion: reduce) { #card, #tip { transition:none; } }
+  .hint { position: fixed; right: clamp(12px, 2vw, 28px); bottom: clamp(10px, 1.6vw, 22px); z-index: 4; color: rgba(251,238,221,.55); font-size: 12px; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { .bob, .glow, .twinkle, .flow, .note, .spin { animation: none; } }
 </style>
 </head>
 <body>
 
-<canvas id="scene"></canvas>
+<div class="title">
+  <a href="https://corentinbel.com">← corentinbel.com</a>
+  <h1>art</h1>
+  <p>A little harbour at dusk. <em>Every piece is moored somewhere.</em></p>
+</div>
 
-<header id="top">
-  <h1><b>art</b>.corentinbel.com</h1>
-  <nav>
-    <a href="https://corentinbel.com">home</a>
-    <a href="https://lab.corentinbel.com">lab</a>
-    <a href="https://aboutme.corentinbel.com">about me</a>
-  </nav>
-</header>
-<div id="hint">a world of brain × art things — click a place to visit it</div>
-<div id="tip" class="glass"></div>
+<button id="listBtn" aria-expanded="false" aria-controls="list">☰ plain list</button>
+<nav id="list" aria-label="All art pieces"></nav>
 
-<aside id="card" class="glass" role="dialog" aria-labelledby="cardTitle" tabindex="-1">
-  <button id="cardClose" type="button" aria-label="close">×</button>
-  <div id="cardBadge"></div>
-  <h2 id="cardTitle"></h2>
-  <div id="cardDesc"></div>
-  <div id="cardLinks"></div>
-</aside>
+<div id="stage">
+<svg id="scene" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid meet" role="img" aria-label="A Mediterranean harbour at dusk; each art piece is a place in it">
+<defs>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#1a1236"/><stop offset=".35" stop-color="#4a2a62"/><stop offset=".62" stop-color="#b8546a"/><stop offset=".85" stop-color="#f08a52"/><stop offset="1" stop-color="#ffc77a"/>
+  </linearGradient>
+  <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#e0806a"/><stop offset=".12" stop-color="#7a4a78"/><stop offset=".55" stop-color="#2e2a5a"/><stop offset="1" stop-color="#16183a"/>
+  </linearGradient>
+  <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#c9a27a"/><stop offset="1" stop-color="#8a6448"/>
+  </linearGradient>
+  <linearGradient id="quayTop" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#9a7258"/><stop offset="1" stop-color="#5a3c2c"/>
+  </linearGradient>
+  <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#8a5a34"/><stop offset="1" stop-color="#5a3820"/>
+  </linearGradient>
+  <linearGradient id="hull" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#f6efe0"/><stop offset="1" stop-color="#c9bda4"/>
+  </linearGradient>
+  <linearGradient id="waveG" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#5fd0d8"/><stop offset=".6" stop-color="#2a7a9a"/><stop offset="1" stop-color="#1c3a62"/>
+  </linearGradient>
+  <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#fff2c0" stop-opacity=".6"/><stop offset="1" stop-color="#fff2c0" stop-opacity="0"/>
+  </linearGradient>
+  <radialGradient id="sunGlow" cx=".5" cy=".5" r=".5">
+    <stop offset="0" stop-color="#ffe0a0" stop-opacity=".8"/><stop offset=".4" stop-color="#ffb070" stop-opacity=".25"/><stop offset="1" stop-color="#ff9060" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="lamp" cx=".5" cy=".5" r=".5">
+    <stop offset="0" stop-color="#ffd98a" stop-opacity=".7"/><stop offset="1" stop-color="#ffd98a" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="windowGlow" cx=".5" cy=".5" r=".5">
+    <stop offset="0" stop-color="#bfe6ff" stop-opacity=".6"/><stop offset="1" stop-color="#bfe6ff" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="vignette" cx=".5" cy=".45" r=".75">
+    <stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/>
+  </radialGradient>
+  <filter id="blur6" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+  <filter id="blur2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2"/></filter>
+  <clipPath id="seaClip"><rect x="-1600" y="520" width="4800" height="300"/></clipPath>
+  <clipPath id="roseClip"><circle cx="352" cy="470" r="30"/></clipPath>
+</defs>
 
-<div id="legend" class="glass">🔓 near shore — open now &nbsp; 🌫️ far islands — still being built</div>
-<footer><a href="https://corentinbel.com">corentinbel.com</a></footer>
+<!-- ============ sky ============ -->
+<rect x="-1600" y="-1000" width="4800" height="1520" fill="url(#sky)"/>
+<g id="stars" fill="#fff"></g>
+<circle cx="980" cy="512" r="200" fill="url(#sunGlow)"/>
+<circle cx="980" cy="512" r="46" fill="#ffd27a"/>
+<g id="clouds" fill="#f4a08a" opacity=".55"></g>
+<g id="gulls" fill="none" stroke="#2a1830" stroke-width="2.4" stroke-linecap="round"></g>
 
-<noscript><div class="fallback glass"><p>This map needs JavaScript.</p></div></noscript>
+<!-- far coast: red rocks of the Esterel -->
+<path d="M-1600 520 L-200 500 Q60 440 160 470 Q260 430 360 480 Q430 470 520 520z" fill="#6a3050"/>
+<path d="M1300 520 Q1400 490 1500 500 Q1600 480 3200 500 V520z" fill="#5a2a48"/>
+
+<!-- ============ sea ============ -->
+<rect x="-1600" y="520" width="4800" height="300" fill="url(#sea)"/>
+<g clip-path="url(#seaClip)">
+  <g id="sunPath" fill="#ffd9a0"></g>
+  <g id="ripples" stroke="#f4b8a0" stroke-width="2" stroke-linecap="round" opacity=".35"></g>
+</g>
+
+<!-- ============ genesis: an island garden in the bay ============ -->
+<a class="door" href="genesis/" data-label="Genesis garden" data-sub="Paint water, rocks and seeds, press play, and watch a world invent itself">
+<g transform="translate(176 0)">
+  <path d="M580 532 Q620 488 680 492 Q740 490 772 532z" fill="#4a7a4a" class="ink"/>
+  <path d="M590 532 Q680 520 764 532" stroke="#e8c79a" stroke-width="4" fill="none"/>
+  <path d="M672 498 V452" stroke="#5a3820" stroke-width="5"/>
+  <g class="bob" style="animation-duration:6s">
+    <circle cx="672" cy="438" r="26" fill="#5fae5a" class="ink"/>
+    <circle cx="652" cy="450" r="16" fill="#4f9a4a" class="thin"/>
+    <circle cx="694" cy="448" r="18" fill="#6fbe5a" class="thin"/>
+    <circle cx="664" cy="430" r="4" fill="#ff8a9a"/><circle cx="684" cy="440" r="4" fill="#ffd34a"/><circle cx="660" cy="452" r="3.5" fill="#ffffff"/>
+  </g>
+  <g fill="#ff9aa8"><circle cx="612" cy="510" r="4"/><circle cx="626" cy="504" r="4"/><circle cx="740" cy="512" r="4" fill="#ffd34a"/></g>
+  <path d="M720 500 l8 -14 l8 14z" fill="#8a6a50" class="thin"/>
+  <g class="sign"><rect x="618" y="388" width="110" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="673" y="402" text-anchor="middle">Genesis garden</text></g>
+</g>
+</a>
+
+<!-- ============ coming soon: ghost ships on the horizon ============ -->
+<a class="ghost" data-info="neural-music" tabindex="0" role="button" aria-label="Coming: neural music spectacle"><g id="ghost1"></g></a>
+<a class="ghost" data-info="music-to-images" tabindex="0" role="button" aria-label="Coming: music to images"><g id="ghost2"></g></a>
+<a class="ghost" data-info="petit-prince" tabindex="0" role="button" aria-label="Coming: Le Petit Prince, imaged"><g id="ghost3"></g></a>
+
+<!-- ============ the perfect wave: a barrel breaking beyond the jetty ============ -->
+<a class="door" href="waves/" data-label="The perfect wave" data-sub="A raymarched ocean driven by real swell physics — watch spilling, plunging and surging breakers form">
+<g>
+  <path d="M1398 478 Q1410 492 1422 478 Q1430 464 1448 470 Q1472 482 1462 522 Q1444 556 1290 560 Q1384 544 1398 478z" fill="#123058"/>
+  <path d="M1600 562 V528 Q1546 470 1484 434 Q1430 408 1398 440 Q1382 460 1398 478 Q1410 492 1422 478 Q1430 464 1448 470 Q1472 482 1462 522 Q1444 556 1250 562 Z" fill="url(#waveG)" class="ink"/>
+  <path d="M1452 474 Q1470 488 1462 522" fill="none" stroke="#8fe8f0" stroke-width="3" opacity=".7"/>
+  <path id="waveLip" d="M1560 486 Q1520 446 1484 436 Q1432 414 1402 442 Q1390 458 1400 474" fill="none" stroke="#f4feff" stroke-width="6" stroke-linecap="round"/>
+  <path d="M1250 562 Q1330 556 1380 548" stroke="#f4feff" stroke-width="3" fill="none" opacity=".7"/>
+  <g id="spray" fill="#f4feff"></g>
+  <g id="surfer">
+    <path d="M-14 0 h28" stroke="#ffd34a" stroke-width="4" stroke-linecap="round"/>
+    <path d="M-4 0 l4 -12 l4 12 M0 -12 v-9 M0 -17 l-8 -4 M0 -17 l9 2" stroke="#160d1c" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <circle cx="0" cy="-24" r="3.4" fill="#160d1c"/>
+  </g>
+  <g class="sign"><rect x="1452" y="396" width="128" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="1516" y="410" text-anchor="middle">the perfect wave</text></g>
+</g>
+</a>
+
+<!-- jetty + lighthouse (decor) -->
+<g id="jetty">
+  <path d="M1160 572 L1600 556 V600 L1160 596z" fill="url(#stone)" class="ink"/>
+  <g stroke="#6a4a34" stroke-width="2" opacity=".6"><path d="M1200 572 v24 M1250 570 v26 M1300 568 v27 M1350 566 v28 M1400 564 v30 M1450 562 v31 M1500 560 v32 M1550 558 v33"/></g>
+  <path id="beamA" d="M1196 352 L1600 300 L1600 404z" fill="url(#beam)" opacity=".7"/>
+  <rect x="1176" y="368" width="40" height="204" fill="#f6efe0" class="ink"/>
+  <path d="M1176 410 h40 v28 h-40z M1176 480 h40 v28 h-40z M1176 550 h40 v22 h-40z" fill="#d84a4a"/>
+  <path d="M1176 368 h40" stroke="#160d1c" stroke-width="3"/>
+  <rect x="1168" y="352" width="56" height="16" rx="2" fill="#3a3040" class="ink"/>
+  <rect x="1180" y="324" width="32" height="28" fill="#ffe8a0" class="ink"/>
+  <circle cx="1196" cy="338" r="22" fill="#ffe8a0" opacity=".5" filter="url(#blur6)" class="glow"/>
+  <path d="M1174 324 l22 -20 l22 20z" fill="#d84a4a" class="ink"/>
+  <rect x="1188" y="520" width="16" height="30" rx="8" fill="#3a3040"/>
+</g>
+
+<!-- ============ ringout: a boxing ring on a floating barge ============ -->
+<a class="door" href="ringout/" data-label="Ringout" data-sub="A browser platform fighter built from scratch — NIX and BRAM trade percent-based knockback">
+<g class="bob" style="animation-duration:5s">
+  <path d="M1010 668 h220 l-18 34 h-184z" fill="#3a4a6a" class="ink"/>
+  <path d="M1012 676 h216" stroke="#f6efe0" stroke-width="3"/>
+  <rect x="1030" y="648" width="180" height="20" fill="#e8dcc4" class="ink"/>
+  <g stroke="#f6efe0" stroke-width="2.5"><path d="M1036 600 v48 M1204 600 v48"/></g>
+  <g stroke="#e04848" stroke-width="2.4"><path d="M1036 612 H1204 M1036 626 H1204 M1036 640 H1204"/></g>
+  <g fill="#e04848"><rect x="1030" y="596" width="12" height="10" rx="2"/><rect x="1198" y="596" width="12" height="10" rx="2"/></g>
+  <g id="fighterNix"><rect x="-8" y="-22" width="16" height="22" rx="5" fill="#ff7a5a" class="thin"/><circle cx="0" cy="-28" r="6" fill="#ff7a5a" class="thin"/><circle cx="2" cy="-29" r="1.4" fill="#160d1c"/><circle cx="9" cy="-14" r="4" fill="#e04848" class="thin"/></g>
+  <g id="fighterBram"><rect x="-8" y="-22" width="16" height="22" rx="5" fill="#5aa8ff" class="thin"/><circle cx="0" cy="-28" r="6" fill="#5aa8ff" class="thin"/><circle cx="-2" cy="-29" r="1.4" fill="#160d1c"/><circle cx="-9" cy="-14" r="4" fill="#3a6ad6" class="thin"/></g>
+  <text id="pctNix" x="1060" y="592" font-family="Inter, sans-serif" font-weight="600" font-size="12" fill="#ffb0a0">0%</text>
+  <text id="pctBram" x="1160" y="592" font-family="Inter, sans-serif" font-weight="600" font-size="12" fill="#a8d0ff">0%</text>
+  <g class="sign"><rect x="1080" y="708" width="80" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="1120" y="722" text-anchor="middle">Ringout</text></g>
+</g>
+</a>
+
+<!-- ============ the town on the left ============ -->
+<g id="town"></g>
+
+<!-- fractals: the glassmaker's house with a fractal rose window -->
+<a class="door" href="fractals/" data-label="Fractal studio" data-sub="Mandelbrot, Julia, Burning Ship, Newton basins and a Barnsley fern — deep zoom">
+<g>
+  <path d="M298 640 V430 l54 -48 l54 48 V640z" fill="#f2d9a8" class="ink"/>
+  <path d="M290 434 l62 -56 l62 56" fill="none" stroke="#b8442a" stroke-width="12" stroke-linejoin="round"/>
+  <circle cx="352" cy="470" r="54" fill="url(#windowGlow)" class="glow"/>
+  <circle cx="352" cy="470" r="32" fill="#1c2a52" class="ink"/>
+  <g clip-path="url(#roseClip)"><g id="koch" class="spin" style="animation-duration:40s"></g></g>
+  <circle cx="352" cy="470" r="32" fill="none" stroke="#f2d9a8" stroke-width="3"/>
+  <rect x="330" y="568" width="44" height="72" rx="20" fill="#3a6aa8" class="ink"/>
+  <circle cx="366" cy="606" r="3" fill="#ffd34a"/>
+  <g class="sign"><rect x="300" y="524" width="104" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="352" y="538" text-anchor="middle">Fractal studio</text></g>
+</g>
+</a>
+
+<!-- quay walls -->
+<path d="M-1600 640 H520 L560 660 V700 H-1600z" fill="url(#stone)" class="ink"/>
+<g stroke="#6a4a34" stroke-width="2" opacity=".5"><path d="M0 660 H540 M0 680 H550 M60 640 v20 M140 660 v20 M220 640 v20 M300 660 v20 M380 640 v20 M460 660 v20"/></g>
+
+<!-- ============ flow studio: a sailboat whose sail shows the flow ============ -->
+<a class="door" href="flow-studio/" data-label="Flow studio" data-sub="Paint with fluid dynamics: long-exposure particle trails around a foil section">
+<g class="bob">
+  <g class="flow" fill="none" stroke="#bfefff" stroke-width="2.2" opacity=".75">
+    <path d="M560 470 q70 -40 150 -10 t120 10"/><path d="M560 520 q70 -26 150 0 t120 0"/><path d="M560 570 q70 -10 150 8 t120 -6"/><path d="M560 420 q70 -50 150 -24 t120 16"/>
+  </g>
+  <path d="M700 370 V700" stroke="#3a2418" stroke-width="5"/>
+  <path d="M704 384 q78 120 66 270 h-66z" fill="#fff4e0" class="ink"/>
+  <path d="M696 404 q-60 110 -64 250 h64z" fill="#f6e0c0" class="ink"/>
+  <path d="M704 450 q40 60 46 140 M704 520 q30 40 36 110" stroke="#e8c49a" stroke-width="1.6" fill="none"/>
+  <path d="M700 370 l20 7 l-20 7z" fill="#e04848" class="thin"/>
+  <path d="M600 700 h210 q-16 34 -50 34 h-126 q-26 0 -34 -34z" fill="url(#hull)" class="ink"/>
+  <path d="M606 712 h198" stroke="#3a6aa8" stroke-width="5"/>
+  <circle cx="740" cy="722" r="4" fill="#3a3040"/><circle cx="760" cy="722" r="4" fill="#3a3040"/>
+  <text x="660" y="728" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="12" fill="#3a6aa8">Flow</text>
+  <g class="sign"><rect x="742" y="610" width="96" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="790" y="624" text-anchor="middle">Flow studio</text></g>
+</g>
+</a>
+<path d="M560 694 q30 40 60 30" fill="none" stroke="#e8d7b0" stroke-width="2"/>
+
+<!-- ============ foreground quay ============ -->
+<path d="M-1600 790 H3200 V2000 H-1600z" fill="url(#quayTop)"/>
+<rect x="-1600" y="782" width="4800" height="16" fill="url(#stone)" class="ink"/>
+<g id="paving" stroke="#3a2418" stroke-width="2" opacity=".45"></g>
+<g id="bollards"></g>
+<g id="lamps"></g>
+
+<!-- psychedelia: a carousel with a spiralling canopy -->
+<a class="door" href="psychedelia/" data-label="Psychedelia" data-sub="A generative sampler of fractals, kaleidoscopes, warp tunnels and vision illusions">
+<g>
+  <ellipse cx="230" cy="905" rx="150" ry="22" fill="#2a1830" opacity=".5"/>
+  <ellipse cx="230" cy="890" rx="140" ry="22" fill="#7a3a6a" class="ink"/>
+  <rect x="90" y="868" width="280" height="22" fill="#9a4a82" class="ink"/>
+  <g id="poles"></g>
+  <path d="M90 700 L230 620 L370 700z" fill="#ffd34a" class="ink"/>
+  <g id="canopy"></g>
+  <path d="M90 700 L230 620 L370 700z" fill="none" class="ink"/>
+  <g id="scallops"></g>
+  <circle cx="230" cy="612" r="10" fill="#e04848" class="ink"/>
+  <path d="M230 602 v-24" stroke="#160d1c" stroke-width="2"/><path d="M230 578 l18 6 l-18 6z" fill="#5fd0d8" class="thin"/>
+  <g id="horses"></g>
+  <g class="sign"><rect x="178" y="922" width="104" height="22" rx="4" fill="#fbeedd" class="thin"/><text x="230" y="937" text-anchor="middle">Psychedelia</text></g>
+</g>
+</a>
+
+<!-- sitar tuner: a bandstand with a sitar under the roof -->
+<a class="door" href="sitar-tuner/" data-label="Sitar tuner" data-sub="Pluck a string — a mandala blooms when you hit the swara">
+<g>
+  <ellipse cx="1360" cy="900" rx="150" ry="22" fill="#2a1830" opacity=".5"/>
+  <path d="M1220 870 h280 l-14 30 h-252z" fill="#e8dcc4" class="ink"/>
+  <g stroke="#f6efe0" stroke-width="7"><path d="M1236 870 V700 M1300 870 V700 M1420 870 V700 M1484 870 V700"/></g>
+  <g stroke="#160d1c" stroke-width="1.4" opacity=".5"><path d="M1240 870 V700 M1304 870 V700 M1424 870 V700 M1488 870 V700"/></g>
+  <path d="M1230 836 H1490" stroke="#f6efe0" stroke-width="5"/>
+  <g stroke="#f6efe0" stroke-width="2"><path d="M1246 836 v34 M1262 836 v34 M1278 836 v34 M1442 836 v34 M1458 836 v34 M1474 836 v34"/></g>
+  <path d="M1206 704 Q1360 600 1514 704z" fill="#3a8a7a" class="ink"/>
+  <path d="M1206 704 h308" stroke="#f6efe0" stroke-width="8"/>
+  <g id="bunting"></g>
+  <circle cx="1360" cy="628" r="8" fill="#ffd34a" class="ink"/>
+  <!-- sitar on a stand -->
+  <g transform="rotate(-24 1360 820)">
+    <rect x="1352" y="700" width="14" height="140" rx="3" fill="#7a4520" class="thin"/>
+    <g stroke="#d6a94f" stroke-width="2"><path d="M1351 722h16M1351 736h16M1351 750h16M1351 764h16M1351 778h16M1351 792h16"/></g>
+    <ellipse cx="1359" cy="846" rx="30" ry="24" fill="#b0692e" class="ink"/>
+    <circle cx="1359" cy="704" r="9" fill="#8a5126" class="thin"/>
+  </g>
+  <g id="notes" font-family="Fraunces, Georgia, serif" font-size="24" fill="#ffd98a"></g>
+  <g class="sign"><rect x="1308" y="914" width="104" height="22" rx="4" fill="#fbeedd" class="thin"/><text x="1360" y="929" text-anchor="middle">Sitar tuner</text></g>
+</g>
+</a>
+
+<!-- crates, ropes, a cat -->
+<g id="props">
+  <rect x="560" y="836" width="70" height="56" fill="#a87a4a" class="ink"/>
+  <rect x="610" y="864" width="56" height="44" fill="#946a3e" class="ink"/>
+  <path d="M560 856 h70 M560 874 h70 M610 880 h56" stroke="#6b4a2c" stroke-width="2.5"/>
+  <ellipse cx="740" cy="900" rx="40" ry="12" fill="#c9a87a" class="ink"/>
+  <ellipse cx="740" cy="894" rx="28" ry="8" fill="none" stroke="#8a6a44" stroke-width="3"/>
+  <ellipse cx="740" cy="890" rx="16" ry="5" fill="none" stroke="#8a6a44" stroke-width="3"/>
+  <g transform="translate(596 836)">
+    <path d="M0 0 q-4 -20 6 -26 q-2 -8 2 -12 l4 6 h6 l4 -6 q4 4 2 12 q10 6 6 26z" fill="#2a1830"/>
+    <path d="M24 -2 q16 -4 12 -20" fill="none" stroke="#2a1830" stroke-width="4" stroke-linecap="round" class="tail"/>
+    <circle cx="9" cy="-28" r="1.6" fill="#ffd34a"/><circle cx="16" cy="-28" r="1.6" fill="#ffd34a"/>
+  </g>
+</g>
+
+<rect x="-1600" y="-1000" width="4800" height="3000" fill="url(#vignette)" pointer-events="none"/>
+</svg>
+</div>
+
+<div id="tip"><b></b><span></span></div>
+<aside id="pane" aria-live="polite"><button class="x" aria-label="close">×</button><h2></h2><div class="latin"></div><p></p></aside>
+<div class="hint"><span class="wide">hover to look closer · the ghost ships on the horizon are coming soon</span><span class="narrow">swipe ← → · tap things</span></div>
 
 <script>
 "use strict";
-/* ============================================================
-   art.corentinbel.com — the gallery as a little painted world.
-   Live projects sit on the near shore as buildings you can walk
-   up to; in-progress/concept ones are misty islands further out —
-   distance = how far from shipped. Click a place, read the card,
-   follow the link (or come back later for the foggy ones).
-   ============================================================ */
+const NS = "http://www.w3.org/2000/svg";
+const $ = id => document.getElementById(id);
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const R = rng(11);
+const rr = (a, b) => a + (b - a) * R();
+const pick = arr => arr[Math.floor(R() * arr.length)];
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const LOCATIONS = [
-  { id:'flow-studio', emoji:'🌬️', title:'Flow studio', status:'live', kind:'mill',
-    x:.15, y:.70, scale:1,
-    desc:'Paint with fluid dynamics: long-exposure particle trails around a foil section — tilt it, stall it, shed chaotic vortices, then snapshot the canvas.',
-    href:'flow-studio/' },
-  { id:'genesis', emoji:'🌱', title:'Genesis garden', status:'live', kind:'tree',
-    x:.32, y:.82, scale:1,
-    desc:'Paint water, rocks and seeds, press play, and watch a world invent itself — ecosystems, seasons, predator-prey waves.',
-    href:'genesis/' },
-  { id:'psychedelia', emoji:'🌀', title:'Psychedelia', status:'live', kind:'orb',
-    x:.42, y:.90, scale:.9,
-    desc:'A generative sampler of fractals, kaleidoscopes, warp tunnels and classic vision illusions — click for a new one, no two trips alike.',
-    href:'psychedelia/' },
-  { id:'fractals', emoji:'❄️', title:'Fractal studio', status:'live', kind:'crystal',
-    x:.50, y:.60, scale:1,
-    desc:'Mandelbrot, Julia, Burning Ship, Newton basins and a Barnsley fern — deep zoom, drag the Julia seed, seven colour themes, export the frame.',
-    href:'fractals/' },
-  { id:'waves', emoji:'🌊', title:'The perfect wave', status:'live', kind:'wave',
-    x:.59, y:.71, scale:1,
-    desc:'A raymarched ocean driven by real swell physics — drag period, height, wind and seabed slope and watch spilling, plunging and surging breakers form, with the Iribarren number doing the explaining.',
-    href:'waves/' },
-  { id:'sitar-tuner', emoji:'🪕', title:'Sitar tuner', status:'live', kind:'pavilion',
-    x:.68, y:.79, scale:1,
-    desc:'Plug in your ears, pluck a string — a mandala blooms when you hit the swara. YIN pitch tracking, kharaj-pancham presets, tarab checklists, a tanpura drone.',
-    href:'sitar-tuner/' },
-  { id:'ringout', emoji:'🥊', title:'Ringout', status:'live', kind:'arena',
-    x:.76, y:.68, scale:1,
-    desc:'A browser platform fighter built from scratch — NIX and BRAM trade percent-based knockback on a floating arena, with a chiptune arena loop synthesised live in the Web Audio API.',
-    href:'ringout/' },
-  { id:'neural-music', emoji:'🎼', title:'Neural music spectacle', status:'concept', kind:'mist',
-    x:.83, y:.56, scale:.85,
-    desc:'Live EEG/OPM decoding of what music does to a listening brain, projected as visuals during a concert — the audience watches the listener\'s cortex dance.' },
-  { id:'music-to-images', emoji:'🎨', title:'Music → images', status:'concept', kind:'mist',
-    x:.90, y:.38, scale:.78,
-    desc:'Feeding decoded auditory features into image diffusion: what a song looks like, noise and all. Examples coming as the pipeline stabilises.' },
-  { id:'petit-prince-imaged', emoji:'🎬', title:'Le Petit Prince, imaged', status:'concept', kind:'mist',
-    x:.95, y:.20, scale:.7,
-    desc:'People listened to Le Petit Prince inside an fMRI scanner. Turning each listener\'s brain responses into their own private film of the story — one image sequence per brain.' },
+/* ============ pieces ============ */
+const PIECES = [
+  ["flow-studio/", "Flow studio", "Paint with fluid dynamics: long-exposure particle trails around a foil section — tilt it, stall it, shed chaotic vortices, then snapshot the canvas."],
+  ["genesis/", "Genesis garden", "Paint water, rocks and seeds, press play, and watch a world invent itself — ecosystems, seasons, predator-prey waves."],
+  ["psychedelia/", "Psychedelia", "A generative sampler of fractals, kaleidoscopes, warp tunnels and classic vision illusions — click for a new one."],
+  ["fractals/", "Fractal studio", "Mandelbrot, Julia, Burning Ship, Newton basins and a Barnsley fern — deep zoom, seven colour themes, export the frame."],
+  ["waves/", "The perfect wave", "A raymarched ocean driven by real swell physics — spilling, plunging and surging breakers, with the Iribarren number doing the explaining."],
+  ["sitar-tuner/", "Sitar tuner", "Pluck a string — a mandala blooms when you hit the swara. YIN pitch tracking, kharaj-pancham presets, a tanpura drone."],
+  ["ringout/", "Ringout", "A browser platform fighter built from scratch — NIX and BRAM trade percent-based knockback, with a chiptune loop synthesised live."],
 ];
-const TRAIL = ['flow-studio', 'genesis', 'psychedelia', 'fractals', 'waves', 'sitar-tuner', 'ringout'];
-
-const PALETTES = [
-  { name:'dusk', sky:['#150c29','#3a2757','#9a4a6c','#e2834f','#f6c584'], stars:.9, sun:'#ffdca0' },
-  { name:'night', sky:['#070512','#120a26','#241a45','#3a2a5e','#4a3672'], stars:1, sun:'#cfe0ff' },
-  { name:'dawn', sky:['#0f1a33','#274066','#5c7aa0','#e8b489','#fbe3b8'], stars:.45, sun:'#ffe9b8' },
-];
-let palIdx = 0;
-
-const scene = document.getElementById('scene');
-const ctx = scene.getContext('2d');
-let dpr = 1, vw = 0, vh = 0;
-function resize() {
-  dpr = Math.min(devicePixelRatio || 1, 2);
-  vw = scene.clientWidth; vh = scene.clientHeight;
-  scene.width = Math.round(vw * dpr); scene.height = Math.round(vh * dpr);
-}
-addEventListener('resize', resize); resize();
-
-function mulberry32(seed) {
-  let a = seed >>> 0;
-  return function () {
-    a |= 0; a = (a + 0x6D2B79F5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-const rnd = mulberry32(20260820);
-
-const STARS = Array.from({ length: 90 }, () => ({
-  x: rnd(), y: rnd() * 0.55, s: .5 + rnd() * 1.3, ph: rnd() * Math.PI * 2, sp: .5 + rnd(),
-}));
-const CLOUDS = Array.from({ length: 5 }, (_, i) => ({
-  x: rnd(), y: .1 + rnd() * .28, w: .12 + rnd() * .12, drift: .003 + rnd() * .006,
-  dir: i % 2 ? -1 : 1,
-}));
-const TREES = Array.from({ length: 26 }, () => ({
-  x: rnd(), y: .58 + rnd() * .38, s: .5 + rnd() * .8, hue: 95 + rnd() * 45,
-}));
-const FIREFLIES = Array.from({ length: 34 }, () => ({
-  x: rnd(), y: .55 + rnd() * .4, ph: rnd() * Math.PI * 2, r: 6 + rnd() * 40, sp: .2 + rnd() * .3,
-}));
-
-function hexA(hex, a) {
-  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r},${g},${b},${a})`;
-}
-function lerp(a, b, t) { return a + (b - a) * t; }
-
-/* ---------- decor ---------- */
-function drawSky(t) {
-  const pal = PALETTES[palIdx];
-  const g = ctx.createLinearGradient(0, 0, 0, vh);
-  const stops = pal.sky;
-  stops.forEach((c, i) => g.addColorStop(i / (stops.length - 1), c));
-  ctx.fillStyle = g; ctx.fillRect(0, 0, vw, vh);
-
-  // sun/moon — also the "click empty sky to change the light" hotspot
-  const sx = vw * .8, sy = vh * .16, sr = vh * .075;
-  const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 4.5);
-  sg.addColorStop(0, hexA(pal.sun, .9));
-  sg.addColorStop(.25, hexA(pal.sun, .35));
-  sg.addColorStop(1, hexA(pal.sun, 0));
-  ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx, sy, sr * 4.5, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = pal.sun; ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
-  for (const s of STARS) {
-    const tw = .4 + .6 * Math.sin(t * .0012 * s.sp + s.ph);
-    ctx.fillStyle = `rgba(255,255,255,${(pal.stars * tw * .8).toFixed(3)})`;
-    ctx.beginPath(); ctx.arc(s.x * vw, s.y * vh, s.s, 0, Math.PI * 2); ctx.fill();
-  }
-  for (const c of CLOUDS) {
-    const cx = ((c.x + t * 0.00001 * c.drift * c.dir) % 1.3 - .15) * vw;
-    const cy = c.y * vh, cw = c.w * vw;
-    const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, cw);
-    cg.addColorStop(0, 'rgba(255,255,255,.14)');
-    cg.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = cg;
-    ctx.beginPath(); ctx.ellipse(cx, cy, cw, cw * .35, 0, 0, Math.PI * 2); ctx.fill();
-  }
+const SOON = {
+  "neural-music":    { t: "Neural music spectacle", p: "Live EEG/OPM decoding of what music does to a listening brain, projected as visuals during a concert: the audience watches the listener's cortex dance." },
+  "music-to-images": { t: "Music → images", p: "Feeding decoded auditory features into image diffusion: what a song looks like, noise and all. Examples coming as the pipeline stabilises." },
+  "petit-prince":    { t: "Le Petit Prince, imaged", p: "People listened to Le Petit Prince inside an fMRI scanner. Turning each listener's brain responses into their own private film of the story, one image sequence per brain." },
+};
+{
+  const nav = $("list");
+  let h = document.createElement("h3"); h.textContent = "pieces"; nav.appendChild(h);
+  for (const [href, t, sub] of PIECES) { const a = document.createElement("a"); a.href = href; a.textContent = t; const s = document.createElement("small"); s.textContent = sub; a.appendChild(s); nav.appendChild(a); }
+  h = document.createElement("h3"); h.textContent = "on the horizon"; nav.appendChild(h);
+  for (const k in SOON) { const s = document.createElement("span"); s.textContent = SOON[k].t; const sm = document.createElement("small"); sm.textContent = SOON[k].p; s.appendChild(sm); nav.appendChild(s); }
 }
 
-function ridge(y0, y1, amp, seedOff, fill) {
-  const rr = mulberry32(seedOff);
-  ctx.beginPath(); ctx.moveTo(0, vh);
-  ctx.lineTo(0, y0 * vh);
-  const pts = 7;
-  for (let i = 0; i <= pts; i++) {
-    const x = (i / pts) * vw;
-    const y = (y0 + (rr() - .3) * amp) * vh;
-    ctx.lineTo(x, y);
-  }
-  ctx.lineTo(vw, vh); ctx.closePath();
-  ctx.fillStyle = fill; ctx.fill();
+/* ============ sky ============ */
+for (let i = 0; i < 60; i++) el("circle", { cx: rr(-200, 1800), cy: rr(10, 260), r: rr(.4, 1.4), opacity: rr(.3, .9), class: R() < .3 ? "twinkle" : "", style: `animation-delay:${rr(0, 2).toFixed(1)}s` }, $("stars"));
+const clouds = [];
+for (const [x, y, w] of [[200, 230, 160], [560, 300, 220], [1100, 200, 180], [1420, 330, 140], [820, 380, 120]]) {
+  const g = el("g", {}, $("clouds"));
+  for (let k = 0; k < 5; k++) el("ellipse", { cx: x + (k - 2) * w * .2, cy: y + Math.abs(k - 2) * 4, rx: w * .22, ry: w * .07 + (2 - Math.abs(k - 2)) * 4 }, g);
+  clouds.push({ g, x: 0, v: rr(3, 8) });
 }
+const gulls = [];
+for (let i = 0; i < 5; i++) gulls.push({ e: el("path", {}, $("gulls")), x: rr(0, 1600), y: rr(120, 360), v: rr(18, 34), p: R() * 6, s: rr(.7, 1.2) });
 
-function drawGround() {
-  ridge(.62, .95, .07, 7, 'rgba(30,20,48,.9)');
-  ridge(.70, .95, .06, 13, 'rgba(38,26,56,.95)');
-  const g = ctx.createLinearGradient(0, vh * .74, 0, vh);
-  g.addColorStop(0, '#3d5238'); g.addColorStop(1, '#212c1f');
-  ctx.fillStyle = g;
-  ctx.beginPath(); ctx.moveTo(0, vh);
-  const rr = mulberry32(31);
-  for (let i = 0; i <= 8; i++) ctx.lineTo((i / 8) * vw, (.78 + (rr() - .5) * .05) * vh);
-  ctx.lineTo(vw, vh); ctx.closePath(); ctx.fill();
-
-  // brush-stroke texture on the meadow
-  ctx.globalAlpha = .07;
-  const rr2 = mulberry32(41);
-  for (let i = 0; i < 40; i++) {
-    const x = rr2() * vw, y = vh * (.8 + rr2() * .18);
-    ctx.strokeStyle = rr2() < .5 ? '#e8e6df' : '#0c0f0a';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 18, y - 3); ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
+/* ============ sea ============ */
+for (let y = 524; y < 820; y += rr(8, 16)) {
+  const w = Math.max(4, 90 - (y - 520) * .15) * rr(.6, 1.4);
+  el("rect", { x: 980 - w / 2 + rr(-10, 10), y, width: w, height: 2.5, rx: 1.2, opacity: Math.max(.08, .9 - (y - 520) / 300), class: "twinkle", style: `animation-delay:${rr(0, 2).toFixed(1)}s` }, $("sunPath"));
 }
+const ripples = [];
+for (let i = 0; i < 40; i++) { const y = rr(530, 800); ripples.push({ e: el("path", { d: `M0 0 h${(10 + (y - 520) * .12).toFixed(0)}` }, $("ripples")), x: rr(-100, 1700), y, v: rr(4, 10) }); }
 
-function drawTrail() {
-  ctx.setLineDash([6, 9]);
-  ctx.strokeStyle = 'rgba(243,234,217,.35)'; ctx.lineWidth = 2;
-  ctx.beginPath();
-  TRAIL.forEach((id, i) => {
-    const L = LOCATIONS.find(l => l.id === id);
-    const x = L.x * vw, y = L.y * vh + vh * .05;
-    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-  });
-  ctx.stroke(); ctx.setLineDash([]);
+/* ============ ghost ships ============ */
+function ghost(id, x, y, s) {
+  const g = el("g", { transform: `translate(${x} ${y}) scale(${s})` }, $(id));
+  el("path", { d: "M-40 0 h80 q-8 14 -24 14 h-32 q-16 0 -24 -14z", fill: "#d8c8f0" }, g);
+  el("path", { d: "M0 0 V-84", stroke: "#d8c8f0", "stroke-width": 3 }, g);
+  el("path", { d: "M3 -80 q34 40 28 76 h-28z", fill: "#efe6ff" }, g);
+  el("path", { d: "M-3 -70 q-26 36 -26 66 h26z", fill: "#e0d4f6" }, g);
+  el("path", { d: "M0 -84 l14 5 l-14 5z", fill: "#b8a8e0" }, g);
+  el("text", { x: 0, y: -94, "text-anchor": "middle", "font-family": "Fraunces, Georgia, serif", "font-style": "italic", "font-size": 14, fill: "#efe6ff" }, g).textContent = "soon";
 }
+ghost("ghost1", 1060, 524, .5); ghost("ghost2", 1118, 522, .42); ghost("ghost3", 1290, 523, .46);
 
-function drawTrees(t) {
-  for (const tr of TREES) {
-    const x = tr.x * vw, y = tr.y * vh, s = tr.s * vh * .035;
-    const sway = Math.sin(t * .0008 + x) * 1.5;
-    ctx.fillStyle = `hsla(${tr.hue},28%,14%,.9)`;
-    ctx.beginPath(); ctx.ellipse(x, y - s * .3, s * .16, s * .8, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = `hsla(${tr.hue},38%,${20 + tr.s * 10}%,.92)`;
-    for (const [dx, dy, r] of [[0, -1.1, .95], [-.55, -.55, .7], [.55, -.55, .7]]) {
-      ctx.beginPath(); ctx.arc(x + dx * s + sway * .3, y + dy * s, s * r, 0, Math.PI * 2); ctx.fill();
+/* ============ town ============ */
+{
+  const g = $("town");
+  const cols = ["#f2c07a", "#e8946a", "#f6e0b0", "#d9a0a0", "#f0d070", "#e0b090"];
+  // back row up the hill
+  for (const [x, w, h, y] of [[-20, 70, 110, 560], [40, 80, 140, 550], [110, 70, 100, 560], [170, 90, 150, 520], [240, 60, 90, 560], [420, 70, 120, 560], [470, 60, 80, 580]]) {
+    el("rect", { x, y: y - h + 80, width: w, height: h, fill: pick(cols), class: "ink" }, g);
+    el("path", { d: `M${x - 4} ${y - h + 80} h${w + 8} l-6 -14 h-${w - 4}z`, fill: "#b8442a", class: "thin" }, g);
+    for (let wy = y - h + 96; wy < y + 60; wy += 28) for (let wx = x + 10; wx < x + w - 14; wx += 22) {
+      const lit = R() < .45;
+      el("rect", { x: wx, y: wy, width: 10, height: 14, rx: 2, fill: lit ? "#ffd98a" : "#3a5a7a", class: "thin" }, g);
+      if (lit) el("rect", { x: wx - 4, y: wy - 4, width: 18, height: 22, fill: "#ffd98a", opacity: .25, filter: "url(#blur2)" }, g);
+      el("rect", { x: wx - 3, y: wy, width: 3, height: 14, fill: "#3a8a7a" }, g); el("rect", { x: wx + 10, y: wy, width: 3, height: 14, fill: "#3a8a7a" }, g);
     }
   }
+  // a little church tower
+  el("rect", { x: 120, y: 360, width: 40, height: 120, fill: "#f6e0b0", class: "ink" }, g);
+  el("path", { d: "M116 362 l24 -36 l24 36z", fill: "#b8442a", class: "ink" }, g);
+  el("circle", { cx: 140, cy: 392, r: 9, fill: "#fbeedd", class: "thin" }, g);
+  el("path", { d: "M140 392 v-6 M140 392 h5", stroke: "#160d1c", "stroke-width": 1.5 }, g);
+  // cypresses
+  for (const x of [234, 278, 450]) el("path", { d: `M${x} 640 q-10 -40 0 -90 q10 50 0 90z`, fill: "#2a4a3a", class: "thin" }, g);
 }
-
-/* ---------- buildings ---------- */
-function haloFor(status) { return status === 'live' ? 'rgba(140,238,221,.55)' : 'rgba(138,143,163,.4)'; }
-
-function drawMill(x, y, s, t, hover) {
-  ctx.fillStyle = '#1e1a2e';
-  ctx.beginPath(); ctx.moveTo(x - s * .22, y); ctx.lineTo(x - s * .12, y - s * 1.4); ctx.lineTo(x + s * .12, y - s * 1.4); ctx.lineTo(x + s * .22, y); ctx.closePath(); ctx.fill();
-  const hubY = y - s * 1.4;
-  ctx.save(); ctx.translate(x, hubY);
-  const ang = t * .0012;
-  ctx.fillStyle = hexA('#e8e6df', hover ? .95 : .8);
-  for (let i = 0; i < 3; i++) {
-    ctx.save(); ctx.rotate(ang + i * Math.PI * 2 / 3);
-    ctx.beginPath(); ctx.ellipse(0, -s * .55, s * .12, s * .55, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
+// Koch snowflake in the rose window
+{
+  function koch(a, b, n, out) {
+    if (!n) { out.push(a); return; }
+    const dx = (b[0] - a[0]) / 3, dy = (b[1] - a[1]) / 3;
+    const p1 = [a[0] + dx, a[1] + dy], p3 = [a[0] + 2 * dx, a[1] + 2 * dy];
+    const p2 = [p1[0] + dx * .5 - dy * Math.sqrt(3) / 2, p1[1] + dy * .5 + dx * Math.sqrt(3) / 2];
+    koch(a, p1, n - 1, out); koch(p1, p2, n - 1, out); koch(p2, p3, n - 1, out); koch(p3, b, n - 1, out);
   }
-  ctx.fillStyle = '#6ea8ff'; ctx.beginPath(); ctx.arc(0, 0, s * .09, 0, Math.PI * 2); ctx.fill();
-  ctx.restore();
+  const g = $("koch");
+  for (const [r, c, n] of [[26, "#7ad0ff", 3], [15, "#ffd34a", 2], [7, "#ff8ac0", 2]]) {
+    const v = [0, 1, 2].map(k => [352 + r * Math.cos(-Math.PI / 2 + k * 2 * Math.PI / 3), 470 + r * Math.sin(-Math.PI / 2 + k * 2 * Math.PI / 3)]);
+    const pts = []; for (let k = 0; k < 3; k++) koch(v[k], v[(k + 1) % 3], n, pts);
+    el("path", { d: "M" + pts.map(p => p[0].toFixed(1) + " " + p[1].toFixed(1)).join("L") + "z", fill: c, opacity: .85, stroke: "#160d1c", "stroke-width": .6 }, g);
+  }
 }
 
-function drawTree(x, y, s, t, hover) {
-  const sway = Math.sin(t * .0009) * s * .04;
-  ctx.fillStyle = '#3b2a1c';
-  ctx.beginPath(); ctx.moveTo(x - s * .08, y); ctx.lineTo(x - s * .05, y - s * .7); ctx.lineTo(x + s * .05, y - s * .7); ctx.lineTo(x + s * .08, y); ctx.closePath(); ctx.fill();
-  const cols = ['#7bd389', '#57b06a', '#38a35c'];
-  cols.forEach((c, i) => {
-    ctx.fillStyle = hexA(c, hover ? .95 : .85);
-    ctx.beginPath();
-    ctx.arc(x + sway * (i - 1), y - s * (.85 + i * .18), s * (.55 - i * .06), 0, Math.PI * 2);
-    ctx.fill();
+/* ============ foreground ============ */
+{
+  let d = "";
+  for (const y of [830, 880, 950]) d += `M-1600 ${y}H3200`;
+  for (let x = -400; x < 2000; x += 90) d += `M${x} 798 L${800 + (x - 800) * 1.5} 1000`;
+  el("path", { d }, $("paving"));
+  for (const x of [470, 880, 1120, 1560]) {
+    el("path", { d: `M${x - 12} 800 v-22 q0 -10 12 -10 q12 0 12 10 v22z`, fill: "#3a3040", class: "ink" }, $("bollards"));
+    el("rect", { x: x - 16, y: 772, width: 32, height: 6, rx: 3, fill: "#4a4050", class: "thin" }, $("bollards"));
+  }
+  for (const x of [520, 1000, 1580]) {
+    const g = $("lamps");
+    el("circle", { cx: x, cy: 640, r: 60, fill: "url(#lamp)", class: "glow" }, g);
+    el("path", { d: `M${x} 800 V650`, stroke: "#2a2236", "stroke-width": 6 }, g);
+    el("path", { d: `M${x - 10} 800 h20`, stroke: "#2a2236", "stroke-width": 8 }, g);
+    el("path", { d: `M${x - 12} 650 h24 l-4 -22 h-16z`, fill: "#ffe8a0", class: "ink" }, g);
+    el("path", { d: `M${x - 14} 628 h28 l-14 -10z`, fill: "#2a2236", class: "thin" }, g);
+  }
+}
+// carousel canopy stripes, poles, horses
+{
+  const c = $("canopy");
+  for (let i = 0; i < 8; i++) {
+    const x0 = 90 + i * 35, x1 = x0 + 35;
+    if (i % 2) el("path", { d: `M230 620 L${x0} 700 L${x1} 700z`, fill: "#e04848" }, c);
+  }
+  const sc = $("scallops");
+  for (let i = 0; i < 8; i++) el("path", { d: `M${90 + i * 35} 700 q17.5 22 35 0z`, fill: i % 2 ? "#ffd34a" : "#e04848", class: "thin" }, sc);
+  for (const x of [120, 175, 230, 285, 340]) el("path", { d: `M${x} 718 V870`, stroke: "#f2d9a8", "stroke-width": 4 }, $("poles"));
+  for (const [x, c2] of [[148, "#fbeedd"], [258, "#9ad0f0"], [312, "#f0a0c0"]]) {
+    const h = el("g", { class: "horse", "data-x": x }, $("horses"));
+    el("path", { d: "M-20 0 q0 -14 16 -14 h12 l8 -12 q10 2 8 12 l-4 4 q-2 10 -12 10 h-24z", fill: c2, class: "thin" }, h);
+    el("path", { d: "M-16 0 v14 M12 0 v14", stroke: c2, "stroke-width": 4 }, h);
+    el("path", { d: "M-20 -6 q-8 -2 -10 6", stroke: "#e04848", "stroke-width": 3, fill: "none" }, h);
+  }
+}
+// spiral painted on the canopy, rotating
+{
+  const c = $("canopy");
+  const sp = el("g", { class: "spin", style: "animation-duration:6s" }, null);
+  let d = "M0 0";
+  for (let a = 0; a < 6 * Math.PI; a += .2) { const r = a * 2.2; d += ` L${(r * Math.cos(a)).toFixed(1)} ${(r * Math.sin(a)).toFixed(1)}`; }
+  el("path", { d, fill: "none", stroke: "#5fd0d8", "stroke-width": 3 }, sp);
+  const wrap = el("g", { transform: "translate(230 676) scale(1 .5)" }, c);
+  wrap.appendChild(sp);
+}
+// bandstand bunting + notes
+{
+  const g = $("bunting");
+  const cols = ["#e04848", "#ffd34a", "#5fd0d8", "#f0a0c0"];
+  for (let i = 0; i < 14; i++) { const x = 1214 + i * 21.5, y = 710 + Math.sin(i / 13 * Math.PI) * 14; el("path", { d: `M${x} ${y} l10 0 l-5 12z`, fill: cols[i % 4], class: "thin" }, g); }
+  ["♪", "♫", "♪"].forEach((n, i) => el("text", { x: 1376, y: 770, class: "note", style: `animation-delay:${i * 1.2}s` }, $("notes")).textContent = n);
+}
+
+/* ============ animation ============ */
+const waveLip = $("waveLip"), surfer = $("surfer"), spray = $("spray");
+const sprays = [];
+for (let i = 0; i < 16; i++) sprays.push({ e: el("circle", { r: 2 }, spray), life: R() * 1.2, x: 0, y: 0, vx: 0, vy: 0 });
+const horses = [...document.querySelectorAll(".horse")];
+const nix = $("fighterNix"), bram = $("fighterBram");
+const fight = [{ e: nix, x: 1080, y: 648, vy: 0, dmg: 0, t: $("pctNix") }, { e: bram, x: 1160, y: 648, vy: 0, dmg: 0, t: $("pctBram") }];
+const beam = $("beamA");
+let T = 0, last = performance.now();
+function frame(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now; T += dt;
+
+  // the barrel: foam shimmers along the lip, spray falls off its tip, the surfer rides inside
+  waveLip.setAttribute("stroke-dasharray", `${(40 + Math.sin(T * 3) * 8).toFixed(1)} 6`);
+  waveLip.setAttribute("stroke-dashoffset", (-T * 30).toFixed(1));
+  const sx = 1340 + (Math.sin(T * .7) + 1) * 40;
+  surfer.setAttribute("transform", `translate(${sx.toFixed(1)} ${(552 - (sx - 1340) * .22).toFixed(1)}) rotate(-12)`);
+  for (const s of sprays) {
+    s.life += dt;
+    if (s.life > 1.2) { s.life = 0; s.x = 1400 + rr(-6, 6); s.y = 478; s.vx = rr(-30, 6); s.vy = rr(-30, 10); }
+    s.vy += 120 * dt; s.x += s.vx * dt; s.y += s.vy * dt;
+    s.e.setAttribute("cx", s.x.toFixed(1)); s.e.setAttribute("cy", s.y.toFixed(1)); s.e.setAttribute("opacity", (1 - s.life / 1.2).toFixed(2));
+  }
+  // lighthouse beam sweeps
+  const ang = Math.sin(T * .6) * 30;
+  beam.setAttribute("transform", `rotate(${ang.toFixed(1)} 1196 352)`);
+  beam.setAttribute("opacity", (.35 + .35 * Math.abs(Math.cos(T * .6))).toFixed(2));
+  // clouds, gulls, ripples
+  for (const c of clouds) { c.x = (c.x + c.v * dt) % 2000; c.g.setAttribute("transform", `translate(${(c.x > 1000 ? c.x - 2000 : c.x).toFixed(1)} 0)`); }
+  for (const g of gulls) {
+    g.x += g.v * dt; if (g.x > 1700) g.x = -100; g.p += dt * 6;
+    const f = Math.sin(g.p) * 6 * g.s, w = 12 * g.s;
+    g.e.setAttribute("d", `M${(g.x - w).toFixed(1)} ${(g.y - f).toFixed(1)} Q${(g.x - w / 2).toFixed(1)} ${(g.y - 6 * g.s).toFixed(1)} ${g.x.toFixed(1)} ${g.y.toFixed(1)} Q${(g.x + w / 2).toFixed(1)} ${(g.y - 6 * g.s).toFixed(1)} ${(g.x + w).toFixed(1)} ${(g.y - f).toFixed(1)}`);
+  }
+  for (const r of ripples) { r.x += r.v * dt; if (r.x > 1700) r.x = -100; r.e.setAttribute("transform", `translate(${r.x.toFixed(1)} ${(r.y + Math.sin(T + r.x * .01) * 1.5).toFixed(1)})`); }
+  // carousel horses go up and down
+  horses.forEach((h, i) => h.setAttribute("transform", `translate(${h.dataset.x} ${(800 + Math.sin(T * 2 + i * 2) * 12).toFixed(1)})`));
+  // ring
+  for (const f of fight) {
+    if (f.vy === 0 && R() < dt * .9) f.vy = -rr(60, 110);
+    f.vy += 300 * dt; f.y += f.vy * dt; if (f.y > 648) { f.y = 648; f.vy = 0; }
+    f.x += Math.sin(T * 1.4 + (f === nix ? 0 : 2)) * 16 * dt; f.x = Math.max(1050, Math.min(1190, f.x));
+    f.e.setAttribute("transform", `translate(${f.x.toFixed(1)} ${f.y.toFixed(1)})`);
+  }
+  if (R() < dt * .5) { const f = pick(fight); f.dmg += Math.round(rr(4, 18)); if (f.dmg > 150) fight.forEach(q => q.dmg = 0); }
+  fight.forEach(f => f.t.textContent = f.dmg + "%");
+  if (!reduced) requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ============ tooltip + pane ============ */
+const tip = $("tip"), pane = $("pane");
+document.querySelectorAll(".door, .ghost").forEach(a => {
+  a.addEventListener("pointerenter", () => {
+    if (a.classList.contains("door")) { tip.querySelector("b").textContent = a.dataset.label + " →"; tip.querySelector("span").textContent = a.dataset.sub; }
+    else { tip.querySelector("b").textContent = SOON[a.dataset.info].t; tip.querySelector("span").textContent = "on the horizon · click to read"; }
+    tip.classList.add("on");
   });
-  ctx.fillStyle = '#ffd27a';
-  for (const [dx, dy] of [[-.5, -1.5], [.5, -1.6], [.15, -1.9]]) {
-    ctx.beginPath(); ctx.arc(x + dx * s * .3, y + dy * s * .3, s * .04, 0, Math.PI * 2); ctx.fill();
-  }
-}
-
-function drawCrystal(x, y, s, t, hover) {
-  const cols = ['#8ceedd', '#6ea8ff', '#b48ce8'];
-  cols.forEach((c, i) => {
-    const bx = x + (i - 1) * s * .3, h = s * (1 + i % 2 * .3);
-    ctx.save(); ctx.translate(bx, y);
-    ctx.rotate(Math.sin(t * .0006 + i) * .04);
-    ctx.beginPath(); ctx.moveTo(0, -h); ctx.lineTo(s * .14, 0); ctx.lineTo(-s * .14, 0); ctx.closePath();
-    ctx.fillStyle = hexA(c, hover ? .8 : .6); ctx.fill();
-    ctx.strokeStyle = hexA(c, .9); ctx.lineWidth = 1; ctx.stroke();
-    ctx.restore();
-  });
-  const sp = (Math.sin(t * .003) + 1) / 2;
-  ctx.fillStyle = `rgba(255,255,255,${.4 + sp * .4})`;
-  ctx.beginPath(); ctx.arc(x, y - s * 1.1, s * .04, 0, Math.PI * 2); ctx.fill();
-}
-
-function drawPavilion(x, y, s, t, hover) {
-  ctx.fillStyle = '#eda100';
-  ctx.fillRect(x - s * .32, y - s * .55, s * .1, s * .55);
-  ctx.fillRect(x + s * .22, y - s * .55, s * .1, s * .55);
-  ctx.beginPath(); ctx.arc(x, y - s * .55, s * .34, Math.PI, 0); ctx.fillStyle = hexA('#eda100', hover ? 1 : .85); ctx.fill();
-  const pulse = .5 + .5 * Math.sin(t * .0018);
-  ctx.strokeStyle = `rgba(237,161,0,${.25 + pulse * .25})`; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.arc(x, y - s * .55, s * (.5 + pulse * .2), 0, Math.PI * 2); ctx.stroke();
-}
-
-function drawMist(x, y, s, t, hover, L) {
-  const puls = 1 + .04 * Math.sin(t * .0007 + x);
-  const g = ctx.createRadialGradient(x, y, 0, x, y, s * 1.3 * puls);
-  g.addColorStop(0, `rgba(160,160,180,${hover ? .3 : .22})`);
-  g.addColorStop(1, 'rgba(160,160,180,0)');
-  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, s * 1.3 * puls, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = `rgba(210,208,222,${hover ? .5 : .32})`;
-  ctx.beginPath(); ctx.arc(x, y, s * .55, 0, Math.PI * 2); ctx.fill();
-}
-
-function drawOrb(x, y, s, t, hover) {
-  const cols = ['#ff5c8a', '#8ceedd', '#b48ce8', '#ffd27a'];
-  cols.forEach((c, i) => {
-    const rr = s * (.35 + i * .17) + Math.sin(t * .0012 + i) * s * .05;
-    ctx.save(); ctx.translate(x, y);
-    ctx.rotate(t * .0006 * (i % 2 ? -1 : 1) + i);
-    ctx.strokeStyle = hexA(c, hover ? .8 : .55); ctx.lineWidth = 2;
-    ctx.setLineDash([s * .18, s * .12]);
-    ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI * 2); ctx.stroke();
-    ctx.restore();
-  });
-  ctx.setLineDash([]);
-  const g = ctx.createRadialGradient(x, y, 0, x, y, s * .4);
-  g.addColorStop(0, hexA('#ff5c8a', hover ? .5 : .35));
-  g.addColorStop(1, hexA('#ff5c8a', 0));
-  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, s * .4, 0, Math.PI * 2); ctx.fill();
-}
-
-function drawWave(x, y, s, t, hover) {
-  const g = ctx.createRadialGradient(x, y, 0, x, y, s * .5);
-  g.addColorStop(0, hexA('#6ea8ff', hover ? .35 : .22));
-  g.addColorStop(1, hexA('#6ea8ff', 0));
-  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, s * .5, s * .16, 0, 0, Math.PI * 2); ctx.fill();
-
-  const roll = Math.sin(t * .0011) * s * .04;
-  ctx.save(); ctx.translate(x, y);
-  ['#8ceedd', '#6ea8ff'].forEach((col, i) => {
-    const off = i * s * .16 - s * .08;
-    ctx.beginPath();
-    ctx.moveTo(-s * .42, -s * .05 + off);
-    ctx.quadraticCurveTo(-s * .1, -s * .95 + off + roll, s * .12, -s * .5 + off);
-    ctx.quadraticCurveTo(s * .28, -s * .3 + off, s * .1, -s * .12 + off);
-    ctx.quadraticCurveTo(-s * .05, -s * .22 + off, -s * .2, -s * .1 + off);
-    ctx.closePath();
-    ctx.fillStyle = hexA(col, hover ? .85 : .65);
-    ctx.fill();
-  });
-  ctx.restore();
-
-  ctx.fillStyle = `rgba(232,242,240,${hover ? .9 : .7})`;
-  for (let i = 0; i < 5; i++) {
-    const fx = x - s * .1 + Math.sin(t * .002 + i) * s * .12;
-    const fy = y - s * .5 - i * s * .06 + Math.cos(t * .0025 + i) * s * .02;
-    ctx.beginPath(); ctx.arc(fx, fy, s * (.035 - i * .003), 0, Math.PI * 2); ctx.fill();
-  }
-}
-
-function drawArena(x, y, s, t, hover) {
-  // a floating fight stage: slab, two side platforms, two little fighters
-  const bob = Math.sin(t * .0013) * s * .03;
-  ctx.save(); ctx.translate(x, y - s * .06 + bob);
-
-  // the main slab, seen slightly from the front
-  ctx.fillStyle = hexA('#6ea8ff', hover ? .3 : .2);
-  ctx.beginPath();
-  ctx.moveTo(-s * .62, 0); ctx.lineTo(s * .62, 0);
-  ctx.lineTo(s * .46, s * .18); ctx.lineTo(-s * .46, s * .18);
-  ctx.closePath(); ctx.fill();
-  ctx.fillStyle = hexA('#8ceedd', hover ? .95 : .75);
-  ctx.fillRect(-s * .62, -s * .04, s * 1.24, s * .04);
-
-  // two floating platforms above
-  ctx.fillStyle = hexA('#b48ce8', hover ? .7 : .5);
-  for (const dx of [-.4, .4]) {
-    ctx.fillRect(dx * s - s * .16, -s * (.58 + Math.sin(t * .0016 + dx) * .02), s * .32, s * .045);
-  }
-
-  // the fighters — teal on the left, amber on the right, lunging in time
-  const lunge = Math.sin(t * .0034) * s * .07;
-  const pairs = [[-.26 + lunge, '#8ceedd', 1], [.26 - lunge, '#ffd27a', -1]];
-  for (const [px, col, dir] of pairs) {
-    ctx.fillStyle = hexA(col, hover ? 1 : .85);
-    ctx.beginPath();
-    ctx.moveTo(px * s + dir * s * .07, -s * .30);
-    ctx.lineTo(px * s - dir * s * .05, -s * .04);
-    ctx.lineTo(px * s + dir * s * .09, -s * .04);
-    ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.arc(px * s, -s * .34, s * .055, 0, Math.PI * 2); ctx.fill();
-  }
-
-  // the impact spark between them
-  const flash = Math.max(0, Math.sin(t * .0034));
-  ctx.strokeStyle = `rgba(255,255,255,${(flash * (hover ? .9 : .6)).toFixed(3)})`;
-  ctx.lineWidth = 1.6;
-  ctx.beginPath(); ctx.arc(0, -s * .2, s * (.06 + flash * .12), 0, Math.PI * 2); ctx.stroke();
-  ctx.restore();
-}
-
-const BUILD = { mill: drawMill, tree: drawTree, crystal: drawCrystal, pavilion: drawPavilion, mist: drawMist, orb: drawOrb, wave: drawWave, arena: drawArena };
-
-/* ---------- interaction ---------- */
-let hoverId = null, selectedId = null;
-const card = document.getElementById('card');
-const tip = document.getElementById('tip');
-
-function screenPos(L) { return [L.x * vw, L.y * vh]; }
-function hitRadius(L) { return Math.max(20, vh * .045 * L.scale); }
-
-function hitTest(px, py) {
-  let best = null, bd = Infinity;
-  for (const L of LOCATIONS) {
-    const [x, y] = screenPos(L);
-    const d = Math.hypot(px - x, py - (y - vh * .05));
-    if (d < hitRadius(L) * 1.6 && d < bd) { bd = d; best = L; }
-  }
-  return best;
-}
-
-scene.addEventListener('pointermove', e => {
-  const hit = hitTest(e.clientX, e.clientY);
-  hoverId = hit ? hit.id : null;
-  scene.classList.toggle('hot', !!hit);
-  if (hit) {
-    tip.textContent = hit.status === 'live' ? hit.title : hit.title + ' — coming';
-    tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px';
-    tip.classList.add('show');
-  } else {
-    tip.classList.remove('show');
-  }
+  a.addEventListener("pointerleave", () => tip.classList.remove("on"));
 });
-scene.addEventListener('pointerleave', () => { hoverId = null; tip.classList.remove('show'); });
-
-scene.addEventListener('click', e => {
-  const hit = hitTest(e.clientX, e.clientY);
-  if (hit) { openCard(hit); return; }
-  palIdx = (palIdx + 1) % PALETTES.length;
+addEventListener("pointermove", e => { tip.style.left = e.clientX + "px"; tip.style.top = e.clientY + "px"; });
+function openPane(key) {
+  const i = SOON[key];
+  pane.querySelector("h2").textContent = i.t; pane.querySelector(".latin").textContent = "coming soon"; pane.querySelector("p").textContent = i.p;
+  pane.classList.add("open");
+}
+document.querySelectorAll(".ghost").forEach(a => {
+  a.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); openPane(a.dataset.info); });
+  a.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPane(a.dataset.info); } });
 });
-
-function openCard(L) {
-  selectedId = L.id;
-  const badge = document.getElementById('cardBadge');
-  badge.textContent = L.status === 'live' ? 'open now' : 'in the works';
-  badge.className = L.status === 'live' ? 'live' : 'locked';
-  document.getElementById('cardTitle').innerHTML = `<span class="em">${L.emoji}</span>${L.title}`;
-  document.getElementById('cardDesc').textContent = L.desc;
-  const links = document.getElementById('cardLinks');
-  links.innerHTML = L.href ? `<a href="${L.href}">visit →</a>` : '<span style="color:var(--faint); font-size:.85rem;">still being built — come back later</span>';
-  card.classList.add('open');
-  card.focus({ preventScroll: true });
-}
-function closeCard() { selectedId = null; card.classList.remove('open'); }
-document.getElementById('cardClose').addEventListener('click', closeCard);
-addEventListener('keydown', e => { if (e.key === 'Escape') closeCard(); });
-
-/* ---------- render loop ---------- */
-function render(t) {
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  drawSky(t);
-  drawGround();
-  drawTrail();
-  drawTrees(t);
-
-  const pal = PALETTES[palIdx];
-  for (const f of FIREFLIES) {
-    const x = f.x * vw + Math.cos(t * .0005 * f.sp + f.ph) * f.r;
-    const y = f.y * vh + Math.sin(t * .0007 * f.sp + f.ph) * f.r * .6;
-    const a = .3 + .5 * Math.sin(t * .002 + f.ph);
-    ctx.fillStyle = hexA(pal.sun, a * .7);
-    ctx.beginPath(); ctx.arc(x, y, 1.6, 0, Math.PI * 2); ctx.fill();
-  }
-
-  const sorted = [...LOCATIONS].sort((a, b) => a.y - b.y);
-  for (const L of sorted) {
-    const [x0, y0] = screenPos(L);
-    const y = y0 - vh * .05;
-    const s = vh * .1 * L.scale;
-    const hover = hoverId === L.id || selectedId === L.id;
-    if (hover) {
-      ctx.save();
-      ctx.shadowColor = haloFor(L.status); ctx.shadowBlur = 22;
-      ctx.fillStyle = haloFor(L.status).replace(/[\d.]+\)$/, '.12)');
-      ctx.beginPath(); ctx.arc(x0, y, hitRadius(L), 0, Math.PI * 2); ctx.fill();
-      ctx.restore();
-    }
-    BUILD[L.kind](x0, y, s, t, hover, L);
-    ctx.font = `${Math.max(16, s * .5)}px ui-sans-serif,system-ui,sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.globalAlpha = L.status === 'live' ? 1 : .75;
-    ctx.fillText(L.emoji, x0, y - s * 1.5 - (L.kind === 'mist' ? -s * .3 : 0));
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = L.status === 'live' ? 'rgba(243,234,217,.85)' : 'rgba(201,191,174,.55)';
-    ctx.font = '11px ui-sans-serif,system-ui,sans-serif';
-    ctx.fillText(L.title, x0, y + 14);
-  }
-
-  requestAnimationFrame(render);
-}
-requestAnimationFrame(render);
+pane.querySelector(".x").addEventListener("click", () => pane.classList.remove("open"));
+$("stage").addEventListener("click", e => { if (!e.target.closest(".ghost")) pane.classList.remove("open"); });
+const list = $("list"), listBtn = $("listBtn");
+listBtn.addEventListener("click", () => { const o = list.classList.toggle("open"); listBtn.setAttribute("aria-expanded", o); });
+addEventListener("keydown", e => { if (e.key === "Escape") { pane.classList.remove("open"); list.classList.remove("open"); } });
+const stage = $("stage");
+if (stage.scrollWidth > stage.clientWidth) stage.scrollLeft = (stage.scrollWidth - stage.clientWidth) * .5;
 </script>
 </body>
 </html>
