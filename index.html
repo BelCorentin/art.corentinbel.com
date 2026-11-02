@@ -132,6 +132,11 @@
   <radialGradient id="vignette" cx=".5" cy=".45" r=".75">
     <stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/>
   </radialGradient>
+  <filter id="rip" x="-20%" y="-20%" width="140%" height="140%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.006 0.11" numOctaves="2" seed="4" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="14" xChannelSelector="R" yChannelSelector="G"/>
+    <feGaussianBlur stdDeviation=".8"/>
+  </filter>
   <filter id="blur6" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
   <filter id="blur2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2"/></filter>
   <clipPath id="seaClip"><rect x="-1600" y="520" width="4800" height="300"/></clipPath>
@@ -154,12 +159,22 @@
 <rect x="-1600" y="520" width="4800" height="300" fill="url(#sea)"/>
 <g clip-path="url(#seaClip)">
   <g id="sunPath" fill="#ffd9a0"></g>
+  <g id="reflections" filter="url(#rip)" opacity=".38" pointer-events="none">
+    <use href="#isle" transform="translate(0 1064) scale(1 -1)"/>
+    <use href="#ghost1" transform="translate(0 1048) scale(1 -1)"/>
+    <use href="#ghost2" transform="translate(0 1044) scale(1 -1)"/>
+    <use href="#ghost3" transform="translate(0 1046) scale(1 -1)"/>
+    <use href="#jetty" transform="translate(0 1196) scale(1 -1)"/>
+    <use href="#barge" transform="translate(0 1404) scale(1 -1)"/>
+    <use href="#sail" transform="translate(0 1468) scale(1 -1)"/>
+  </g>
+  <rect x="-1600" y="520" width="4800" height="300" fill="#2e2a5a" opacity=".18" pointer-events="none"/>
   <g id="ripples" stroke="#f4b8a0" stroke-width="2" stroke-linecap="round" opacity=".35"></g>
 </g>
 
 <!-- ============ genesis: an island garden in the bay ============ -->
 <a class="door" href="genesis/" data-label="Genesis garden" data-sub="Paint water, rocks and seeds, press play, and watch a world invent itself">
-<g transform="translate(176 0)">
+<g id="isle" transform="translate(176 0)">
   <path d="M580 532 Q620 488 680 492 Q740 490 772 532z" fill="#4a7a4a" class="ink"/>
   <path d="M590 532 Q680 520 764 532" stroke="#e8c79a" stroke-width="4" fill="none"/>
   <path d="M672 498 V452" stroke="#5a3820" stroke-width="5"/>
@@ -171,8 +186,8 @@
   </g>
   <g fill="#ff9aa8"><circle cx="612" cy="510" r="4"/><circle cx="626" cy="504" r="4"/><circle cx="740" cy="512" r="4" fill="#ffd34a"/></g>
   <path d="M720 500 l8 -14 l8 14z" fill="#8a6a50" class="thin"/>
-  <g class="sign"><rect x="618" y="388" width="110" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="673" y="402" text-anchor="middle">Genesis garden</text></g>
 </g>
+  <g class="sign"><rect x="794" y="388" width="110" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="849" y="402" text-anchor="middle">Genesis garden</text></g>
 </a>
 
 <!-- ============ coming soon: ghost ships on the horizon ============ -->
@@ -215,7 +230,7 @@
 
 <!-- ============ ringout: a boxing ring on a floating barge ============ -->
 <a class="door" href="ringout/" data-label="Ringout" data-sub="A browser platform fighter built from scratch — NIX and BRAM trade percent-based knockback">
-<g class="bob" style="animation-duration:5s">
+<g id="barge" class="bob" style="animation-duration:5s">
   <path d="M1010 668 h220 l-18 34 h-184z" fill="#3a4a6a" class="ink"/>
   <path d="M1012 676 h216" stroke="#f6efe0" stroke-width="3"/>
   <rect x="1030" y="648" width="180" height="20" fill="#e8dcc4" class="ink"/>
@@ -226,8 +241,8 @@
   <g id="fighterBram"><rect x="-8" y="-22" width="16" height="22" rx="5" fill="#5aa8ff" class="thin"/><circle cx="0" cy="-28" r="6" fill="#5aa8ff" class="thin"/><circle cx="-2" cy="-29" r="1.4" fill="#160d1c"/><circle cx="-9" cy="-14" r="4" fill="#3a6ad6" class="thin"/></g>
   <text id="pctNix" x="1060" y="592" font-family="Inter, sans-serif" font-weight="600" font-size="12" fill="#ffb0a0">0%</text>
   <text id="pctBram" x="1160" y="592" font-family="Inter, sans-serif" font-weight="600" font-size="12" fill="#a8d0ff">0%</text>
-  <g class="sign"><rect x="1080" y="708" width="80" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="1120" y="722" text-anchor="middle">Ringout</text></g>
 </g>
+  <g class="sign"><rect x="1080" y="708" width="80" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="1120" y="722" text-anchor="middle">Ringout</text></g>
 </a>
 
 <!-- ============ the town on the left ============ -->
@@ -254,7 +269,7 @@
 
 <!-- ============ flow studio: a sailboat whose sail shows the flow ============ -->
 <a class="door" href="flow-studio/" data-label="Flow studio" data-sub="Paint with fluid dynamics: long-exposure particle trails around a foil section">
-<g class="bob">
+<g id="sail" class="bob">
   <g class="flow" fill="none" stroke="#bfefff" stroke-width="2.2" opacity=".75">
     <path d="M560 470 q70 -40 150 -10 t120 10"/><path d="M560 520 q70 -26 150 0 t120 0"/><path d="M560 570 q70 -10 150 8 t120 -6"/><path d="M560 420 q70 -50 150 -24 t120 16"/>
   </g>
@@ -267,8 +282,8 @@
   <path d="M606 712 h198" stroke="#3a6aa8" stroke-width="5"/>
   <circle cx="740" cy="722" r="4" fill="#3a3040"/><circle cx="760" cy="722" r="4" fill="#3a3040"/>
   <text x="660" y="728" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="12" fill="#3a6aa8">Flow</text>
-  <g class="sign"><rect x="742" y="610" width="96" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="790" y="624" text-anchor="middle">Flow studio</text></g>
 </g>
+  <g class="sign"><rect x="742" y="610" width="96" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="790" y="624" text-anchor="middle">Flow studio</text></g>
 </a>
 <path d="M560 694 q30 40 60 30" fill="none" stroke="#e8d7b0" stroke-width="2"/>
 
@@ -422,12 +437,15 @@ ghost("ghost1", 1060, 524, .5); ghost("ghost2", 1118, 522, .42); ghost("ghost3",
   // back row up the hill
   for (const [x, w, h, y] of [[-20, 70, 110, 560], [40, 80, 140, 550], [110, 70, 100, 560], [170, 90, 150, 520], [240, 60, 90, 560], [420, 70, 120, 560], [470, 60, 80, 580]]) {
     el("rect", { x, y: y - h + 80, width: w, height: h, fill: pick(cols), class: "ink" }, g);
+    if (R() < .6) el("rect", { x: x + w * rr(.15, .7), y: y - h + 52, width: 9, height: 18, fill: "#9a3a24", class: "thin" }, g);
     el("path", { d: `M${x - 4} ${y - h + 80} h${w + 8} l-6 -14 h-${w - 4}z`, fill: "#b8442a", class: "thin" }, g);
+    for (let tx = x + 2; tx < x + w; tx += 8) el("path", { d: `M${tx} ${y - h + 68} v10`, stroke: "#8a2e1c", "stroke-width": 1.2 }, g);
     for (let wy = y - h + 96; wy < y + 60; wy += 28) for (let wx = x + 10; wx < x + w - 14; wx += 22) {
       const lit = R() < .45;
       el("rect", { x: wx, y: wy, width: 10, height: 14, rx: 2, fill: lit ? "#ffd98a" : "#3a5a7a", class: "thin" }, g);
       if (lit) el("rect", { x: wx - 4, y: wy - 4, width: 18, height: 22, fill: "#ffd98a", opacity: .25, filter: "url(#blur2)" }, g);
       el("rect", { x: wx - 3, y: wy, width: 3, height: 14, fill: "#3a8a7a" }, g); el("rect", { x: wx + 10, y: wy, width: 3, height: 14, fill: "#3a8a7a" }, g);
+      if (R() < .25) { el("rect", { x: wx - 3, y: wy + 13, width: 16, height: 4, fill: "#7a4a2a", class: "thin" }, g); for (let k = 0; k < 3; k++) el("circle", { cx: wx + k * 5, cy: wy + 12, r: 2.2, fill: pick(["#e04848", "#ff8ac0", "#ffd34a"]) }, g); }
     }
   }
   // a little church tower
@@ -468,6 +486,7 @@ ghost("ghost1", 1060, 524, .5); ghost("ghost2", 1118, 522, .42); ghost("ghost3",
   for (const x of [520, 1000, 1580]) {
     const g = $("lamps");
     el("circle", { cx: x, cy: 640, r: 60, fill: "url(#lamp)", class: "glow" }, g);
+    el("ellipse", { cx: x, cy: 806, rx: 90, ry: 16, fill: "#ffd98a", opacity: .16, filter: "url(#blur6)" }, g);
     el("path", { d: `M${x} 800 V650`, stroke: "#2a2236", "stroke-width": 6 }, g);
     el("path", { d: `M${x - 10} 800 h20`, stroke: "#2a2236", "stroke-width": 8 }, g);
     el("path", { d: `M${x - 12} 650 h24 l-4 -22 h-16z`, fill: "#ffe8a0", class: "ink" }, g);
