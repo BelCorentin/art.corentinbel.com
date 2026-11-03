@@ -129,6 +129,12 @@
   <radialGradient id="windowGlow" cx=".5" cy=".5" r=".5">
     <stop offset="0" stop-color="#bfe6ff" stop-opacity=".6"/><stop offset="1" stop-color="#bfe6ff" stop-opacity="0"/>
   </radialGradient>
+  <radialGradient id="shroomGlow" cx=".5" cy=".5" r=".5">
+    <stop offset="0" stop-color="#7dffcf" stop-opacity=".45"/><stop offset="1" stop-color="#7dffcf" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="brainGlow" cx=".5" cy=".5" r=".5">
+    <stop offset="0" stop-color="#9fe6ff" stop-opacity=".7"/><stop offset="1" stop-color="#9fe6ff" stop-opacity="0"/>
+  </radialGradient>
   <radialGradient id="vignette" cx=".5" cy=".45" r=".75">
     <stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/>
   </radialGradient>
@@ -151,6 +157,20 @@
 <g id="clouds" fill="#f4a08a" opacity=".55"></g>
 <g id="gulls" fill="none" stroke="#2a1830" stroke-width="2.4" stroke-linecap="round"></g>
 
+<!-- cloud atlas: a fat fair-weather cumulus with a paraglider thermalling under it -->
+<a class="door" href="cloud-atlas/" data-label="A cloud atlas" data-sub="Ten cloud families, painted at their real heights — and what each tells a paraglider or a sailor">
+<g>
+  <g id="cumulus"></g>
+  <g id="glider">
+    <path d="M-26 0 Q0 -14 26 0 Q0 -8 -26 0z" fill="#ffd34a" class="thin"/>
+    <path d="M-26 0 Q0 -14 26 0" fill="none" stroke="#e04848" stroke-width="3"/>
+    <path d="M-24 1 L0 30 M24 1 L0 30 M-10 -5 L0 30 M10 -5 L0 30" stroke="#2a1830" stroke-width=".8" opacity=".8"/>
+    <circle cx="0" cy="32" r="3" fill="#2a1830"/><path d="M0 34 v5" stroke="#2a1830" stroke-width="2.4"/>
+  </g>
+  <g class="sign"><rect x="1300" y="248" width="90" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="1345" y="262" text-anchor="middle">Cloud atlas</text></g>
+</g>
+</a>
+
 <!-- far coast: red rocks of the Esterel -->
 <path d="M-1600 520 L-200 500 Q60 440 160 470 Q260 430 360 480 Q430 470 520 520z" fill="#6a3050"/>
 <path d="M1300 520 Q1400 490 1500 500 Q1600 480 3200 500 V520z" fill="#5a2a48"/>
@@ -165,6 +185,7 @@
     <use href="#ghost2" transform="translate(0 1044) scale(1 -1)"/>
     <use href="#ghost3" transform="translate(0 1046) scale(1 -1)"/>
     <use href="#jetty" transform="translate(0 1196) scale(1 -1)"/>
+    <use href="#lighthouse" transform="translate(0 1196) scale(1 -1)"/>
     <use href="#barge" transform="translate(0 1404) scale(1 -1)"/>
     <use href="#sail" transform="translate(0 1468) scale(1 -1)"/>
   </g>
@@ -195,38 +216,31 @@
 <a class="ghost" data-info="music-to-images" tabindex="0" role="button" aria-label="Coming: music to images"><g id="ghost2"></g></a>
 <a class="ghost" data-info="petit-prince" tabindex="0" role="button" aria-label="Coming: Le Petit Prince, imaged"><g id="ghost3"></g></a>
 
-<!-- ============ the perfect wave: a barrel breaking beyond the jetty ============ -->
-<a class="door" href="waves/" data-label="The perfect wave" data-sub="A raymarched ocean driven by real swell physics — watch spilling, plunging and surging breakers form">
-<g>
-  <path d="M1398 478 Q1410 492 1422 478 Q1430 464 1448 470 Q1472 482 1462 522 Q1444 556 1290 560 Q1384 544 1398 478z" fill="#123058"/>
-  <path d="M1600 562 V528 Q1546 470 1484 434 Q1430 408 1398 440 Q1382 460 1398 478 Q1410 492 1422 478 Q1430 464 1448 470 Q1472 482 1462 522 Q1444 556 1250 562 Z" fill="url(#waveG)" class="ink"/>
-  <path d="M1452 474 Q1470 488 1462 522" fill="none" stroke="#8fe8f0" stroke-width="3" opacity=".7"/>
-  <path id="waveLip" d="M1560 486 Q1520 446 1484 436 Q1432 414 1402 442 Q1390 458 1400 474" fill="none" stroke="#f4feff" stroke-width="6" stroke-linecap="round"/>
-  <path d="M1250 562 Q1330 556 1380 548" stroke="#f4feff" stroke-width="3" fill="none" opacity=".7"/>
-  <g id="spray" fill="#f4feff"></g>
-  <g id="surfer">
-    <path d="M-14 0 h28" stroke="#ffd34a" stroke-width="4" stroke-linecap="round"/>
-    <path d="M-4 0 l4 -12 l4 12 M0 -12 v-9 M0 -17 l-8 -4 M0 -17 l9 2" stroke="#160d1c" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-    <circle cx="0" cy="-24" r="3.4" fill="#160d1c"/>
-  </g>
-  <g class="sign"><rect x="1452" y="396" width="128" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="1516" y="410" text-anchor="middle">the perfect wave</text></g>
-</g>
-</a>
-
-<!-- jetty + lighthouse (decor) -->
+<!-- jetty (decor) -->
 <g id="jetty">
   <path d="M1160 572 L1600 556 V600 L1160 596z" fill="url(#stone)" class="ink"/>
   <g stroke="#6a4a34" stroke-width="2" opacity=".6"><path d="M1200 572 v24 M1250 570 v26 M1300 568 v27 M1350 566 v28 M1400 564 v30 M1450 562 v31 M1500 560 v32 M1550 558 v33"/></g>
+</g>
+
+
+<!-- glass brain: the lighthouse lantern is a brain of light -->
+<a class="door" href="glass-brain/" data-label="Glass brain" data-sub="The lighthouse keeps a brain instead of a lamp — click the cortex to make it fire">
+<g id="lighthouse">
   <path id="beamA" d="M1196 352 L1600 300 L1600 404z" fill="url(#beam)" opacity=".7"/>
   <rect x="1176" y="368" width="40" height="204" fill="#f6efe0" class="ink"/>
   <path d="M1176 410 h40 v28 h-40z M1176 480 h40 v28 h-40z M1176 550 h40 v22 h-40z" fill="#d84a4a"/>
   <path d="M1176 368 h40" stroke="#160d1c" stroke-width="3"/>
   <rect x="1168" y="352" width="56" height="16" rx="2" fill="#3a3040" class="ink"/>
-  <rect x="1180" y="324" width="32" height="28" fill="#ffe8a0" class="ink"/>
-  <circle cx="1196" cy="338" r="22" fill="#ffe8a0" opacity=".5" filter="url(#blur6)" class="glow"/>
+  <rect x="1180" y="322" width="32" height="30" fill="#2a2440" class="ink"/>
+  <g id="lhBrain"></g>
+  <path d="M1190 322 v30 M1202 322 v30" stroke="#160d1c" stroke-width="1.2" opacity=".6"/>
+  <rect x="1180" y="322" width="32" height="30" fill="none" stroke="#d9f3ff" stroke-opacity=".7" stroke-width="1.4"/>
+  <circle cx="1196" cy="338" r="22" fill="#9fe6ff" opacity=".6" filter="url(#blur6)" class="glow"/>
   <path d="M1174 324 l22 -20 l22 20z" fill="#d84a4a" class="ink"/>
   <rect x="1188" y="520" width="16" height="30" rx="8" fill="#3a3040"/>
 </g>
+  <g class="sign"><rect x="1226" y="372" width="96" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="1274" y="386" text-anchor="middle">Glass brain</text></g>
+</a>
 
 <!-- ============ ringout: a boxing ring on a floating barge ============ -->
 <a class="door" href="ringout/" data-label="Ringout" data-sub="A browser platform fighter built from scratch — NIX and BRAM trade percent-based knockback">
@@ -246,6 +260,19 @@
 </a>
 
 <!-- ============ the town on the left ============ -->
+<!-- raga clock: the bell tower's clock is divided into the eight prahars of the day -->
+<a class="door" href="raga-clock/" data-label="The raga clock" data-sub="Which raga belongs to this hour? Hear it over a tanpura drone">
+<g>
+  <rect x="112" y="352" width="56" height="140" fill="#f6e0b0" class="ink"/>
+  <path d="M112 440 h56" stroke="#d9b98a" stroke-width="2"/>
+  <rect x="128" y="448" width="24" height="34" rx="12" fill="#3a2a40" class="thin"/>
+  <path d="M106 354 l34 -48 l34 48z" fill="#b8442a" class="ink"/>
+  <path d="M140 306 v-16 M134 296 h12" stroke="#160d1c" stroke-width="2.4"/>
+  <g id="ragaDial"></g>
+  <g class="sign"><rect x="88" y="270" width="104" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="140" y="284" text-anchor="middle">The raga clock</text></g>
+</g>
+</a>
+
 <g id="town"></g>
 
 <!-- fractals: the glassmaker's house with a fractal rose window -->
@@ -342,15 +369,52 @@
   <rect x="560" y="836" width="70" height="56" fill="#a87a4a" class="ink"/>
   <rect x="610" y="864" width="56" height="44" fill="#946a3e" class="ink"/>
   <path d="M560 856 h70 M560 874 h70 M610 880 h56" stroke="#6b4a2c" stroke-width="2.5"/>
-  <ellipse cx="740" cy="900" rx="40" ry="12" fill="#c9a87a" class="ink"/>
-  <ellipse cx="740" cy="894" rx="28" ry="8" fill="none" stroke="#8a6a44" stroke-width="3"/>
-  <ellipse cx="740" cy="890" rx="16" ry="5" fill="none" stroke="#8a6a44" stroke-width="3"/>
   <g transform="translate(596 836)">
     <path d="M0 0 q-4 -20 6 -26 q-2 -8 2 -12 l4 6 h6 l4 -6 q4 4 2 12 q10 6 6 26z" fill="#2a1830"/>
     <path d="M24 -2 q16 -4 12 -20" fill="none" stroke="#2a1830" stroke-width="4" stroke-linecap="round" class="tail"/>
     <circle cx="9" cy="-28" r="1.6" fill="#ffd34a"/><circle cx="16" cy="-28" r="1.6" fill="#ffd34a"/>
   </g>
 </g>
+
+<!-- the flower clock: a floral clock bed on the quay, like the one in Geneva -->
+<a class="door" href="flower-clock/" data-label="The flower clock" data-sub="Linnaeus planted a garden that tells the time: flowers that open and close by the hour">
+<g>
+  <ellipse cx="800" cy="918" rx="118" ry="30" fill="#2a1830" opacity=".45"/>
+  <ellipse cx="800" cy="910" rx="114" ry="30" fill="#6a4a34" class="ink"/>
+  <ellipse cx="800" cy="905" rx="106" ry="25" fill="#4a7a3a" class="thin"/>
+  <g id="floralRing"></g>
+  <g id="floralHands"></g>
+  <g class="sign"><rect x="742" y="946" width="116" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="800" y="960" text-anchor="middle">The flower clock</text></g>
+</g>
+</a>
+
+<!-- mycelium: an old mooring log with glowing mushrooms -->
+<a class="door" href="mycelium/" data-label="Mycelium" data-sub="Grow a glowing fungal network, then some facts that will mess with you">
+<g>
+  <ellipse cx="462" cy="918" rx="86" ry="38" fill="url(#shroomGlow)" class="glow"/>
+  <ellipse cx="466" cy="928" rx="80" ry="8" fill="#2a1830" opacity=".5"/>
+  <rect x="394" y="896" width="136" height="30" rx="15" fill="#6a4a30" class="ink"/>
+  <path d="M410 904 q40 -4 100 2 M414 916 q50 4 96 -2" stroke="#4a3020" stroke-width="2" fill="none"/>
+  <ellipse cx="528" cy="911" rx="9" ry="15" fill="#b8925a" class="ink"/>
+  <ellipse cx="528" cy="911" rx="4" ry="8" fill="none" stroke="#7a5a34" stroke-width="1.4"/>
+  <g id="logShrooms"></g>
+  <g class="sign"><rect x="418" y="946" width="84" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="460" y="960" text-anchor="middle">Mycelium</text></g>
+</g>
+</a>
+
+<!-- redacted: an advertising column whose posters are blacked out -->
+<a class="door" href="redacted/" data-label="Redacted" data-sub="A whole Wikipedia page, blacked out — type words to un-redact it and guess what it is">
+<g>
+  <ellipse cx="1080" cy="936" rx="40" ry="8" fill="#2a1830" opacity=".5"/>
+  <rect x="1054" y="926" width="52" height="10" rx="2" fill="#2f5a4a" class="ink"/>
+  <rect x="1058" y="826" width="44" height="102" fill="#e8dcc4" class="ink"/>
+  <g id="posters"></g>
+  <path d="M1052 828 h56 l-4 -10 h-48z" fill="#2f5a4a" class="ink"/>
+  <path d="M1058 818 q22 -30 44 0z" fill="#3a6a5a" class="ink"/>
+  <circle cx="1080" cy="794" r="4" fill="#d6a94f" class="thin"/>
+  <g class="sign"><rect x="1040" y="946" width="80" height="20" rx="4" fill="#fbeedd" class="thin"/><text x="1080" y="960" text-anchor="middle">Redacted</text></g>
+</g>
+</a>
 
 <rect x="-1600" y="-1000" width="4800" height="3000" fill="url(#vignette)" pointer-events="none"/>
 </svg>
@@ -378,13 +442,21 @@ const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ============ pieces ============ */
 const PIECES = [
-  ["flow-studio/", "Flow studio", "Paint with fluid dynamics: long-exposure particle trails around a foil section — tilt it, stall it, shed chaotic vortices, then snapshot the canvas."],
-  ["genesis/", "Genesis garden", "Paint water, rocks and seeds, press play, and watch a world invent itself — ecosystems, seasons, predator-prey waves."],
-  ["psychedelia/", "Psychedelia", "A generative sampler of fractals, kaleidoscopes, warp tunnels and classic vision illusions — click for a new one."],
-  ["fractals/", "Fractal studio", "Mandelbrot, Julia, Burning Ship, Newton basins and a Barnsley fern — deep zoom, seven colour themes, export the frame."],
-  ["waves/", "The perfect wave", "A raymarched ocean driven by real swell physics — spilling, plunging and surging breakers, with the Iribarren number doing the explaining."],
-  ["sitar-tuner/", "Sitar tuner", "Pluck a string — a mandala blooms when you hit the swara. YIN pitch tracking, kharaj-pancham presets, a tanpura drone."],
-  ["ringout/", "Ringout", "A browser platform fighter built from scratch — NIX and BRAM trade percent-based knockback, with a chiptune loop synthesised live."],
+  ["paint & grow", [
+    ["flow-studio/", "Flow studio", "Paint with fluid dynamics: long-exposure particle trails around a foil section — tilt it, stall it, shed vortices, snapshot the canvas."],
+    ["fractals/", "Fractal studio", "Mandelbrot, Julia, Burning Ship, Newton basins and a Barnsley fern — deep zoom, seven colour themes, export the frame."],
+    ["genesis/", "Genesis garden", "Paint water, rocks and seeds, press play, and watch a world invent itself — ecosystems, seasons, predator-prey waves."],
+    ["mycelium/", "Mycelium", "Grow a glowing fungal network in the browser, then a handful of facts about fungi."],
+    ["glass-brain/", "Glass brain", "A procedural brain of light — click the cortex to make it fire."]]],
+  ["look & listen", [
+    ["flower-clock/", "The flower clock", "Linnaeus's garden that tells the time: flowers opening and closing by the hour, live."],
+    ["raga-clock/", "The raga clock", "The eight watches of the Hindustani day, the ragas that belong to each, and a tanpura to hear them over."],
+    ["cloud-atlas/", "Cloud atlas", "Ten cloud families painted at their real heights, and what each one tells someone who plays outside."],
+    ["psychedelia/", "Psychedelia", "A generative sampler of fractals, kaleidoscopes, warp tunnels and classic vision illusions — click for a new one."],
+    ["sitar-tuner/", "Sitar tuner", "Pluck a string — a mandala blooms when you hit the swara. YIN pitch tracking, kharaj-pancham presets, a tanpura drone."]]],
+  ["play", [
+    ["ringout/", "Ringout", "A browser platform fighter built from scratch — NIX and BRAM trade percent-based knockback, with a chiptune loop synthesised live."],
+    ["redacted/", "Redacted", "A whole Wikipedia page, blacked out. Type words to un-redact it and guess what it is."]]],
 ];
 const SOON = {
   "neural-music":    { t: "Neural music spectacle", p: "Live EEG/OPM decoding of what music does to a listening brain, projected as visuals during a concert: the audience watches the listener's cortex dance." },
@@ -393,8 +465,11 @@ const SOON = {
 };
 {
   const nav = $("list");
-  let h = document.createElement("h3"); h.textContent = "pieces"; nav.appendChild(h);
-  for (const [href, t, sub] of PIECES) { const a = document.createElement("a"); a.href = href; a.textContent = t; const s = document.createElement("small"); s.textContent = sub; a.appendChild(s); nav.appendChild(a); }
+  let h;
+  for (const [grp, items] of PIECES) {
+    h = document.createElement("h3"); h.textContent = grp; nav.appendChild(h);
+    for (const [href, t, sub] of items) { const a = document.createElement("a"); a.href = href; a.textContent = t; const s = document.createElement("small"); s.textContent = sub; a.appendChild(s); nav.appendChild(a); }
+  }
   h = document.createElement("h3"); h.textContent = "on the horizon"; nav.appendChild(h);
   for (const k in SOON) { const s = document.createElement("span"); s.textContent = SOON[k].t; const sm = document.createElement("small"); sm.textContent = SOON[k].p; s.appendChild(sm); nav.appendChild(s); }
 }
@@ -448,11 +523,6 @@ ghost("ghost1", 1060, 524, .5); ghost("ghost2", 1118, 522, .42); ghost("ghost3",
       if (R() < .25) { el("rect", { x: wx - 3, y: wy + 13, width: 16, height: 4, fill: "#7a4a2a", class: "thin" }, g); for (let k = 0; k < 3; k++) el("circle", { cx: wx + k * 5, cy: wy + 12, r: 2.2, fill: pick(["#e04848", "#ff8ac0", "#ffd34a"]) }, g); }
     }
   }
-  // a little church tower
-  el("rect", { x: 120, y: 360, width: 40, height: 120, fill: "#f6e0b0", class: "ink" }, g);
-  el("path", { d: "M116 362 l24 -36 l24 36z", fill: "#b8442a", class: "ink" }, g);
-  el("circle", { cx: 140, cy: 392, r: 9, fill: "#fbeedd", class: "thin" }, g);
-  el("path", { d: "M140 392 v-6 M140 392 h5", stroke: "#160d1c", "stroke-width": 1.5 }, g);
   // cypresses
   for (const x of [234, 278, 450]) el("path", { d: `M${x} 640 q-10 -40 0 -90 q10 50 0 90z`, fill: "#2a4a3a", class: "thin" }, g);
 }
@@ -528,10 +598,96 @@ ghost("ghost1", 1060, 524, .5); ghost("ghost2", 1118, 522, .42); ghost("ghost3",
   ["♪", "♫", "♪"].forEach((n, i) => el("text", { x: 1376, y: 770, class: "note", style: `animation-delay:${i * 1.2}s` }, $("notes")).textContent = n);
 }
 
+
+/* ============ new places ============ */
+// raga dial: eight prahars, day ones warm, night ones blue; a single hand shows the real hour
+const PRAHAR_COLS = ["#ffcf8a", "#ffe08a", "#ffd06a", "#f4a05a", "#9a6ab8", "#5a5aa8", "#3a3a7a", "#7a8ac8"]; // from 6:00, every 3 h
+{
+  const g = $("ragaDial"), cx = 140, cy = 396, r = 19;
+  el("circle", { cx, cy, r: r + 3, fill: "#fbeedd", class: "ink" }, g);
+  for (let k = 0; k < 8; k++) {
+    const a0 = (k * 45 - 90 + 90) * Math.PI / 180, a1 = ((k + 1) * 45 - 90 + 90) * Math.PI / 180; // 6:00 at the bottom? no: 24h dial, midnight at top
+    const b0 = ((6 + k * 3) / 24) * 2 * Math.PI - Math.PI / 2, b1 = ((9 + k * 3) / 24) * 2 * Math.PI - Math.PI / 2;
+    el("path", { d: `M${cx} ${cy} L${(cx + r * Math.cos(b0)).toFixed(2)} ${(cy + r * Math.sin(b0)).toFixed(2)} A${r} ${r} 0 0 1 ${(cx + r * Math.cos(b1)).toFixed(2)} ${(cy + r * Math.sin(b1)).toFixed(2)}z`, fill: PRAHAR_COLS[k], stroke: "#160d1c", "stroke-width": .6 }, g);
+  }
+  el("circle", { cx, cy: cy - r + 6, r: 2.6, fill: "#f6f2e6" }, g);
+  el("circle", { cx, cy: cy + r - 6, r: 3, fill: "#ffd34a", stroke: "#b8442a", "stroke-width": .8 }, g);
+  el("path", { id: "ragaHand", d: "", stroke: "#160d1c", "stroke-width": 2.2, "stroke-linecap": "round" }, g);
+  el("circle", { cx, cy, r: 2.4, fill: "#160d1c" }, g);
+}
+// cumulus: flat base, cauliflower top
+{
+  const g = $("cumulus");
+  const base = 236, x0 = 1376, x1 = 1556;
+  el("ellipse", { cx: 1466, cy: base + 6, rx: 100, ry: 10, fill: "#b86a7a", opacity: .4 }, g);
+  const puffs = [[1402, 214, 22], [1432, 196, 32], [1470, 178, 40], [1508, 196, 30], [1534, 214, 20], [1452, 160, 26], [1490, 152, 22], [1470, 212, 26]];
+  for (const [x, y, r] of puffs) el("circle", { cx: x, cy: y, r: r + 2.5, fill: "#160d1c" }, g);
+  for (const [x, y, r] of puffs) el("circle", { cx: x, cy: y, r, fill: "#fde3d0" }, g);
+  for (const [x, y, r] of puffs) el("circle", { cx: x - r * .25, cy: y - r * .3, r: r * .55, fill: "#fff4ea", opacity: .8 }, g);
+  const bd = `M${x0 + 6} ${base + 4} Q${x0 - 6} ${base - 14} ${x0 + 20} ${base - 18} H${x1 - 20} Q${x1 + 6} ${base - 14} ${x1 - 6} ${base + 4}z`;
+  el("path", { d: bd, fill: "#fde3d0" }, g);
+  el("path", { d: `M${x0 + 6} ${base + 4} H${x1 - 6}`, stroke: "#160d1c", "stroke-width": 2.5, "stroke-linecap": "round" }, g);
+  el("path", { d: `M${x0 + 14} ${base} H${x1 - 14}`, stroke: "#e0a8a4", "stroke-width": 4, "stroke-linecap": "round" }, g);
+  // a thermal: faint rising spirals under the base
+  for (let i = 0; i < 3; i++) el("path", { d: `M${1440 + i * 18} 400 q-10 -40 6 -80 q14 -40 -2 -70`, fill: "none", stroke: "#ffe8d0", "stroke-width": 1.4, "stroke-dasharray": "3 7", opacity: .45, class: "flow" }, g);
+}
+// floral clock: twelve flower clumps round the rim, real local time on the hands
+{
+  const g = $("floralRing");
+  const cols = ["#ff6a8a", "#ffd34a", "#f6f2e6", "#b88ae0", "#ff9a4a", "#7ad0ff"];
+  el("ellipse", { cx: 800, cy: 905, rx: 72, ry: 16, fill: "#5f9a4a", stroke: "#2f5a2a", "stroke-width": 1 }, g);
+  for (let k = 0; k < 12; k++) {
+    const a = k / 12 * 2 * Math.PI - Math.PI / 2;
+    const x = 800 + Math.cos(a) * 92, y = 905 + Math.sin(a) * 21;
+    for (let j = 0; j < 4; j++) el("circle", { cx: (x + rr(-6, 6)).toFixed(1), cy: (y + rr(-3, 3)).toFixed(1), r: rr(2.4, 3.6).toFixed(1), fill: cols[k % 6], stroke: "#160d1c", "stroke-width": .6 }, g);
+    if (k % 3 === 0) el("path", { d: `M${(800 + Math.cos(a) * 80).toFixed(1)} ${(905 + Math.sin(a) * 18).toFixed(1)} L${(800 + Math.cos(a) * 86).toFixed(1)} ${(905 + Math.sin(a) * 19.4).toFixed(1)}`, stroke: "#fbeedd", "stroke-width": 2 }, g);
+  }
+  for (let i = 0; i < 40; i++) { const a = R() * 6.28, d = Math.sqrt(R()) * .8; el("circle", { cx: (800 + Math.cos(a) * d * 70).toFixed(1), cy: (905 + Math.sin(a) * d * 15).toFixed(1), r: 1.2, fill: pick(["#ffe08a", "#ffffff", "#ffb0c8"]) }, g); }
+}
+const floralHands = $("floralHands");
+function drawFloralHands() {
+  const now = new Date(), h = now.getHours() % 12 + now.getMinutes() / 60, m = now.getMinutes() + now.getSeconds() / 60;
+  floralHands.textContent = "";
+  for (const [v, len, w, c] of [[h / 12, 44, 5, "#2a1830"], [m / 60, 66, 3.4, "#2a1830"]]) {
+    const a = v * 2 * Math.PI - Math.PI / 2, x = 800 + Math.cos(a) * len, y = 905 + Math.sin(a) * len * .23;
+    el("path", { d: `M800 905 L${x.toFixed(1)} ${y.toFixed(1)}`, stroke: c, "stroke-width": w, "stroke-linecap": "round" }, floralHands);
+  }
+  el("ellipse", { cx: 800, cy: 905, rx: 5, ry: 3, fill: "#d6a94f", stroke: "#160d1c", "stroke-width": 1 }, floralHands);
+}
+drawFloralHands(); setInterval(drawFloralHands, 20000);
+// glowing mushrooms on the log
+{
+  const g = $("logShrooms");
+  for (const [x, hgt, w, c] of [[414, 18, 16, "#7dffcf"], [436, 28, 24, "#b8fff0"], [462, 16, 14, "#a9ffe0"], [486, 24, 20, "#7dffcf"], [508, 14, 12, "#b8fff0"]]) {
+    el("rect", { x: x - w * .14, y: 898 - hgt, width: w * .28, height: hgt, rx: 2, fill: "#e8f5ee", class: "thin" }, g);
+    el("path", { d: `M${x - w / 2} ${898 - hgt + 2} q${w / 2} -${w * .9} ${w} 0z`, fill: c, class: "thin glow", style: `animation-delay:-${rr(0, 3).toFixed(1)}s` }, g);
+    el("circle", { cx: x - w * .15, cy: 898 - hgt - w * .2, r: w * .08, fill: "#fff", opacity: .8 }, g);
+  }
+}
+// blacked-out posters on the column
+{
+  const g = $("posters");
+  for (const [y, h, c] of [[834, 40, "#f6e0b0"], [878, 44, "#fbeedd"]]) {
+    el("rect", { x: 1062, y, width: 36, height: h, fill: c, stroke: "#8a6a44", "stroke-width": 1 }, g);
+    el("rect", { x: 1066, y: y + 5, width: 28, height: 6, fill: "#1a1a1a" }, g);
+    for (let k = 0; k < Math.floor((h - 16) / 6); k++) el("rect", { x: 1066, y: y + 15 + k * 6, width: rr(10, 28).toFixed(0), height: 3.4, fill: R() < .7 ? "#1a1a1a" : "#b8442a" }, g);
+  }
+}
+// the lighthouse's brain
+{
+  const g = $("lhBrain");
+  el("ellipse", { cx: 1196, cy: 338, rx: 30, ry: 26, fill: "url(#brainGlow)", class: "glow" }, g);
+  el("path", { d: "M1196 330 c-9 -3 -14 4 -12 9 c1 5 7 8 13 6 c6 -1 9 -6 7 -11 c-2 -4 -5 -5 -8 -4z", fill: "#f4b0c0", stroke: "#160d1c", "stroke-width": 1.2 }, g);
+  el("path", { d: "M1188 339 q3 -3 6 0 q3 3 6 0 M1191 344 q3 -2 6 0", fill: "none", stroke: "#b9606f", "stroke-width": 1 }, g);
+}
+const ragaHand = $("ragaHand"), glider = $("glider");
+function drawRagaHand() {
+  const now = new Date(), t = (now.getHours() + now.getMinutes() / 60) / 24 * 2 * Math.PI - Math.PI / 2;
+  ragaHand.setAttribute("d", `M140 396 L${(140 + Math.cos(t) * 15).toFixed(1)} ${(396 + Math.sin(t) * 15).toFixed(1)}`);
+}
+drawRagaHand(); setInterval(drawRagaHand, 60000);
+
 /* ============ animation ============ */
-const waveLip = $("waveLip"), surfer = $("surfer"), spray = $("spray");
-const sprays = [];
-for (let i = 0; i < 16; i++) sprays.push({ e: el("circle", { r: 2 }, spray), life: R() * 1.2, x: 0, y: 0, vx: 0, vy: 0 });
 const horses = [...document.querySelectorAll(".horse")];
 const nix = $("fighterNix"), bram = $("fighterBram");
 const fight = [{ e: nix, x: 1080, y: 648, vy: 0, dmg: 0, t: $("pctNix") }, { e: bram, x: 1160, y: 648, vy: 0, dmg: 0, t: $("pctBram") }];
@@ -540,17 +696,9 @@ let T = 0, last = performance.now();
 function frame(now) {
   const dt = Math.min(.05, (now - last) / 1000); last = now; T += dt;
 
-  // the barrel: foam shimmers along the lip, spray falls off its tip, the surfer rides inside
-  waveLip.setAttribute("stroke-dasharray", `${(40 + Math.sin(T * 3) * 8).toFixed(1)} 6`);
-  waveLip.setAttribute("stroke-dashoffset", (-T * 30).toFixed(1));
-  const sx = 1340 + (Math.sin(T * .7) + 1) * 40;
-  surfer.setAttribute("transform", `translate(${sx.toFixed(1)} ${(552 - (sx - 1340) * .22).toFixed(1)}) rotate(-12)`);
-  for (const s of sprays) {
-    s.life += dt;
-    if (s.life > 1.2) { s.life = 0; s.x = 1400 + rr(-6, 6); s.y = 478; s.vx = rr(-30, 6); s.vy = rr(-30, 10); }
-    s.vy += 120 * dt; s.x += s.vx * dt; s.y += s.vy * dt;
-    s.e.setAttribute("cx", s.x.toFixed(1)); s.e.setAttribute("cy", s.y.toFixed(1)); s.e.setAttribute("opacity", (1 - s.life / 1.2).toFixed(2));
-  }
+  // the paraglider circles in the thermal, drifting up and down a little
+  const ga = T * .45;
+  glider.setAttribute("transform", `translate(${(1466 + Math.cos(ga) * 46).toFixed(1)} ${(300 + Math.sin(ga) * 9 + Math.sin(T * .2) * 6).toFixed(1)}) rotate(${(Math.sin(ga) * -14).toFixed(1)}) scale(${(.92 + Math.sin(ga) * .08).toFixed(3)})`);
   // lighthouse beam sweeps
   const ang = Math.sin(T * .6) * 30;
   beam.setAttribute("transform", `rotate(${ang.toFixed(1)} 1196 352)`);
