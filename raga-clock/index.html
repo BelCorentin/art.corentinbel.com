@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the raga clock · art · Corentin Bel</title>
+<meta name="description" content="A day-wheel of Hindustani ragas: which raga belongs to which hour, its scale in sargam and Western notes, and a tanpura drone with a plucked sitar-ish synth to hear it.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪕</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400;1,9..144,600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1b1a22; --bg1:#17132b; --bg2:#2b1f3f; --paper:#f6ead2; --paper2:#ead8b4;
+  --saffron:#e9a23b; --rose:#d4675a; --teal:#3c7d84; --plum:#5a3a6e;
+  --soft:#d9cbe6; --dim:#a898bd;
+  --serif:'Fraunces',Georgia,'Times New Roman',serif;
+  --sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:var(--sans); color:var(--soft); line-height:1.55; font-size:16px;
+  background:radial-gradient(1200px 700px at 30% 10%, #3a2752 0%, var(--bg2) 40%, var(--bg1) 100%) fixed, var(--bg1);
+  min-height:100vh; overflow-x:hidden;
+}
+#stars{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.top{position:relative;z-index:2;padding:14px 22px;font-size:13px;color:var(--dim)}
+.top a{color:var(--soft);text-decoration:none;border-bottom:1px dotted #8a7aa3}
+.top a:hover{color:var(--saffron)}
+main{position:relative;z-index:1;max-width:1320px;margin:0 auto;padding:0 22px 60px}
+.hero{padding:6px 0 10px}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(34px,5.4vw,62px);line-height:1.02;margin:6px 0 8px;color:var(--paper);letter-spacing:-.01em}
+h1 em{font-style:italic;font-weight:400;color:var(--saffron)}
+.lede{max-width:760px;font-size:17px;color:var(--soft);margin:0}
+.stage{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);gap:30px;align-items:start;margin-top:18px}
+.dialwrap{position:relative}
+#dial{width:100%;height:auto;display:block;touch-action:none;user-select:none;-webkit-user-select:none}
+#dial .plq{cursor:pointer}
+#dial .plq rect{transition:fill .2s}
+#dial .plq:hover rect{fill:#fff6e2}
+#dial .plq.sel rect{fill:var(--saffron)}
+#dial .plq.inp rect{stroke-width:3.2}
+.timebar{display:flex;align-items:center;gap:12px;margin:4px 6px 0;font-size:14px}
+.timebar input{flex:1}
+.timebar .tl{font-variant-numeric:tabular-nums;min-width:48px;color:var(--paper);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:14px 4px 0}
+.chip{font:600 13px var(--sans);padding:5px 11px;border-radius:999px;border:2px solid var(--ink);background:#3a2d52;color:var(--soft);cursor:pointer}
+.chip.inp{background:var(--paper2);color:var(--ink)}
+.chip.sel{background:var(--saffron);color:var(--ink)}
+.chip:focus-visible,.btn:focus-visible{outline:3px solid var(--saffron);outline-offset:2px}
+.nowline{margin:12px 6px 0;font-size:15px;color:var(--soft)}
+.nowline b{color:var(--paper)}
+.panel{background:var(--paper);color:var(--ink);border:2.6px solid var(--ink);border-radius:20px;box-shadow:7px 8px 0 #0c0a15;padding:22px 24px 20px;position:sticky;top:14px}
+.panel h2{font-family:var(--serif);font-size:clamp(28px,3.2vw,40px);margin:0;line-height:1.05}
+.panel .sub{font-size:14px;color:#5b4f63;margin:4px 0 10px}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:10px 0 12px;border-bottom:2px dashed #cdb894;font-size:14px}
+.ctrl label{display:flex;align-items:center;gap:6px}
+select{font:600 14px var(--sans);border:2px solid var(--ink);border-radius:8px;background:#fff8ea;padding:3px 6px;color:var(--ink)}
+.btn{font:600 14px var(--sans);border:2.2px solid var(--ink);border-radius:10px;background:var(--paper2);color:var(--ink);padding:7px 13px;cursor:pointer;box-shadow:3px 3px 0 var(--ink);transition:transform .06s,box-shadow .06s}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn.on{background:var(--saffron)}
+.btn.play{background:#f3c46f}
+.btn.stop{background:#e9a196}
+input[type=range]{accent-color:var(--rose)}
+.row{padding:12px 0 6px;border-bottom:2px dashed #cdb894}
+.row:last-of-type{border-bottom:0}
+.rh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.rh .k{font:600 12px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#7a6a80}
+.phrase{display:flex;flex-wrap:wrap;gap:4px 3px;font-size:21px;padding:10px 0 12px;font-family:var(--serif)}
+.west{display:flex;flex-wrap:wrap;gap:3px 9px;font-size:13px;color:#5b4f63;font-variant-numeric:tabular-nums}
+.west span.on{color:var(--ink);background:#f3c46f;border-radius:4px}
+.sw{position:relative;display:inline-block;padding:1px 4px;border-radius:6px;font-weight:600;line-height:1.25;transition:background .1s}
+.sw.komal{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
+.sw.tivra::before{content:'';position:absolute;left:50%;top:-.36em;width:2px;height:.44em;margin-left:-1px;background:currentColor}
+.sw.taar::after,.sw.mandra::after{content:'';position:absolute;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:currentColor}
+.sw.taar::after{top:-.3em}
+.sw.tivra.taar::after{margin-left:4px}
+.sw.mandra::after{bottom:-.55em}
+.sw.and .wv{position:absolute;left:0;right:0;top:-.95em;text-align:center;font-size:.75em;font-family:var(--sans)}
+.sw.on{background:#f3c46f}
+.comma{color:#a28e7a;padding:0 2px}
+.strip{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;margin:6px 0 4px}
+.cell{border:2px solid var(--ink);border-radius:8px;text-align:center;padding:6px 0 4px;font:600 13px var(--serif);background:#efe1c4;color:#a9977f;cursor:pointer;position:relative}
+.cell small{display:block;font:400 10px var(--sans);color:inherit;opacity:.85;margin-top:1px}
+.cell.use{background:#fff8ea;color:var(--ink)}
+.cell.vadi{background:var(--saffron)}
+.cell.samvadi{background:#f3c46f}
+.legend{font-size:12px;color:#6e6070;display:flex;gap:12px;flex-wrap:wrap}
+.legend i{display:inline-block;width:11px;height:11px;border:1.6px solid var(--ink);border-radius:3px;vertical-align:-1px;margin-right:4px}
+dl.facts{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;margin:10px 0 0;font-size:14.5px}
+dl.facts dt{font-weight:600;color:#6c5d70}
+dl.facts dd{margin:0}
+.play-row{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;padding-top:14px;font-size:14px}
+.essay{max-width:780px;margin:64px auto 0}
+.essay h3{font-family:var(--serif);font-size:28px;color:var(--paper);margin:44px 0 8px;font-weight:600}
+.essay p,.essay li{color:var(--soft)}
+.essay b{color:var(--paper)}
+.essay .card{background:rgba(246,234,210,.06);border:2px solid #4e3d66;border-radius:14px;padding:4px 20px}
+.essay ul{padding-left:20px}
+.notekey{display:flex;flex-wrap:wrap;gap:14px 26px;font-size:15px;background:var(--paper);color:var(--ink);border:2.4px solid var(--ink);border-radius:14px;padding:16px 20px;box-shadow:5px 6px 0 #0c0a15;margin:14px 0}
+.notekey .sw{font-family:var(--serif);font-size:20px}
+.sources{max-width:780px;margin:56px auto 0;font-size:14px;color:var(--dim)}
+.sources h3{font-family:var(--serif);color:var(--paper);font-size:22px;margin-bottom:6px}
+.sources li{margin:5px 0}
+.sources a{color:var(--soft)}
+footer{text-align:center;color:#7d6e95;font-size:13px;margin-top:40px}
+@media (max-width:900px){
+  .stage{grid-template-columns:minmax(0,1fr);gap:22px}
+  .panel{position:static;padding:18px 16px}
+  main{padding:0 14px 50px}
+  .top{padding:12px 14px}
+  .phrase{font-size:19px}
+  .cell{font-size:11.5px;padding:5px 0 3px}
+  .cell small{font-size:8.5px}
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+<svg id="stars" aria-hidden="true"></svg>
+<nav class="top"><a href="../">← art</a> · <a href="https://corentinbel.com">home</a></nav>
+<main>
+  <section class="hero">
+    <h1>the raga <em>clock</em></h1>
+    <p class="lede">In Hindustani classical music, ragas have hours. Bhairav belongs to dawn, Yaman to the first dark, Malkauns to the dead of night. The wheel below is one day; it shows where we are right now and what a musician would traditionally play. Tap a raga to read its scale and hear it over a tanpura.</p>
+  </section>
+
+  <section class="stage">
+    <div class="dialwrap">
+      <svg id="dial" viewBox="0 0 1000 1000" role="img" aria-label="A 24-hour wheel of ragas"></svg>
+      <div class="timebar">
+        <span>time</span>
+        <input id="tslider" type="range" min="0" max="1439" step="5" aria-label="Time of day">
+        <span class="tl" id="tlabel">--:--</span>
+        <button class="btn" id="nowbtn" title="Back to the current time">now</button>
+      </div>
+      <p class="nowline" id="nowline"></p>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <aside class="panel" id="panel" aria-live="polite">
+      <h2 id="pname">Yaman</h2>
+      <div class="sub" id="psub"></div>
+      <div class="ctrl">
+        <label>Sa = <select id="sasel" aria-label="Pitch of Sa"></select></label>
+        <button class="btn" id="dronebtn" aria-pressed="false">tanpura drone</button>
+        <label>volume <input id="vol" type="range" min="0" max="1" step="0.01" value="0.7" style="width:90px"></label>
+      </div>
+      <div class="row">
+        <div class="rh"><span class="k">aroha · ascent</span><button class="btn play" data-play="aroha">play ▲</button></div>
+        <div class="phrase" id="aroha"></div>
+        <div class="west" id="warroha"></div>
+      </div>
+      <div class="row">
+        <div class="rh"><span class="k">avaroha · descent</span><button class="btn play" data-play="avaroha">play ▼</button></div>
+        <div class="phrase" id="avaroha"></div>
+        <div class="west" id="wavaroha"></div>
+      </div>
+      <div class="row">
+        <div class="rh"><span class="k">the twelve notes, which ones it uses</span></div>
+        <div class="strip" id="strip"></div>
+        <div class="legend"><span><i style="background:var(--saffron)"></i>vadi (king note)</span><span><i style="background:#f3c46f"></i>samvadi (minister)</span><span><i style="background:#fff8ea"></i>used</span><span><i style="background:#efe1c4"></i>not used</span></div>
+        <dl class="facts" id="facts"></dl>
+      </div>
+      <div class="play-row">
+        <button class="btn play" data-play="both">play both</button>
+        <button class="btn stop" id="stopbtn">stop</button>
+        <label><input type="checkbox" id="meend"> meend (glide)</label>
+        <label>tempo <input id="tempo" type="range" min="50" max="180" value="96" style="width:80px"></label>
+      </div>
+    </aside>
+  </section>
+
+  <section class="essay">
+    <h3>How to read the wheel</h3>
+    <p>The circle is one day. Noon sits at the top, midnight at the bottom, sunrise on the left and sunset on the right. The outer ring is the colour of the sky at each hour. The band inside it splits the day into eight <b>prahars</b> of about three hours: four of daylight counted from roughly 6 am, four of night from roughly 6 pm. The plaques mark where each raga is traditionally placed. Drag the sun, or the slider, to walk through the day.</p>
+    <p>Treat each plaque as "about this time, give or take an hour". Books and gharanas (schools) disagree in the details, and some prahar charts start an hour later. The broad shape is shared, and that is what the wheel shows.</p>
+
+    <h3>Reading the notes</h3>
+    <p>Indian solfège names seven notes relative to a movable tonic, Sa. Sa and Pa never change. Re, Ga, Dha and Ni can be lowered (komal); Ma can be raised (tivra). That makes the same twelve semitones as a piano, named from wherever Sa happens to be.</p>
+    <div class="notekey">
+      <span><span class="sw">Re</span> shuddh (natural)</span>
+      <span><span class="sw komal">Re</span> komal (flat), underlined</span>
+      <span><span class="sw tivra">Ma</span> tivra (sharp), tick above</span>
+      <span><span class="sw mandra">Ni</span> lower octave, dot below</span>
+      <span><span class="sw taar">Sa</span> upper octave, dot above</span>
+      <span><span class="sw komal and"><span class="wv">~</span>Ga</span> andolan, a slow sway</span>
+    </div>
+    <p>The aroha and avaroha are not just a scale going up and down. They are the conventional path, with its skipped notes and its little turns back. A raga's real identity lives in its characteristic phrases, its ornaments and which notes it rests on. The <b>vadi</b> is the most emphasised note, the <b>samvadi</b> the second, usually a fourth or a fifth away. What you will hear here is a skeleton. A sitarist would never play it this plainly.</p>
+
+    <h3>Is the time theory real?</h3>
+    <div class="card">
+    <p>It is a real tradition, not a law of nature. Linking ragas to hours and seasons is old and widely respected among Hindustani musicians, and many concerts still follow it. But the specific rules you read in textbooks were largely written down in the early 20th century by <b>V. N. Bhatkhande</b>, who sorted hundreds of ragas into ten parent scales (<b>thaats</b>) and looked for patterns. Three of the rules of thumb associated with his system:</p>
+    <ul>
+      <li><b>Twilight ragas.</b> At dawn and dusk, the <i>sandhi prakash</i> ("joining of light") hours, the classic ragas use komal Re with shuddh Ga and Ni: Bhairav and Lalit in the morning, Marwa and Puriya Dhanashree in the evening. They are the moments the wheel's colours change fastest.</li>
+      <li><b>Ma as the signpost.</b> Shuddh Ma tends to dominate in the morning, tivra Ma in the evening. Compare Bhairav (dawn) with Marwa or Yaman (dusk). Todi, a morning raga with tivra Ma, is the famous counterexample.</li>
+      <li><b>Lower half, upper half.</b> Ragas whose vadi sits in the lower half of the octave (Sa to Pa) tend to fall between noon and midnight; those with the vadi in the upper half (Ma to high Sa) between midnight and noon. Yaman (vadi Ga, evening) and Bhairav (vadi Dha, morning) fit neatly.</li>
+    </ul>
+    <p>Plenty of ragas bend these rules, and scholars such as Jairazbhoy treat them as generalisations drawn after the fact from a living repertoire rather than a cause. Nothing in acoustics or physiology makes a scale belong to the morning. It is better understood as a shared language of moods tuned to the light, which musicians and listeners learn together.</p>
+    <p>Two more honest footnotes. Some ragas belong to a season instead of an hour: the Malhar family to the monsoon, Basant and Bahar to spring. And South Indian (Carnatic) music has its own raga system, built on 72 parent scales called melakartas; it knows a few time associations but does not organise performance around the clock the way the North does.</p>
+    </div>
+
+    <h3>What you are hearing</h3>
+    <p><b>The tanpura</b> is the drone behind all of it. Four strings are plucked in a slow loop, usually Pa in the lower octave, Sa, Sa, then the low Sa. For ragas that drop Pa, the first string is retuned, usually to Ma (as here for Lalit and Malkauns) or to Ni (here for Marwa). Its shimmering sound comes from the <i>jawari</i>, a broad curved bridge that the vibrating string grazes. That contact keeps pumping energy into high harmonics, so the tone blooms after the pluck instead of only dying away. C. V. Raman described this in 1921. Here it is imitated by letting each upper harmonic swell a little later than the one below it.</p>
+    <p><b>The plucked notes</b> use the Karplus–Strong algorithm (1983): a short burst of noise circulates in a delay line whose length sets the pitch, and every lap gently averages neighbouring samples, which damps the high frequencies the way a real string loses its brightness. Letting the delay length wobble with the string's amplitude adds a faint buzz. With <b>meend</b> on, each note glides from the previous one instead of being struck fresh, the way a sitarist pulls the string sideways across a fret. Notes marked with andolan sway slightly below their pitch.</p>
+  </section>
+
+  <section class="sources">
+    <h3>Sources</h3>
+    <ul>
+      <li>V. N. Bhatkhande, <i>Kramik Pustak Malika</i> (Hindustani Sangeet Paddhati), six volumes, published in the 1910s to 1930s. Thaat classification, aroha/avaroha, vadi/samvadi and times for the ragas here.</li>
+      <li>J. Bor (ed.), S. Rao, W. van der Meer, J. Harvey, 1999. <i>The Raga Guide: A Survey of 74 Hindustani Ragas</i>. Nimbus Records with Rotterdam Conservatory of Music.</li>
+      <li>N. A. Jairazbhoy, 1971. <i>The Rāgs of North Indian Music: Their Structure and Evolution</i>. Faber and Faber, London.</li>
+      <li>C. V. Raman, 1921. "On some Indian stringed instruments". <i>Proceedings of the Indian Association for the Cultivation of Science</i> 7.</li>
+      <li>K. Karplus and A. Strong, 1983. "Digital synthesis of plucked-string and drum timbres". <i>Computer Music Journal</i> 7(2).</li>
+    </ul>
+    <p>Scales follow the common Bhatkhande-style textbook versions. Gharanas differ, especially for Lalit (some sing shuddh Dha), Kedar and Puriya Dhanashree. The sky colours are drawn for a generic mid-latitude day, not your location.</p>
+  </section>
+  <footer>made for my sitar practice · Corentin</footer>
+</main>
+
+<script>
+(function(){
+'use strict';
+// ---------- utilities ----------
+function rng(seed){ let a = seed >>> 0; return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent){ const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+const $ = id => document.getElementById(id);
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- data ----------
+// tokens: S r R g G m M P d D n N ; suffix . = lower octave, ' = upper octave, ~ = andolan ; "," = phrase break
+const SEMI = {S:0,r:1,R:2,g:3,G:4,m:5,M:6,P:7,d:8,D:9,n:10,N:11};
+const LABEL = {S:'Sa',r:'Re',R:'Re',g:'Ga',G:'Ga',m:'Ma',M:'Ma',P:'Pa',d:'Dha',D:'Dha',n:'Ni',N:'Ni'};
+const STRIP = ['S','r','R','g','G','m','M','P','d','D','n','N'];
+const RAGAS = [
+ {id:'lalit', name:'Lalit', short:'Lalit', h:4.5, time:'before dawn, last prahar of the night',
+  thaat:'Marwa (Bhatkhande; some place it in Purvi)', aroha:"N. r G m , M m G , M d S'", avaroha:"r' N d M d m , M m G , r S",
+  vadi:'m', samvadi:'S', mood:'tense and yearning, the grey hour before light',
+  note:'No Pa. Uses both Ma, often one straight after the other, which is its signature. Many sing shuddh Dha instead of komal.', drone:'m'},
+ {id:'bhairav', name:'Bhairav', short:'Bhairav', h:6.4, time:'dawn, sandhi prakash',
+  thaat:'Bhairav', aroha:"S r~ G m P d~ N S'", avaroha:"S' N d~ P m G r~ S",
+  vadi:'d', samvadi:'r', mood:'grave, devotional, solemn',
+  note:'Named after Bhairava, a fierce form of Shiva. Komal Re and komal Dha are sung with a slow andolan.', drone:'P'},
+ {id:'bilawal', name:'Alhaiya Bilawal', short:'Bilawal', h:8.2, time:'morning, first prahar of the day',
+  thaat:'Bilawal', aroha:"S R G R G P D N S'", avaroha:"S' N D P , D n D P , m G m R S",
+  vadi:'D', samvadi:'G', mood:'bright, open, unhurried',
+  note:'Bilawal thaat is the all-natural scale, Bhatkhande’s reference. Ma is skipped going up; a touch of komal Ni appears coming down.', drone:'P'},
+ {id:'todi', name:'Miyan ki Todi', short:'Todi', h:10.5, time:'late morning, second prahar of the day',
+  thaat:'Todi', aroha:"S r g M d N S'", avaroha:"S' N d P M g r S",
+  vadi:'d', samvadi:'g', mood:'tender, plaintive, full of longing',
+  note:'Pa is weak and usually skipped in ascent. A morning raga with tivra Ma, the classic exception to the "tivra Ma means evening" rule.', drone:'P'},
+ {id:'sarang', name:'Brindabani Sarang', short:'Sarang', h:12.6, time:'midday, third prahar of the day',
+  thaat:'Kafi', aroha:"N. S R m P N S'", avaroha:"S' n P m R S",
+  vadi:'R', samvadi:'P', mood:'bright and light, the heat of noon',
+  note:'Five notes, no Ga or Dha. Shuddh Ni going up, komal Ni coming down.', drone:'P'},
+ {id:'bhimpalasi', name:'Bhimpalasi', short:'Bhimpalasi', h:14.4, time:'afternoon, third prahar of the day',
+  thaat:'Kafi', aroha:"n. S g m P n S'", avaroha:"S' n D P m g R S",
+  vadi:'m', samvadi:'S', mood:'longing, warm, a little melancholy',
+  note:'Re and Dha are left out on the way up and return on the way down.', drone:'P'},
+ {id:'multani', name:'Multani', short:'Multani', h:16.2, time:'late afternoon, fourth prahar of the day',
+  thaat:'Todi', aroha:"N. S g M P N S'", avaroha:"S' N d P M g r S",
+  vadi:'P', samvadi:'S', mood:'intense, brooding',
+  note:'Same notes as Todi but a different weight: Re and Dha are skipped going up and only lightly touched, Pa is strong.', drone:'P'},
+ {id:'marwa', name:'Marwa', short:'Marwa', h:17.7, time:'sunset, sandhi prakash',
+  thaat:'Marwa', aroha:"S r G M D N D S'", avaroha:"S' N D M G r S",
+  vadi:'r', samvadi:'D', mood:'restless, unresolved, the light going',
+  note:'No Pa. Sa is touched lightly and rarely rested on, which is why it never quite settles.', drone:'N'},
+ {id:'puriya', name:'Puriya Dhanashree', short:'Puriya Dh.', h:18.6, time:'sunset, sandhi prakash',
+  thaat:'Purvi', aroha:"N. r G M P , M d N S'", avaroha:"S' N d P , M G M r G , r S",
+  vadi:'P', samvadi:'r', mood:'devotional, poignant',
+  note:'Komal Re, komal Dha and tivra Ma, with a strong Pa that Marwa lacks.', drone:'P'},
+ {id:'yaman', name:'Yaman', short:'Yaman', h:19.6, time:'early night, first prahar of the night',
+  thaat:'Kalyan', aroha:"N. R G M D N S'", avaroha:"S' N D P M G R S",
+  vadi:'G', samvadi:'N', mood:'serene, romantic, expansive',
+  note:'All notes natural except tivra Ma. Often the first raga a student learns. Sa and Pa are usually skipped on the way up.', drone:'P'},
+ {id:'bhupali', name:'Bhupali', short:'Bhupali', h:20.6, time:'evening, first prahar of the night',
+  thaat:'Kalyan', aroha:"S R G P D S'", avaroha:"S' D P G R S",
+  vadi:'G', samvadi:'D', mood:'calm, peaceful, clear',
+  note:'Pentatonic, no Ma or Ni. Deshkar uses the same five notes with a different emphasis and is sung in the morning.', drone:'P'},
+ {id:'kedar', name:'Kedar', short:'Kedar', h:21.5, time:'night, first prahar of the night',
+  thaat:'Kalyan', aroha:"S m , m P , D P , N D S'", avaroha:"S' N D P , M P D P m , G m R S",
+  vadi:'m', samvadi:'S', mood:'tender, ornate',
+  note:'Leaps from Sa straight to shuddh Ma; tivra Ma appears in turns around Pa. Ga is light.', drone:'P'},
+ {id:'bihag', name:'Bihag', short:'Bihag', h:22.5, time:'night, second prahar of the night',
+  thaat:'Bilawal', aroha:"N. S G m P N S'", avaroha:"S' N D P , M P G m G , R S",
+  vadi:'G', samvadi:'N', mood:'romantic, sweet',
+  note:'Re and Dha skipped going up. A brief tivra Ma slips in on the way down.', drone:'P'},
+ {id:'bageshree', name:'Bageshree', short:'Bageshree', h:23.5, time:'night, second prahar of the night',
+  thaat:'Kafi', aroha:"n. S g m D n S'", avaroha:"S' n D m , P D g m g , R S",
+  vadi:'m', samvadi:'S', mood:'longing, waiting for someone who has not come',
+  note:'Pa is used sparingly; Re and Pa are skipped on the way up.', drone:'P'},
+ {id:'darbari', name:'Darbari Kanada', short:'Darbari', h:0.6, time:'midnight, third prahar of the night',
+  thaat:'Asavari', aroha:"S R g~ , R S , m P d~ n S'", avaroha:"S' d~ n P , m P g~ m R S",
+  vadi:'R', samvadi:'P', mood:'deep, grave, majestic',
+  note:'"Darbar" is a royal court; tradition credits Tansen at Akbar’s court. Komal Ga and Dha are sung with a slow, wide andolan, mostly in the low register.', drone:'P'},
+ {id:'malkauns', name:'Malkauns', short:'Malkauns', h:1.8, time:'late night, third prahar of the night',
+  thaat:'Bhairavi', aroha:"n. S g m d n S'", avaroha:"S' n d m g S",
+  vadi:'m', samvadi:'S', mood:'deep, meditative, inward',
+  note:'Pentatonic, no Re or Pa. Komal Ga, Dha and Ni.', drone:'m'}
+];
+RAGAS.forEach(r => { r.A = parse(r.aroha); r.V = parse(r.avaroha); r.used = new Set([...r.A, ...r.V].filter(t => t.n).map(t => t.n)); });
+const BYID = Object.fromEntries(RAGAS.map(r => [r.id, r]));
+
+function parse(s){
+  return s.trim().split(/\s+/).map(tok => {
+    if (tok === ',') return {comma:true};
+    const m = tok.match(/^([SrRgGmMPdDnN])(\.|')?(~)?$/);
+    if (!m) throw new Error('bad token ' + tok);
+    const oct = m[2] === '.' ? -1 : m[2] === "'" ? 1 : 0;
+    return {n:m[1], oct, and:!!m[3], semi:SEMI[m[1]] + 12*oct};
+  });
+}
+
+const PRAHARS = ['1st prahar of the day','2nd prahar of the day','3rd prahar of the day','4th prahar of the day',
+                 '1st prahar of the night','2nd prahar of the night','3rd prahar of the night','4th prahar of the night'];
+function praharOf(h){ return Math.floor((((h - 6) % 24) + 24) % 24 / 3); }
+function ragaPrahar(r){ return praharOf(r.h); }
+
+// ---------- sky colours ----------
+const SKY = [[0,'#121735'],[3.5,'#1a1f47'],[4.8,'#3d3270'],[5.6,'#9a5a86'],[6.2,'#ee8f74'],[7,'#f6c47c'],[8.3,'#a9d5e6'],
+             [12,'#79c0ea'],[15.5,'#8dc6e2'],[16.8,'#f2c27a'],[17.8,'#ec8a5e'],[18.6,'#b4506e'],[19.4,'#5a3a78'],[20.6,'#29285c'],[24,'#121735']];
+function hex2rgb(h){ return [1,3,5].map(i => parseInt(h.slice(i,i+2),16)); }
+function skyAt(h){
+  h = ((h % 24) + 24) % 24;
+  for (let i = 0; i < SKY.length - 1; i++){
+    const [h0,c0] = SKY[i], [h1,c1] = SKY[i+1];
+    if (h >= h0 && h <= h1){
+      const u = (h - h0)/(h1 - h0), a = hex2rgb(c0), b = hex2rgb(c1);
+      const s = u*u*(3 - 2*u);
+      return 'rgb(' + a.map((v,k) => Math.round(v + (b[k]-v)*s)).join(',') + ')';
+    }
+  }
+  return SKY[0][1];
+}
+
+// ---------- dial geometry ----------
+const CX = 500, CY = 500;
+const R_SKY_O = 478, R_SKY_I = 400, R_PR_O = 400, R_PR_I = 362, R_CORE = 160;
+function ang(h){ return (h - 12)/24 * Math.PI * 2; }
+function pt(h, r){ const a = ang(h); return [CX + r*Math.sin(a), CY - r*Math.cos(a)]; }
+function wobblyCircle(r, amp, seed){
+  const R = rng(seed), ph = [R()*6.28, R()*6.28, R()*6.28], k = [3 + Math.floor(R()*3), 7 + Math.floor(R()*4), 13];
+  let d = '';
+  for (let i = 0; i <= 120; i++){
+    const t = i/120*Math.PI*2;
+    const rr = r + amp*(Math.sin(k[0]*t + ph[0])*.5 + Math.sin(k[1]*t + ph[1])*.3 + Math.sin(k[2]*t + ph[2])*.2);
+    d += (i ? 'L' : 'M') + (CX + rr*Math.sin(t)).toFixed(1) + ' ' + (CY - rr*Math.cos(t)).toFixed(1);
+  }
+  return d + 'Z';
+}
+function annulus(h0, h1, r0, r1){
+  const a = pt(h0, r1), b = pt(h1, r1), c = pt(h1, r0), d = pt(h0, r0);
+  const large = (h1 - h0) > 12 ? 1 : 0;
+  return `M${a[0]} ${a[1]} A${r1} ${r1} 0 ${large} 1 ${b[0]} ${b[1]} L${c[0]} ${c[1]} A${r0} ${r0} 0 ${large} 0 ${d[0]} ${d[1]}Z`;
+}
+
+const dial = $('dial');
+const RADIUS = {malkauns:200, kedar:214, bhupali:312, multani:296};
+let gPrahar, gHand, gCore, plaques = {};
+function buildDial(){
+  dial.innerHTML = '';
+  const defs = el('defs', {}, dial);
+  const rg = el('radialGradient', {id:'coreg', cx:'50%', cy:'40%', r:'65%'}, defs);
+  el('stop', {offset:'0%', 'stop-color':'#fff7e6'}, rg); el('stop', {offset:'100%', 'stop-color':'#ead7b1'}, rg);
+  const glow = el('filter', {id:'glow', x:'-50%', y:'-50%', width:'200%', height:'200%'}, defs);
+  el('feGaussianBlur', {stdDeviation:'9'}, glow);
+
+  // soft shadow disc
+  el('circle', {cx:CX + 10, cy:CY + 12, r:R_SKY_O + 4, fill:'#0c0a15'}, dial);
+  // sky ring wedges
+  const gs = el('g', {}, dial);
+  for (let i = 0; i < 96; i++){
+    const h0 = i/4, h1 = (i + 1)/4 + 0.02;
+    el('path', {d:annulus(h0, h1, R_SKY_I, R_SKY_O), fill:skyAt(h0 + 0.125)}, gs);
+  }
+  // stars on the night part of the ring
+  const R = rng(1971);
+  for (let i = 0; i < 70; i++){
+    const h = R()*24; const night = (h > 20.2 || h < 4.6);
+    if (!night) continue;
+    const r = R_SKY_I + 10 + R()*(R_SKY_O - R_SKY_I - 20);
+    const [x,y] = pt(h, r);
+    el('circle', {cx:x, cy:y, r:(0.8 + R()*1.8).toFixed(2), fill:'#fdf3d6', opacity:(0.5 + R()*0.5).toFixed(2)}, gs);
+  }
+  // hour ticks and labels
+  const gt = el('g', {}, dial);
+  for (let h = 0; h < 24; h++){
+    const [x0,y0] = pt(h, R_SKY_I + 2), [x1,y1] = pt(h, R_SKY_I + (h % 3 ? 9 : 16));
+    el('line', {x1:x0, y1:y0, x2:x1, y2:y1, stroke:'#1b1a22', 'stroke-width':h % 3 ? 1.6 : 2.6, 'stroke-linecap':'round'}, gt);
+  }
+  const lbl = {0:'midnight', 3:'3', 6:'6 am', 9:'9', 12:'noon', 15:'15', 18:'6 pm', 21:'21'};
+  for (const k in lbl){
+    const h = +k, [x,y] = pt(h, R_SKY_I + 40);
+    const dark = (h <= 4 || h >= 20);
+    const t = el('text', {x, y:y + 9, 'text-anchor':'middle', 'font-family':'Inter, system-ui, sans-serif', 'font-weight':600,
+      'font-size':h % 6 ? 24 : 26, fill:dark ? '#f6ead2' : '#1b1a22'}, gt);
+    t.textContent = lbl[k];
+  }
+  // prahar band
+  gPrahar = el('g', {}, dial);
+  for (let p = 0; p < 8; p++){
+    const h0 = 6 + 3*p, h1 = h0 + 3;
+    el('path', {d:annulus(h0, h1, R_PR_I, R_PR_O), fill:p < 4 ? '#ead8b4' : '#4a3a62', stroke:'#1b1a22', 'stroke-width':2, 'data-p':p, class:'pband'}, gPrahar);
+    const [x,y] = pt(h0 + 1.5, (R_PR_I + R_PR_O)/2);
+    const t = el('text', {x, y:y + 7, 'text-anchor':'middle', 'font-family':'Fraunces, Georgia, serif', 'font-size':20, 'font-style':'italic',
+      fill:p < 4 ? '#1b1a22' : '#f6ead2', 'pointer-events':'none'}, gPrahar);
+    t.textContent = ['I','II','III','IV','I','II','III','IV'][p];
+  }
+  // inner plate
+  el('path', {d:wobblyCircle(R_PR_I - 2, 2.2, 7), fill:'#2d2242', stroke:'#1b1a22', 'stroke-width':2.4}, dial);
+  // ink outlines
+  el('path', {d:wobblyCircle(R_SKY_O, 2.6, 11), fill:'none', stroke:'#1b1a22', 'stroke-width':3.2}, dial);
+  el('path', {d:wobblyCircle(R_SKY_I, 1.8, 12), fill:'none', stroke:'#1b1a22', 'stroke-width':2.4}, dial);
+
+  // hand (behind plaques)
+  gHand = el('g', {'pointer-events':'none'}, dial);
+
+  // plaques
+  const sorted = RAGAS.slice().sort((a,b) => a.h - b.h);
+  const gp = el('g', {}, dial);
+  sorted.forEach((r, i) => {
+    const rad = RADIUS[r.id] || (i % 2 ? 228 : 300);
+    const [tx,ty] = pt(r.h, R_PR_I);
+    const [x,y] = pt(r.h, rad);
+    el('line', {x1:tx, y1:ty, x2:x, y2:y, stroke:'#cbb9e0', 'stroke-width':1.4, 'stroke-dasharray':'3 5', opacity:.8}, gp);
+    el('circle', {cx:tx, cy:ty, r:5, fill:'#f6ead2', stroke:'#1b1a22', 'stroke-width':1.8}, gp);
+    const g = el('g', {class:'plq', tabindex:0, role:'button', 'aria-label':r.name + ', ' + r.time}, gp);
+    const w = r.short.length*12.4 + 24, hgt = 38;
+    el('rect', {x:x - w/2 + 4, y:y - hgt/2 + 5, width:w, height:hgt, rx:12, fill:'#0c0a15'}, g);
+    el('rect', {x:x - w/2, y:y - hgt/2, width:w, height:hgt, rx:12, fill:'#f6ead2', stroke:'#1b1a22', 'stroke-width':2.2}, g);
+    const t = el('text', {x, y:y + 8, 'text-anchor':'middle', 'font-family':'Fraunces, Georgia, serif', 'font-weight':600, 'font-size':22, fill:'#1b1a22'}, g);
+    t.textContent = r.short;
+    g.addEventListener('click', e => { e.stopPropagation(); select(r.id); });
+    g.addEventListener('pointerdown', e => e.stopPropagation());
+    g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); select(r.id); } });
+    plaques[r.id] = g;
+  });
+
+  // core
+  gCore = el('g', {'pointer-events':'none'}, dial);
+}
+
+function drawTime(){
+  const h = state.t/60;
+  const p = praharOf(h);
+  gPrahar.querySelectorAll('.pband').forEach(b => {
+    const on = +b.dataset.p === p;
+    b.setAttribute('fill', on ? '#e9a23b' : (+b.dataset.p < 4 ? '#ead8b4' : '#4a3a62'));
+  });
+  gPrahar.querySelectorAll('text').forEach((t,i) => t.setAttribute('fill', i === p ? '#1b1a22' : (i < 4 ? '#1b1a22' : '#f6ead2')));
+  // hand
+  gHand.innerHTML = '';
+  const day = h > 6.1 && h < 18.4;
+  const [hx,hy] = pt(h, R_PR_I - 6);
+  el('line', {x1:CX, y1:CY, x2:hx, y2:hy, stroke:'#f6ead2', 'stroke-width':5, 'stroke-linecap':'round', opacity:.85}, gHand);
+  el('line', {x1:CX, y1:CY, x2:hx, y2:hy, stroke:'#1b1a22', 'stroke-width':2, 'stroke-linecap':'round'}, gHand);
+  const [sx,sy] = pt(h, (R_SKY_I + R_SKY_O)/2);
+  const body = el('g', {transform:`translate(${sx.toFixed(1)} ${sy.toFixed(1)})`, class:'sunbody'}, gHand);
+  if (day){
+    el('circle', {r:46, fill:'#ffd77a', opacity:.55, filter:'url(#glow)'}, body);
+    const rays = el('g', {}, body);
+    for (let i = 0; i < 12; i++){
+      const a = i/12*Math.PI*2, r0 = 33, r1 = i % 2 ? 43 : 48;
+      el('line', {x1:r0*Math.cos(a), y1:r0*Math.sin(a), x2:r1*Math.cos(a), y2:r1*Math.sin(a), stroke:'#1b1a22', 'stroke-width':3, 'stroke-linecap':'round'}, rays);
+    }
+    el('circle', {r:27, fill:'#ffc64a', stroke:'#1b1a22', 'stroke-width':3}, body);
+    el('circle', {cx:-8, cy:-8, r:8, fill:'#ffe6a3', opacity:.8}, body);
+  } else {
+    el('circle', {r:44, fill:'#c8c3ff', opacity:.35, filter:'url(#glow)'}, body);
+    el('path', {d:'M 10 -25.08 A 27 27 0 1 0 10 25.08 A 26 26 0 0 1 10 -25.08 Z', fill:'#fbf0cf', stroke:'#1b1a22', 'stroke-width':3, 'stroke-linejoin':'round'}, body);
+  }
+  // core text
+  gCore.innerHTML = '';
+  el('circle', {cx:CX + 6, cy:CY + 7, r:R_CORE, fill:'#0c0a15'}, gCore);
+  el('path', {d:wobblyCircle(R_CORE, 2, 3), fill:'url(#coreg)', stroke:'#1b1a22', 'stroke-width':3}, gCore);
+  const hh = Math.floor(h), mm = Math.round((h - hh)*60);
+  const t1 = el('text', {x:CX, y:CY - 18, 'text-anchor':'middle', 'font-family':'Fraunces, Georgia, serif', 'font-weight':600, 'font-size':72, fill:'#1b1a22'}, gCore);
+  t1.textContent = String(hh).padStart(2,'0') + ':' + String(mm % 60).padStart(2,'0');
+  const pr = PRAHARS[p].split(' of ');
+  const t2 = el('text', {x:CX, y:CY + 30, 'text-anchor':'middle', 'font-family':'Inter, system-ui, sans-serif', 'font-weight':600, 'font-size':25, fill:'#5a3a6e'}, gCore);
+  t2.textContent = pr[0];
+  const t3 = el('text', {x:CX, y:CY + 60, 'text-anchor':'middle', 'font-family':'Inter, system-ui, sans-serif', 'font-size':23, fill:'#5a3a6e'}, gCore);
+  t3.textContent = 'of ' + pr[1];
+  const sandhi = (h >= 5 && h < 7.5) || (h >= 17 && h < 19.5);
+  if (sandhi){
+    const t4 = el('text', {x:CX, y:CY + 98, 'text-anchor':'middle', 'font-family':'Fraunces, Georgia, serif', 'font-style':'italic', 'font-size':24, fill:'#b4506e'}, gCore);
+    t4.textContent = 'sandhi prakash';
+  }
+  RAGAS.forEach(r => plaques[r.id].classList.toggle('inp', ragaPrahar(r) === p));
+  $('tslider').value = state.t;
+  $('tlabel').textContent = t1.textContent;
+  // now line + chips
+  const here = RAGAS.filter(r => ragaPrahar(r) === p).sort(byTime(h));
+  $('nowline').innerHTML = (state.live ? 'Right now it is the <b>' : 'At this hour it is the <b>') + PRAHARS[p] + '</b>' +
+    (sandhi ? ', a twilight hour' : '') + '. Ragas of this prahar: ' + (here.length ? here.map(r => '<b>' + r.name + '</b>').join(', ') : 'none on this wheel') + '.';
+  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('inp', ragaPrahar(BYID[c.dataset.id]) === p));
+}
+function byTime(h){ return (a,b) => ((a.h - h + 36) % 24) - ((b.h - h + 36) % 24); }
+
+// ---------- selection & panel ----------
+const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const state = {t:0, live:true, sel:'yaman', sa:2};
+function saMidi(){ return state.sa >= 8 ? 36 + state.sa : 48 + state.sa; }
+function freqOf(semi){ return 440*Math.pow(2, (saMidi() + semi - 69)/12); }
+function westName(semi){ const m = saMidi() + semi; return NOTES[((m % 12) + 12) % 12] + (Math.floor(m/12) - 1); }
+function swHTML(t, idx){
+  if (t.comma) return '<span class="comma">,</span>';
+  const cls = ['sw'];
+  if ('rgdn'.includes(t.n)) cls.push('komal');
+  if (t.n === 'M') cls.push('tivra');
+  if (t.oct < 0) cls.push('mandra');
+  if (t.oct > 0) cls.push('taar');
+  if (t.and) cls.push('and');
+  return `<span class="${cls.join(' ')}" data-i="${idx}">${t.and ? '<span class="wv">~</span>' : ''}${LABEL[t.n]}</span>`;
+}
+function single(n){ return swHTML({n, oct:0}); }
+
+function renderPanel(){
+  const r = BYID[state.sel];
+  $('pname').textContent = r.name;
+  $('psub').textContent = 'Thaat ' + r.thaat.split(' (')[0] + ' · ' + r.time;
+  $('aroha').innerHTML = r.A.map(swHTML).join('');
+  $('avaroha').innerHTML = r.V.map(swHTML).join('');
+  const wl = arr => arr.map((t,i) => t.comma ? '' : `<span data-i="${i}">${westName(t.semi)}</span>`).join('');
+  $('warroha').innerHTML = wl(r.A);
+  $('wavaroha').innerHTML = wl(r.V);
+  $('strip').innerHTML = STRIP.map(n => {
+    const c = ['cell'];
+    if (r.used.has(n)) c.push('use');
+    if (n === r.vadi) c.push('vadi');
+    if (n === r.samvadi) c.push('samvadi');
+    return `<div class="${c.join(' ')}" data-n="${n}" title="${LABEL[n]} = ${westName(SEMI[n])}">${single(n)}<small>${westName(SEMI[n]).replace(/\d+$/,'')}</small></div>`;
+  }).join('');
+  const droneName = {P:'Pa', m:'shuddh Ma', N:'Ni'}[r.drone];
+  $('facts').innerHTML =
+    `<dt>time</dt><dd>${r.time}</dd>` +
+    `<dt>thaat</dt><dd>${r.thaat}</dd>` +
+    `<dt>vadi · samvadi</dt><dd>${single(r.vadi)} · ${single(r.samvadi)}</dd>` +
+    `<dt>mood</dt><dd>traditionally ${r.mood}</dd>` +
+    `<dt>notes</dt><dd>${r.note}</dd>` +
+    `<dt>tanpura</dt><dd>first string tuned to ${droneName}</dd>`;
+  RAGAS.forEach(x => plaques[x.id].classList.toggle('sel', x.id === r.id));
+  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('sel', c.dataset.id === r.id));
+}
+function select(id){
+  if (state.sel === id) return;
+  stopPhrase();
+  state.sel = id; renderPanel();
+  if (audio.droneOn) audio.rebuildDrone();
+}
+
+function buildChips(){
+  const c = $('chips');
+  RAGAS.slice().sort((a,b) => ((a.h - 4 + 24) % 24) - ((b.h - 4 + 24) % 24)).forEach(r => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.dataset.id = r.id; b.textContent = r.name;
+    b.addEventListener('click', () => select(r.id));
+    c.appendChild(b);
+  });
+}
+
+// ---------- time control ----------
+function nowMinutes(){ const d = new Date(); return d.getHours()*60 + d.getMinutes(); }
+function setTime(m, live){ state.t = ((Math.round(m) % 1440) + 1440) % 1440; state.live = live; drawTime(); }
+$('tslider').addEventListener('input', e => setTime(+e.target.value, false));
+$('nowbtn').addEventListener('click', () => { setTime(nowMinutes(), true); selectNearest(); });
+setInterval(() => { if (state.live) setTime(nowMinutes(), true); }, 20000);
+let dragging = false;
+function dialTime(e){
+  const b = dial.getBoundingClientRect();
+  const x = (e.clientX - b.left)/b.width*1000 - CX, y = (e.clientY - b.top)/b.height*1000 - CY;
+  return {h:((12 + Math.atan2(x, -y)/(Math.PI*2)*24) % 24 + 24) % 24, r:Math.hypot(x, y)};
+}
+dial.addEventListener('pointerdown', e => {
+  const d = dialTime(e);
+  if (d.r < R_PR_I - 10 || d.r > R_SKY_O + 10) return;
+  dragging = true; dial.setPointerCapture(e.pointerId);
+  setTime(d.h*60, false);
+});
+dial.addEventListener('pointermove', e => { if (dragging) setTime(dialTime(e).h*60, false); });
+dial.addEventListener('pointerup', () => { dragging = false; });
+dial.addEventListener('pointercancel', () => { dragging = false; });
+function selectNearest(){
+  const h = state.t/60;
+  const r = RAGAS.slice().sort((a,b) => Math.min(Math.abs(a.h - h), 24 - Math.abs(a.h - h)) - Math.min(Math.abs(b.h - h), 24 - Math.abs(b.h - h)))[0];
+  state.sel = null; select(r.id);
+}
+
+// ---------- audio ----------
+const audio = {
+  ctx:null, master:null, droneGain:null, sitarGain:null, droneOn:false, droneBufs:null, droneNext:0, droneStep:0, timer:null,
+  phraseSrc:null, highlightTimers:[], droneSrcs:[],
+  init(){
+    if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const ctx = this.ctx = new AC();
+    this.master = ctx.createGain(); this.master.gain.value = +$('vol').value;
+    const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 3;
+    this.master.connect(comp); comp.connect(ctx.destination);
+    // reverb
+    const ir = ctx.createBuffer(2, ctx.sampleRate*2.4, ctx.sampleRate), R = rng(42);
+    for (let ch = 0; ch < 2; ch++){ const d = ir.getChannelData(ch); for (let i = 0; i < d.length; i++) d[i] = (R()*2 - 1)*Math.pow(1 - i/d.length, 3.2)*0.5; }
+    const conv = ctx.createConvolver(); conv.buffer = ir;
+    const wet = ctx.createGain(); wet.gain.value = 0.22; conv.connect(wet); wet.connect(this.master);
+    this.droneGain = ctx.createGain(); this.droneGain.gain.value = 0.42;
+    this.sitarGain = ctx.createGain(); this.sitarGain.gain.value = 0.9;
+    const pres = ctx.createBiquadFilter(); pres.type = 'peaking'; pres.frequency.value = 2800; pres.gain.value = 4; pres.Q.value = 0.8;
+    this.sitarGain.connect(pres);
+    [this.droneGain, pres].forEach(n => { n.connect(this.master); n.connect(conv); });
+  },
+  rebuildDrone(){
+    const r = BYID[state.sel], sr = this.ctx.sampleRate;
+    const first = {P:7, m:5, N:11}[r.drone] - 12;
+    const key = saMidi() + ':' + first;
+    if (this.droneKey === key) return;
+    this.droneKey = key;
+    this.droneBufs = [tanpuraBuf(this.ctx, freqOf(first), sr, 1), tanpuraBuf(this.ctx, freqOf(0), sr, 2), tanpuraBuf(this.ctx, freqOf(-12), sr, 3)];
+  },
+  startDrone(){
+    this.init(); this.rebuildDrone();
+    this.droneOn = true; this.droneNext = this.ctx.currentTime + 0.08; this.droneStep = 0;
+    const R = rng(9);
+    const pattern = [[0, 0.85, 1.0], [1, 0.62, 1.0], [1, 0.62, 1.0007], [2, 0.95, 1.0]];
+    const gaps = [1.15, 1.1, 1.2, 1.9];
+    const tick = () => {
+      while (this.droneNext < this.ctx.currentTime + 0.35){
+        const [b, g, rate] = pattern[this.droneStep % 4];
+        const src = this.ctx.createBufferSource(); src.buffer = this.droneBufs[b]; src.playbackRate.value = rate;
+        const gn = this.ctx.createGain(); gn.gain.value = g*(0.92 + R()*0.12);
+        src.connect(gn); gn.connect(this.droneGain); src.start(this.droneNext);
+        this.droneSrcs.push(src); src.onended = () => { const k = this.droneSrcs.indexOf(src); if (k >= 0) this.droneSrcs.splice(k, 1); };
+        this.droneNext += gaps[this.droneStep % 4]*(0.97 + R()*0.06);
+        this.droneStep++;
+      }
+    };
+    tick(); this.timer = setInterval(tick, 90);
+    this.droneGain.gain.cancelScheduledValues(this.ctx.currentTime);
+    this.droneGain.gain.setTargetAtTime(0.42, this.ctx.currentTime, 0.05);
+  },
+  stopDrone(){
+    if (!this.ctx) return;
+    clearInterval(this.timer); this.droneOn = false;
+    const g = this.droneGain.gain, t = this.ctx.currentTime;
+    g.cancelScheduledValues(t); g.setTargetAtTime(0, t, 0.25);
+    this.droneSrcs.forEach(src => { try { src.stop(t + 1.2); } catch (e) {} });
+    this.droneSrcs = [];
+  }
+};
+
+// sine table additive tanpura string with a delayed "jawari bloom" of upper partials
+const TAB = new Float32Array(4096); for (let i = 0; i < 4096; i++) TAB[i] = Math.sin(i/4096*Math.PI*2);
+function tanpuraBuf(ctx, f, sr, seed){
+  const dur = 5.6, len = Math.floor(dur*sr), out = new Float32Array(len), R = rng(seed*101);
+  const nh = Math.min(32, Math.floor(6000/f));
+  const BL = 64, nb = Math.ceil(len/BL);
+  for (let n = 1; n <= nh; n++){
+    const an = 1/Math.pow(n, 0.8), fn = f*n*(1 + 0.00002*n*n), inc = fn/sr*4096;
+    const tc = Math.min(3.2, 0.12 + 0.075*n), tau = 3.4/(1 + 0.025*n), bw = 0.45 + 0.02*n;
+    let ph = R()*4096;
+    for (let b = 0; b < nb; b++){
+      const t = b*BL/sr;
+      const att = 1 - Math.exp(-t/0.008);
+      const bloom = n <= 2 ? 1 : 0.18 + 1.0*Math.exp(-((t - tc)*(t - tc))/(2*bw*bw));
+      const tail = Math.min(1, (dur - t)/0.4);
+      const e0 = an*att*Math.exp(-t/tau)*bloom*tail;
+      const end = Math.min(len, (b + 1)*BL);
+      for (let i = b*BL; i < end; i++){ out[i] += e0*TAB[(ph | 0) & 4095]; ph += inc; }
+    }
+  }
+  let pk = 0; for (let i = 0; i < len; i++) pk = Math.max(pk, Math.abs(out[i]));
+  const buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = out[i]/pk*0.5;
+  return buf;
+}
+
+// Karplus-Strong string with variable pitch (for meend / andolan) and an amplitude-dependent delay (buzz)
+function renderPhrase(tokens, meend, noteDur){
+  const ctx = audio.ctx, sr = ctx.sampleRate;
+  const segs = []; let t = 0.05, prevF = null;
+  tokens.forEach((tk, i) => {
+    if (tk.comma){ t += noteDur*0.55; return; }
+    const f = freqOf(tk.semi), dur = noteDur*(tk.and ? 1.9 : 1);
+    segs.push({i, t, dur, f, prevF, and:tk.and, amp:(meend && prevF) ? 0.45 : 1});
+    t += dur; prevF = f;
+  });
+  const total = t + 2.2, len = Math.ceil(total*sr);
+  const fArr = new Float32Array(len), exc = new Float32Array(len), R = rng(77);
+  let si = 0;
+  for (let n = 0; n < len; n++){
+    while (si + 1 < segs.length && n >= segs[si + 1].t*sr) si++;
+    const s = segs[si], tt = n/sr - s.t;
+    let f = s.f;
+    if (meend && s.prevF && tt >= 0){
+      const gT = Math.min(0.17, 0.45*s.dur);
+      if (tt < gT){ const u = tt/gT, w = u*u*(3 - 2*u); f = Math.exp(Math.log(s.prevF) + (Math.log(s.f) - Math.log(s.prevF))*w); }
+    }
+    if (s.and && tt > 0.12) f *= Math.pow(2, -0.32*(1 - Math.cos(2*Math.PI*1.4*(tt - 0.12)))/2/12);
+    fArr[n] = n < segs[0].t*sr ? segs[0].f : f;
+  }
+  segs.forEach(s => {
+    const L = Math.round(sr/s.f), start = Math.round(s.t*sr), noise = new Float32Array(L);
+    let lp = 0; for (let k = 0; k < L; k++){ lp += 0.62*((R()*2 - 1) - lp); noise[k] = lp; }
+    const off = Math.max(1, Math.round(L*0.12));
+    for (let k = 0; k < L && start + k < len; k++) exc[start + k] += s.amp*0.9*(noise[k] - (k >= off ? noise[k - off] : 0));
+  });
+  const N = 8192, line = new Float32Array(N), out = new Float32Array(len);
+  let w = 0, lastY = 0, fPrev = -1, g = 0;
+  for (let n = 0; n < len; n++){
+    const f = fArr[n];
+    if (f !== fPrev){ g = Math.exp(-6.9078/(f*3.0)); fPrev = f; }
+    const D = (sr/f - 0.5)*(1 - 0.006*Math.min(1, Math.abs(lastY)*3));
+    let rp = w - D; while (rp < 0) rp += N;
+    const i0 = rp | 0, fr = rp - i0;
+    const a = line[i0 % N], b = line[(i0 + 1) % N], c = line[(i0 - 1 + N) % N];
+    const x1 = a + (b - a)*fr, x0 = c + (a - c)*fr;
+    const y = g*0.5*(x1 + x0) + exc[n];
+    line[w] = y; w = (w + 1) % N; lastY = y;
+    const z = 3*y, zz = z < -3 ? -1 : z > 3 ? 1 : z*(27 + z*z)/(27 + 9*z*z);
+    out[n] = 0.75*y + 0.25*zz;
+  }
+  let pk = 1e-6; for (let n = 0; n < len; n++) pk = Math.max(pk, Math.abs(out[n]));
+  const fadeN = Math.floor(0.6*sr);
+  for (let n = 0; n < len; n++){ out[n] = out[n]/pk*0.8; if (n > len - fadeN) out[n] *= (len - n)/fadeN; }
+  const buf = ctx.createBuffer(1, len, sr); buf.getChannelData(0).set(out);
+  return {buf, segs};
+}
+
+function stopPhrase(){
+  audio.highlightTimers.forEach(clearTimeout); audio.highlightTimers = [];
+  document.querySelectorAll('.sw.on, .west span.on').forEach(x => x.classList.remove('on'));
+  if (audio.phraseSrc){ try { audio.phraseSrc.stop(); } catch (e) {} audio.phraseSrc = null; }
+}
+function playWhich(which){
+  audio.init(); stopPhrase();
+  const r = BYID[state.sel], noteDur = 60/+$('tempo').value, meend = $('meend').checked;
+  const parts = which === 'both' ? ['aroha','avaroha'] : [which];
+  const toks = [], map = [];
+  parts.forEach((p, k) => {
+    const arr = p === 'aroha' ? r.A : r.V;
+    if (k) { toks.push({comma:true}); map.push(null); }
+    arr.forEach((tk, i) => { toks.push(tk); map.push([p, i]); });
+  });
+  const {buf, segs} = renderPhrase(toks, meend, noteDur);
+  const src = audio.ctx.createBufferSource(); src.buffer = buf; src.connect(audio.sitarGain);
+  const t0 = audio.ctx.currentTime + 0.05; src.start(t0); audio.phraseSrc = src;
+  src.onended = () => { if (audio.phraseSrc === src) audio.phraseSrc = null; };
+  segs.forEach(s => {
+    const [p, i] = map[s.i];
+    const nodes = [...document.querySelectorAll(`#${p} .sw[data-i="${i}"], #w${p === 'aroha' ? 'arroha' : 'avaroha'} span[data-i="${i}"]`)];
+    const on = setTimeout(() => nodes.forEach(n => n.classList.add('on')), (s.t + 0.05)*1000);
+    const off = setTimeout(() => nodes.forEach(n => n.classList.remove('on')), (s.t + s.dur + 0.03)*1000);
+    audio.highlightTimers.push(on, off);
+  });
+}
+function pluckOne(n){
+  audio.init(); stopPhrase();
+  const {buf} = renderPhrase([{n, oct:0, semi:SEMI[n]}], false, 0.6);
+  const src = audio.ctx.createBufferSource(); src.buffer = buf; src.connect(audio.sitarGain); src.start(); audio.phraseSrc = src;
+}
+
+document.querySelectorAll('[data-play]').forEach(b => b.addEventListener('click', () => playWhich(b.dataset.play)));
+$('strip').addEventListener('click', e => { const c = e.target.closest('.cell'); if (c) pluckOne(c.dataset.n); });
+$('stopbtn').addEventListener('click', () => { stopPhrase(); audio.stopDrone(); setDroneBtn(); });
+$('dronebtn').addEventListener('click', () => { if (audio.droneOn) audio.stopDrone(); else audio.startDrone(); setDroneBtn(); });
+function setDroneBtn(){ const b = $('dronebtn'); b.classList.toggle('on', audio.droneOn); b.setAttribute('aria-pressed', audio.droneOn); b.textContent = audio.droneOn ? 'drone on' : 'tanpura drone'; }
+$('vol').addEventListener('input', e => { if (audio.master) audio.master.gain.setTargetAtTime(+e.target.value, audio.ctx.currentTime, 0.03); });
+const sasel = $('sasel');
+NOTES.forEach((nm, i) => { const o = document.createElement('option'); o.value = i; o.textContent = nm; sasel.appendChild(o); });
+sasel.value = state.sa;
+sasel.addEventListener('change', () => { state.sa = +sasel.value; stopPhrase(); renderPanel(); if (audio.droneOn) audio.rebuildDrone(); });
+
+// ---------- background stars ----------
+(function(){
+  const s = $('stars'), R = rng(2026);
+  s.setAttribute('viewBox', '0 0 1000 1000'); s.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+  for (let i = 0; i < 140; i++){
+    el('circle', {cx:(R()*1000).toFixed(1), cy:(R()*1000).toFixed(1), r:(0.4 + R()*1.4).toFixed(2), fill:'#f6ead2', opacity:(0.15 + R()*0.5).toFixed(2)}, s);
+  }
+})();
+
+// ---------- boot ----------
+buildDial(); buildChips();
+const q = new URLSearchParams(location.search).get('t');
+if (q && /^\d{1,2}:\d{2}$/.test(q)){ const [a,b] = q.split(':').map(Number); setTime(a*60 + b, false); }
+else setTime(nowMinutes(), true);
+const qs = new URLSearchParams(location.search).get('raga');
+if (qs && BYID[qs]) { state.sel = null; select(qs); } else selectNearest();
+if (!reduceMotion){
+  // gentle breathing of the sun
+  let ph = 0;
+  (function loop(){ ph += 0.02; const b = dial.querySelector('.sunbody circle'); if (b) b.setAttribute('opacity', (0.45 + 0.15*Math.sin(ph)).toFixed(3)); requestAnimationFrame(loop); })();
+}
+})();
+</script>
+</body>
+</html>

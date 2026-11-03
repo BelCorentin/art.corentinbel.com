@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cloud atlas · art · Corentin Bel</title>
+<meta name="description" content="A cloud atlas for people who play outside: the ten cloud genera plus lenticulars, mammatus, shelf clouds and fog, painted at their real heights, with what each one tells a paraglider, a sailor and a wing-foiler.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400;1,9..144,600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1b1a22; --paper:#f6f1e6; --sky:#bcdaf0; --deep:#2f5f99; --accent:#e0794a;
+  --muted:#5b6274; --card:#fffdf8; --line:rgba(27,26,34,.14);
+  --serif:"Fraunces", Georgia, "Times New Roman", serif;
+  --sans:"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+html{background:var(--paper)}
+body{background:linear-gradient(#cfe4f4 0, #eef3f2 520px, var(--paper) 1100px) no-repeat, var(--paper);color:var(--ink);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--deep)}
+.topbar{position:fixed;top:0;left:0;right:0;z-index:30;padding:9px 16px;font:13px var(--sans);background:rgba(246,241,230,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.topbar a{color:var(--ink);text-decoration:none;opacity:.8}
+.topbar a:hover{opacity:1;text-decoration:underline}
+.topbar span{opacity:.45;margin:0 4px}
+header.hero{max-width:1240px;margin:0 auto;padding:62px 24px 10px}
+h1{font:600 clamp(30px,4.6vw,56px)/1.04 var(--serif);margin:0 0 10px;letter-spacing:-.01em;font-variation-settings:"opsz" 120}
+h1 em{font-style:italic;font-weight:400;color:var(--deep)}
+.lede{max-width:760px;margin:0;color:#343848;font-size:17px}
+.lede b{font-weight:600}
+.wrap{max-width:1240px;margin:18px auto 0;padding:0 24px;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:28px;align-items:start}
+figure.sky{margin:0;position:relative;border:2.5px solid var(--ink);border-radius:18px;overflow:hidden;background:#9cc7ea;box-shadow:6px 7px 0 rgba(27,26,34,.12)}
+#sky{display:block;width:100%;height:auto;touch-action:manipulation}
+#sky .cl{cursor:pointer;transition:filter .18s}
+#sky .cl:hover,#sky .cl.sel{filter:drop-shadow(0 0 6px rgba(255,236,170,.95)) drop-shadow(0 0 2px rgba(255,255,255,.9))}
+#sky .lbl{font:italic 400 21px var(--serif);fill:#1b1a22;paint-order:stroke;stroke:rgba(255,255,255,.75);stroke-width:5px;stroke-linejoin:round;pointer-events:none}
+#sky .lbl.dim{opacity:.75}
+#sky .axis{font:600 19px var(--sans);fill:#1b1a22;opacity:.75}
+#sky .etage{font:600 15px var(--sans);letter-spacing:.14em;fill:#1b1a22;opacity:.62}
+#sky .note{font:italic 400 17px var(--serif);fill:#1b1a22;opacity:.8}
+aside{position:sticky;top:52px;display:flex;flex-direction:column;gap:16px;max-height:calc(100vh - 64px);overflow:auto;padding-bottom:8px;scrollbar-width:thin}
+.panel{background:var(--card);border:2px solid var(--ink);border-radius:16px;padding:16px 18px;box-shadow:4px 5px 0 rgba(27,26,34,.1)}
+.panel h3{font:600 19px var(--serif);margin:0 0 4px}
+.panel .sub{font-size:13px;color:var(--muted);margin:0 0 10px}
+.ctl{margin:10px 0 4px}
+.ctl label{display:flex;justify-content:space-between;font-size:13px;font-weight:600}
+.ctl label output{font-weight:400;color:var(--muted);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent);height:26px;margin:2px 0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+button{font:600 13px var(--sans);border:2px solid var(--ink);background:#fff;border-radius:999px;padding:6px 12px;cursor:pointer;color:var(--ink)}
+button:hover{background:#fff4dc}
+button[aria-pressed=true]{background:var(--ink);color:#fff}
+.seg{display:inline-flex;border:2px solid var(--ink);border-radius:999px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:6px 11px}
+.readout{margin-top:10px;font-size:13.5px;background:#f3efe4;border-radius:10px;padding:9px 11px;line-height:1.45}
+.readout .big{font:600 15px var(--sans)}
+.readout .verdict{display:block;margin-top:4px}
+.tag{display:inline-block;font:600 10.5px var(--sans);letter-spacing:.06em;text-transform:uppercase;background:#ffe2c8;color:#7a3a14;border:1px solid #e9b48d;border-radius:5px;padding:0 5px;margin-left:3px;vertical-align:1px;white-space:nowrap}
+.chips{display:flex;flex-direction:column;gap:7px}
+.chips .grp{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.chips .grp b{font:600 11px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);width:58px}
+.chip{font:400 13px var(--sans);padding:3px 9px;border-width:1.5px}
+.chip.on{background:#ffe9c2}
+.card .kicker{font:600 11px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.card h2{font:600 30px/1.05 var(--serif);margin:3px 0 6px}
+.card h2 i{font-weight:400;color:var(--deep);font-size:.72em}
+.card .latin{font:italic 400 15.5px/1.45 var(--serif);color:#3b3f4f;margin:0 0 10px}
+.card dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:0 0 10px;font-size:13.5px}
+.card dt{font-weight:600;color:var(--muted)}
+.card dd{margin:0}
+.card p{margin:0 0 10px;font-size:14.5px}
+.card h4{font:600 12px var(--sans);letter-spacing:.12em;text-transform:uppercase;margin:12px 0 6px;color:var(--muted)}
+.card ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.card li{font-size:14px;padding-left:30px;position:relative}
+.card li .ic{position:absolute;left:0;top:0;width:24px;height:24px}
+.card li b{font-weight:600}
+.close{display:none}
+section.prose{max-width:1240px;margin:34px auto 0;padding:0 24px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+section.prose h2{grid-column:1/-1;font:600 28px var(--serif);margin:10px 0 0}
+section.prose .box{background:var(--card);border:2px solid var(--ink);border-radius:14px;padding:14px 16px;box-shadow:3px 4px 0 rgba(27,26,34,.08)}
+section.prose .box h3{font:600 18px var(--serif);margin:0 0 6px}
+section.prose .box p{margin:0 0 8px;font-size:14.5px}
+footer{max-width:1240px;margin:34px auto 40px;padding:0 24px;font-size:13px;color:#454a5a}
+footer h2{font:600 20px var(--serif);color:var(--ink);margin:0 0 6px}
+footer ol{padding-left:20px;margin:0}
+footer li{margin:3px 0}
+.hint{font-size:12.5px;color:var(--muted);margin:6px 2px 0}
+@media (max-width:960px){
+  .wrap{grid-template-columns:1fr;gap:16px;padding:0 12px}
+  header.hero{padding:54px 14px 6px}
+  .lede{font-size:15px}
+  aside{position:static;max-height:none;overflow:visible}
+  #sky .lbl{display:none}
+  #sky .note{display:none}
+  section.prose{grid-template-columns:1fr;padding:0 12px}
+  footer{padding:0 14px}
+  .card.sheet{position:fixed;left:8px;right:8px;bottom:8px;max-height:62vh;overflow:auto;z-index:40;box-shadow:0 -6px 30px rgba(27,26,34,.25)}
+  .card.sheet .close{display:block;position:absolute;right:10px;top:10px;padding:3px 10px}
+  .card.idle{display:none}
+}
+@media (min-width:961px){ .card.idle{display:block} }
+@media (prefers-reduced-motion:reduce){ *{transition:none!important;animation:none!important} }
+@keyframes drift{from{transform:translateX(-6px)}to{transform:translateX(6px)}}
+.drift{animation:drift 9s ease-in-out infinite alternate}
+.drift2{animation:drift 13s ease-in-out infinite alternate-reverse}
+@keyframes pulse{0%{opacity:.9}100%{opacity:0}}
+</style>
+</head>
+<body>
+<nav class="topbar"><a href="../">← art</a><span>·</span><a href="https://corentinbel.com">home</a></nav>
+
+<header class="hero">
+  <h1>A cloud atlas <em>for people who play outside</em></h1>
+  <p class="lede">The sky is a weather forecast written in water. Here are the ten cloud genera and a few special ones, painted at the heights where they usually live, from the sea to the top of the weather. <b>Tap any cloud</b> to read what it is, how it forms, and what it means if you fly a paraglider, sail, or ride a wing foil. Then <b>run a summer day</b> and watch a cumulus grow.</p>
+</header>
+
+<div class="wrap">
+  <figure class="sky" id="fig">
+    <svg id="sky" viewBox="0 0 1000 1620" role="img" aria-label="Painted cross-section of the sky from sea level to 13 km, with clouds at their typical altitudes"></svg>
+  </figure>
+
+  <aside>
+    <div class="panel" id="dayPanel">
+      <h3>A day of thermals</h3>
+      <p class="sub">The land heats, thermals rise, and cumulus appear where they cool to their dew point. Whether they stay small or become a storm depends on the air above.</p>
+      <div class="ctl"><label for="time">Time of day <output id="timeOut">12:00</output></label>
+        <input id="time" type="range" min="8" max="18" step="0.05" value="12"></div>
+      <div class="ctl"><label for="dew">Dew point (how moist the air is) <output id="dewOut">13 °C</output></label>
+        <input id="dew" type="range" min="2" max="20" step="0.5" value="13"></div>
+      <div class="row">
+        <span style="font-size:13px;font-weight:600">Air aloft</span>
+        <span class="seg"><button id="stable" aria-pressed="true">stable, capped</button><button id="unstable" aria-pressed="false">unstable</button></span>
+        <button id="play" title="Run the day">▶ run the day</button>
+      </div>
+      <div class="readout" id="readout"></div>
+    </div>
+
+    <div class="panel">
+      <h3>The atlas</h3>
+      <div class="chips" id="chips"></div>
+      <p class="hint">The storm clouds only exist on unstable afternoons: tapping one sets the day for you.</p>
+    </div>
+
+    <div class="panel card idle" id="card" aria-live="polite"></div>
+  </aside>
+</div>
+
+<section class="prose">
+  <h2>Three habits worth keeping</h2>
+  <div class="box"><h3>Measure the base</h3>
+    <p>Cumulus bases sit where a rising thermal reaches saturation. A parcel of dry air cools by about 10 °C per km; its dew point falls by only about 2 °C per km. The gap closes at roughly 8 °C per km, which gives the rule of thumb <b>base ≈ 125 m × (T − T<sub>d</sub>)</b> <span class="tag">rule of thumb</span>. Pilots often quote it as 400 ft per °C. It works for surface-based thermals on a sunny day, not for layer clouds.</p></div>
+  <div class="box"><h3>Watch the tops, not the bases</h3>
+    <p>A sky of flat-topped cumulus with wide gaps is a good thermal day. Towers that keep getting taller and harder-edged by late morning or early afternoon are the warning <span class="tag">rule of thumb</span>. Turrets on mid-level altocumulus in the morning (castellanus) say the same thing even earlier.</p></div>
+  <div class="box"><h3>Read the sequence</h3>
+    <p>Cirrus, then a milky cirrostratus with a halo, then grey altostratus, then nimbostratus and steady rain: the textbook arrival of a warm front. The order is reliable; the timing is not. Rain often follows the first thickening veil within roughly 12 to 24 h <span class="tag">rule of thumb</span>, and many cirrus skies bring nothing at all.</p></div>
+</section>
+
+<footer>
+  <h2>Sources</h2>
+  <ol>
+    <li>World Meteorological Organization (2017). <i>International Cloud Atlas</i>, online edition. <a href="https://cloudatlas.wmo.int">cloudatlas.wmo.int</a>. Genera, species, supplementary features, the three levels (étages) and their heights for temperate regions, the apparent-width test (cirrocumulus &lt; 1°, altocumulus 1–5°, stratocumulus &gt; 5°), fog defined as visibility below 1 km.</li>
+    <li>Luke Howard (1803). <i>On the Modification of Clouds</i>. London: J. Taylor. Read to the Askesian Society in 1802. Origin of cirrus, cumulus, stratus, nimbus and their combinations.</li>
+    <li>Met Office (UK). <i>Types of clouds</i> and cloud guides. <a href="https://www.metoffice.gov.uk/weather/learn-about/weather/types-of-weather/clouds">metoffice.gov.uk</a>.</li>
+    <li>Gavin Pretor-Pinney (2006). <i>The Cloudspotter's Guide</i>. London: Sceptre.</li>
+    <li>US National Weather Service. <i>Lightning safety</i>: "if you can hear thunder, you are within striking distance". <a href="https://www.weather.gov/safety/lightning">weather.gov/safety/lightning</a>.</li>
+  </ol>
+  <p style="margin-top:10px">Heights are typical mid-latitude values and vary a lot with season, latitude and air mass. The altitude scale is stretched near the ground so that low clouds have room. Items marked <span class="tag">rule of thumb</span> are field heuristics, not forecasts. For anything you stake your safety on, read a real forecast and the sky together.</p>
+</footer>
+
+<script>
+"use strict";
+/* ---------- helpers ---------- */
+const NS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById("sky");
+const RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function el(tag, attrs, parent){ const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function rng(seed){ let a = seed >>> 0; return function(){ a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+function interp(tab, x){ if (x <= tab[0][0]) return tab[0][1]; for (let i = 1; i < tab.length; i++){ if (x <= tab[i][0]){ const [x0,y0] = tab[i-1], [x1,y1] = tab[i]; return lerp(y0, y1, smooth((x - x0) / (x1 - x0))); } } return tab[tab.length-1][1]; }
+const INK = "#1b1a22";
+
+/* altitude (km) -> y, stretched near the ground */
+const GROUND = 1480;
+function Y(a){ if (a <= 2) return GROUND - a * 220; if (a <= 7) return GROUND - 440 - (a - 2) * 105; return GROUND - 440 - 525 - (a - 7) * 85; }
+
+/* ---------- defs ---------- */
+const defs = el("defs", {}, svg);
+let gid = 0;
+function grad(stops, x1, y1, x2, y2){ const id = "g" + (gid++); const g = el("linearGradient", {id, gradientUnits:"userSpaceOnUse", x1, y1, x2, y2}, defs); stops.forEach(([o,c,op]) => el("stop", {offset:o, "stop-color":c, "stop-opacity": op == null ? 1 : op}, g)); return "url(#" + id + ")"; }
+function radial(stops, cx, cy, r){ const id = "g" + (gid++); const g = el("radialGradient", {id, gradientUnits:"userSpaceOnUse", cx, cy, r}, defs); stops.forEach(([o,c,op]) => el("stop", {offset:o, "stop-color":c, "stop-opacity": op == null ? 1 : op}, g)); return "url(#" + id + ")"; }
+// hand-drawn wobble
+const wob = el("filter", {id:"wob", x:"-5%", y:"-5%", width:"110%", height:"110%"}, defs);
+el("feTurbulence", {type:"fractalNoise", baseFrequency:"0.035", numOctaves:"2", seed:"7", result:"n"}, wob);
+el("feDisplacementMap", {in:"SourceGraphic", in2:"n", scale:"3.2", xChannelSelector:"R", yChannelSelector:"G"}, wob);
+// paper grain
+const grain = el("filter", {id:"grain", x:"0", y:"0", width:"100%", height:"100%"}, defs);
+el("feTurbulence", {type:"fractalNoise", baseFrequency:"0.9", numOctaves:"2", seed:"3", result:"t"}, grain);
+el("feColorMatrix", {in:"t", type:"matrix", values:"0 0 0 0 0.1  0 0 0 0 0.08  0 0 0 0 0.12  0 0 0 0.09 0"}, grain);
+const soft = el("filter", {id:"soft", x:"-30%", y:"-30%", width:"160%", height:"160%"}, defs);
+el("feGaussianBlur", {stdDeviation:"18"}, soft);
+const soft2 = el("filter", {id:"soft2", x:"-30%", y:"-30%", width:"160%", height:"160%"}, defs);
+el("feGaussianBlur", {stdDeviation:"5"}, soft2);
+
+/* ---------- cloud renderer: union-of-shapes with ink rim ---------- */
+// shapes: [{c:[x,y,r]}] or [{d:"path"}]
+function drawCloud(parent, shapes, o){
+  o = Object.assign({ink:2.6, top:0, bot:100, light:"#ffffff", mid:"#f1f2f6", dark:"#b9c0d3", hi:true, clipY:null, opacity:1, detail:true}, o);
+  const g = el("g", {}, parent);
+  if (o.opacity < 1) g.setAttribute("opacity", o.opacity);
+  if (o.clipY != null){ const id = "c" + (gid++); const cp = el("clipPath", {id}, defs); el("rect", {x:-50, y:-50, width:1100, height:o.clipY + 50}, cp); g.setAttribute("clip-path", "url(#" + id + ")"); }
+  const fill = grad([[0,o.light],[0.45,o.mid],[1,o.dark]], 0, o.top, 0, o.bot);
+  const add = (s, attrs, p) => s.c ? el("circle", Object.assign({cx:s.c[0], cy:s.c[1], r:s.c[2]}, attrs), p) : el("path", Object.assign({d:s.d}, attrs), p);
+  const ink = el("g", {fill:INK, stroke:INK, "stroke-width":o.ink * 2, "stroke-linejoin":"round"}, g);
+  shapes.forEach(s => add(s, {}, ink));
+  const body = el("g", {fill}, g);
+  shapes.forEach(s => add(s, {}, body));
+  if (o.hi){
+    const cid = "u" + (gid++); const cp = el("clipPath", {id:cid}, defs);
+    shapes.forEach(s => add(s, {}, cp));
+    const hg = el("g", {"clip-path":"url(#" + cid + ")", fill:o.light, opacity:0.85}, g);
+    shapes.forEach(s => { if (s.c){ const [x,y,r] = s.c; el("circle", {cx:x - r*0.16, cy:y - r*0.2, r:r*0.74}, hg); } else el("path", {d:s.d, transform:"translate(-3,-6)"}, hg); });
+  }
+  // interior cauliflower arcs
+  if (o.detail){
+    const circ = shapes.filter(s => s.c).map(s => s.c);
+    const dg = el("g", {fill:"none", stroke:INK, "stroke-width":1.5, "stroke-linecap":"round", opacity:0.42}, g);
+    circ.forEach((c, i) => {
+      const [x,y,r] = c; if (r < 14) return;
+      const px = x, py = y - r;
+      const inside = circ.some((d, j) => j !== i && Math.hypot(px - d[0], py - d[1]) < d[2] - 6);
+      if (!inside) return;
+      const a0 = Math.PI * 1.12, a1 = Math.PI * 1.62;
+      el("path", {d:`M${x + r*Math.cos(a0)},${y + r*Math.sin(a0)} A${r},${r} 0 0 1 ${x + r*Math.cos(a1)},${y + r*Math.sin(a1)}`}, dg);
+    });
+  }
+  return g;
+}
+
+// puffy heap: cx, base y, top y, width
+function heap(cx, baseY, topY, w, R, opt){
+  opt = opt || {};
+  const C = [], h = baseY - topY;
+  const prof = opt.prof || (f => Math.sqrt(Math.max(0, 1 - Math.pow(f, 2.2))));
+  const rows = Math.max(2, Math.round(h / (opt.step || Math.max(18, Math.min(w * 0.22, 46)))));
+  for (let i = 0; i <= rows; i++){
+    const f = i / rows; const hw = (w / 2) * prof(f);
+    let r = Math.max(9, Math.min((h / rows) * 1.25 + 6, hw * 0.75 + 9)) * (0.85 + R() * 0.35);
+    if (opt.rmax) r = Math.min(r, opt.rmax);
+    const y = Math.max(topY + r, baseY - f * h);
+    const n = Math.max(1, Math.round((2 * hw) / (r * 1.15)));
+    for (let k = 0; k < n; k++){
+      const x = n === 1 ? cx + (R() - 0.5) * r * 0.5 : cx - hw + r * 0.8 + (k / (n - 1)) * (2 * hw - r * 1.6) + (R() - 0.5) * r * 0.35;
+      C.push({c:[x, y + (R() - 0.5) * r * 0.25, r * (0.88 + R() * 0.24)]});
+    }
+  }
+  // cauliflower bumps on the upper rim
+  const bumps = opt.bumps == null ? Math.round(w / 34) : opt.bumps;
+  for (let k = 0; k < bumps; k++){
+    const f = 0.25 + R() * 0.75, side = R() < 0.5 ? -1 : 1;
+    const hw = (w / 2) * prof(f) * (0.75 + R() * 0.25);
+    const r = Math.max(8, (opt.rmax || 40) * (0.35 + R() * 0.3));
+    C.push({c:[cx + side * hw * (0.5 + R()*0.45), Math.max(topY + r, baseY - f * h), r]});
+  }
+  return C;
+}
+
+// layer band: wavy top, softer bottom
+function band(x0, x1, yT, yB, R, bump, roughB){
+  bump = bump || 14; roughB = roughB == null ? 4 : roughB;
+  const n = Math.max(3, Math.round((x1 - x0) / (bump * 3.2)));
+  let d = `M${x0},${(yT + yB) / 2}`;
+  // top scallops left -> right
+  let px = x0, py = yT + (yB - yT) * 0.3;
+  d += ` Q${x0},${yT} ${x0 + 10},${py}`; px = x0 + 10;
+  for (let i = 1; i <= n; i++){
+    const nx = lerp(x0 + 10, x1 - 10, i / n), ny = yT + (R() * 0.5) * (yB - yT) * 0.35;
+    d += ` Q${(px + nx) / 2},${Math.min(py, ny) - bump * (0.6 + R() * 0.7)} ${nx},${ny}`; px = nx; py = ny;
+  }
+  d += ` Q${x1 + 6},${yT + (yB - yT) * 0.4} ${x1},${(yT + yB) / 2 + 4}`;
+  // bottom right -> left
+  const m = Math.max(3, Math.round((x1 - x0) / 60));
+  for (let i = 1; i <= m; i++){
+    const nx = lerp(x1, x0, i / m), ny = yB + (R() - 0.5) * roughB * 2;
+    d += ` Q${lerp(x1, x0, (i - 0.5) / m)},${yB + roughB * (R() - 0.2)} ${nx},${ny}`;
+  }
+  return d + " Z";
+}
+
+/* ---------- static scene ---------- */
+const L = { bg: el("g", {}, svg), far: el("g", {}, svg) };
+L.static = el("g", {}, svg);
+L.dyn = el("g", {}, svg);
+L.ground = el("g", {}, svg);
+L.props = el("g", {}, svg);
+L.dynTop = el("g", {}, svg);
+L.top = el("g", {}, svg);
+
+// sky
+el("rect", {x:0, y:0, width:1000, height:1620, fill:grad([[0,"#2d5f9e"],[0.28,"#5d93cc"],[0.62,"#a9d0ee"],[0.86,"#e3eff3"],[0.92,"#f7ead2"]], 0, 0, 0, GROUND)}, L.bg);
+// painterly washes
+(function(){ const R = rng(11); for (let i = 0; i < 22; i++){ const y = R() * 1400, x = R() * 1000; el("ellipse", {cx:x, cy:y, rx:120 + R()*220, ry:30 + R()*70, fill: y < 600 ? "#8fbbea" : "#ffffff", opacity: y < 600 ? 0.18 : 0.16 + R()*0.1, filter:"url(#soft)"}, L.bg); } })();
+const stormShade = el("ellipse", {cx:480, cy:900, rx:420, ry:620, fill:"#3c4458", opacity:0, filter:"url(#soft)"}, L.bg);
+
+// tropopause + étage guides
+el("line", {x1:46, x2:1000, y1:Y(11), y2:Y(11), stroke:INK, "stroke-width":1.4, "stroke-dasharray":"2 9", "stroke-linecap":"round", opacity:0.45}, L.far);
+el("text", {x:990, y:Y(11) - 9, class:"note", "text-anchor":"end"}, L.far).textContent = "tropopause, roughly: storms spread here";
+// axis
+const ax = el("g", {}, L.top);
+el("rect", {x:0, y:0, width:46, height:GROUND, fill:"rgba(246,241,230,.55)"}, ax);
+el("line", {x1:46, x2:46, y1:0, y2:GROUND, stroke:INK, "stroke-width":2}, ax);
+for (let k = 0; k <= 13; k++){
+  const y = Y(k); el("line", {x1:36, x2:46, y1:y, y2:y, stroke:INK, "stroke-width":2}, ax);
+  if (k > 0 && k < 13){ const t = el("text", {x:32, y:y + 6, class:"axis", "text-anchor":"end"}, ax); t.textContent = k; }
+  if (k <= 2){ const yh = Y(k + 0.5); el("line", {x1:41, x2:46, y1:yh, y2:yh, stroke:INK, "stroke-width":1.5}, ax); }
+}
+el("text", {x:32, y:Y(12.6) + 6, class:"axis", "text-anchor":"end"}, ax).textContent = "km";
+// étage brackets (temperate regions, WMO)
+[["HIGH", 5, 13, "#2f5f99", 64], ["MIDDLE", 2, 7, "#5b7d4a", 82], ["LOW", 0, 2, "#a5562c", 64]].forEach(([n, a0, a1, c, x]) => {
+  const g = el("g", {opacity:0.9}, ax);
+  el("path", {d:`M${x+8},${Y(a1)+6} H${x} V${Y(a0)-6} H${x+8}`, fill:"none", stroke:c, "stroke-width":3, "stroke-linecap":"round"}, g);
+  const t = el("text", {x:x - 6, y:(Y(a0) + Y(a1)) / 2, class:"etage", "text-anchor":"middle", transform:`rotate(-90 ${x - 6} ${(Y(a0) + Y(a1)) / 2})`, fill:c}, g); t.textContent = n; t.style.fill = c;
+});
+
+/* ---------- clouds (static) ---------- */
+const CL = {};   // id -> group
+function cloudGroup(id, parent){ const g = el("g", {class:"cl", "data-id":id, tabindex:0, role:"button", "aria-label":id}, parent || L.static); CL[id] = g; return g; }
+function label(txt, x, y, parent, anchor){ const t = el("text", {x, y, class:"lbl", "text-anchor":anchor || "start"}, parent || L.top); t.textContent = txt; return t; }
+
+// cirrus: hooked fibres, left high
+(function(){
+  const g = cloudGroup("cirrus"); const R = rng(21);
+  el("rect", {x:70, y:Y(11.4), width:330, height:Y(9.4) - Y(11.4), fill:"transparent"}, g);
+  for (let i = 0; i < 11; i++){
+    const x0 = 80 + R() * 270, y0 = Y(9.7 + R() * 1.4), len = 70 + R() * 90;
+    const d = `M${x0},${y0} C${x0 + len*0.35},${y0 + 4 + R()*6} ${x0 + len*0.75},${y0 + 2} ${x0 + len},${y0 - 14 - R()*16} q6,-10 -2,-16`;
+    el("path", {d, fill:"none", stroke:INK, "stroke-width":5.2, "stroke-linecap":"round", opacity:0.85}, g);
+    el("path", {d, fill:"none", stroke:"#ffffff", "stroke-width":2.8, "stroke-linecap":"round"}, g);
+    for (let k = 0; k < 3; k++){ const dy = 4 + k * 4; el("path", {d:`M${x0 + 6},${y0 + dy} C${x0 + len*0.3},${y0 + dy + 6} ${x0 + len*0.6},${y0 + dy + 2} ${x0 + len*0.8},${y0 + dy - 6}`, fill:"none", stroke:"#fff", "stroke-width":1.4, opacity:0.55, "stroke-linecap":"round"}, g); }
+  }
+  label("cirrus", 300, Y(11.45));
+})();
+
+// cirrostratus veil with sun + 22° halo, right high
+(function(){
+  const g = cloudGroup("cirrostratus"); const R = rng(31);
+  const sx = 862, sy = Y(9.0);
+  el("circle", {cx:sx, cy:sy, r:66, fill:radial([[0,"#fff8d6"],[0.5,"#fff2b8",0.6],[1,"#fff2b8",0]], sx, sy, 66)}, g);
+  el("circle", {cx:sx, cy:sy, r:20, fill:"#fff4c4", stroke:INK, "stroke-width":2.4}, g);
+  // 22° halo: reddish inner edge, whitish outer
+  el("circle", {cx:sx, cy:sy, r:92, fill:"none", stroke:"#e7a17a", "stroke-width":3, opacity:0.55}, g);
+  el("circle", {cx:sx, cy:sy, r:97, fill:"none", stroke:"#ffffff", "stroke-width":7, opacity:0.55}, g);
+  const d = band(560, 990, Y(9.55), Y(8.45), R, 6, 6);
+  el("path", {d, fill:"#ffffff", opacity:0.34, stroke:INK, "stroke-width":1.6, "stroke-opacity":0.35, "stroke-dasharray":"14 6 3 6"}, g);
+  for (let i = 0; i < 16; i++){ const y = Y(8.55 + R() * 0.9), x = 570 + R() * 330; el("path", {d:`M${x},${y} q${40 + R()*30},-${3 + R()*4} ${90 + R()*40},0`, fill:"none", stroke:"#fff", "stroke-width":2, opacity:0.6, "stroke-linecap":"round"}, g); }
+  label("cirrostratus · halo", 575, Y(8.3));
+})();
+
+// cirrocumulus: tiny grains in rows
+(function(){
+  const g = cloudGroup("cirrocumulus"); const R = rng(41); const S = [];
+  for (let r = 0; r < 4; r++) for (let k = 0; k < 18; k++){
+    const x = 620 + k * 17 + r * 7 + (R() - 0.5) * 5, y = Y(7.35) - r * 13 + (R() - 0.5) * 4;
+    if (R() < 0.18) continue; S.push({c:[x, y, 4 + R() * 2.5]});
+  }
+  drawCloud(g, S, {ink:1.3, top:Y(7.8), bot:Y(7.2), dark:"#eef1f7", mid:"#f8f9fc", hi:false, detail:false});
+  label("cirrocumulus", 620, Y(7.85));
+})();
+
+// altostratus: grey sheet
+(function(){
+  const g = cloudGroup("altostratus"); const R = rng(51);
+  const d = band(590, 1000, Y(6.15), Y(5.0), R, 10, 6);
+  drawCloud(g, [{d}], {top:Y(6.2), bot:Y(5.0), light:"#e9edf4", mid:"#cfd6e4", dark:"#a7b1c6", hi:true, detail:false});
+  for (let i = 0; i < 7; i++){ const y = Y(5.15 + R() * 0.8), x = 620 + R() * 300; el("path", {d:`M${x},${y} h${60 + R()*80}`, stroke:"#8994ab", "stroke-width":2, opacity:0.35, "stroke-linecap":"round"}, g); }
+  label("altostratus", 610, Y(6.3));
+})();
+
+// altocumulus: patches with shading, middle right
+(function(){
+  const g = cloudGroup("altocumulus"); const R = rng(61); const S = [];
+  for (let r = 0; r < 2; r++) for (let k = 0; k < 7; k++){
+    if (R() < 0.12) continue;
+    const cx = 655 + k * 32 + r * 15, by = Y(3.25) - r * 26;
+    heap(cx, by, by - 16 - R() * 8, 26 + R() * 8, R, {bumps:1, rmax:11}).forEach(s => S.push(s));
+  }
+  drawCloud(g, S, {ink:1.8, top:Y(3.75), bot:Y(3.15), dark:"#c2c9da", detail:false});
+  label("altocumulus", 660, Y(3.85));
+})();
+
+// lenticulars stacked over the ridge + wave streamline
+(function(){
+  const g = cloudGroup("lenticular"); const R = rng(71);
+  const S = [];
+  [[285, 4.35, 120, 15], [282, 4.85, 100, 12], [292, 5.3, 78, 10]].forEach(([x, a, w, h]) => {
+    const y = Y(a);
+    S.push({d:`M${x - w},${y} C${x - w*0.55},${y - h*1.6} ${x + w*0.55},${y - h*1.6} ${x + w},${y} C${x + w*0.5},${y + h*0.75} ${x - w*0.5},${y + h*0.75} ${x - w},${y} Z`});
+  });
+  drawCloud(g, S, {ink:2.2, top:Y(5.5), bot:Y(4.2), dark:"#d7dce8", detail:false});
+  const sl = el("g", {fill:"none", stroke:INK, "stroke-width":1.6, "stroke-dasharray":"3 8", "stroke-linecap":"round", opacity:0.55}, L.far);
+  for (let j = 0; j < 3; j++){
+    const a = 3.9 + j * 0.55; let d = `M60,${Y(a)}`;
+    for (let x = 60; x <= 560; x += 10){ const ph = (x - 285) / 150 * Math.PI; d += ` L${x},${Y(a) - (x > 150 ? 22 * Math.cos(ph) * Math.exp(-Math.max(0, x - 300) / 600) : 0)}`; }
+    el("path", {d}, sl);
+  }
+  el("path", {d:`M70,${Y(5.95)} h52 m-10,-7 l10,7 l-10,7`, fill:"none", stroke:INK, "stroke-width":2.4, "stroke-linecap":"round", "stroke-linejoin":"round"}, L.far);
+  el("text", {x:132, y:Y(5.95) + 6, class:"note"}, L.far).textContent = "strong wind aloft";
+  label("lenticular", 75, Y(3.72));
+})();
+
+// nimbostratus: thick dark layer with rain, far right
+(function(){
+  const g = cloudGroup("nimbostratus"); const R = rng(81);
+  const rain = el("g", {stroke:"#5f6c86", "stroke-width":2, opacity:0.55, "stroke-linecap":"round"}, g);
+  for (let i = 0; i < 26; i++){ const x = 880 + R() * 120, y = Y(0.75) + R() * 40; el("line", {x1:x, y1:y, x2:x - 14, y2:GROUND - R() * 30}, rain); }
+  let d = `M1010,${Y(0.72)} L860,${Y(0.72)}`;
+  for (let i = 1; i <= 8; i++){ const a0 = lerp(0.72, 3.5, (i - 1) / 8), a1 = lerp(0.72, 3.5, i / 8), x = lerp(860, 900, i / 8); d += ` Q${x - 30 - R()*10},${(Y(a0) + Y(a1)) / 2} ${x},${Y(a1)}`; }
+  d += ` Q${905},${Y(3.85)} ${930},${Y(3.72)}`;
+  for (let i = 1; i <= 3; i++){ const x = lerp(930, 1010, i / 3); d += ` Q${x - 13},${Y(3.95) - R()*14} ${x},${Y(3.72)}`; }
+  d += " Z";
+  drawCloud(g, [{d}], {top:Y(4.0), bot:Y(0.7), light:"#cdd3de", mid:"#9aa4b8", dark:"#646e86", detail:false});
+  const sc = el("g", {fill:"none", stroke:"#4f5870", "stroke-width":2, opacity:0.4, "stroke-linecap":"round"}, g);
+  for (let i = 0; i < 9; i++){ const y = Y(0.9 + R() * 2.6), x = 900 + R() * 60; el("path", {d:`M${x},${y} q30,-6 ${50 + R()*30},0`}, sc); }
+  label("nimbostratus", 990, Y(4.05), null, "end");
+})();
+
+// stratocumulus: lumpy low sheet over the sea
+(function(){
+  const g = cloudGroup("stratocumulus"); const R = rng(91); const S = [];
+  for (let k = 0; k < 7; k++){ if (k === 4) continue; const cx = 702 + k * 23; heap(cx, Y(1.15), Y(1.38) - R()*10, 30, R, {bumps:0, rmax:12, step:16}).forEach(s => S.push(s)); }
+  drawCloud(g, S, {clipY:Y(1.15), top:Y(1.45), bot:Y(1.15), mid:"#e4e7ef", dark:"#a8b0c4", detail:false});
+  label("stratocumulus", 700, Y(1.5));
+})();
+
+// stratus: flat grey low layer
+(function(){
+  const g = cloudGroup("stratus"); const R = rng(101);
+  const d = band(668, 880, Y(0.58), Y(0.38), R, 3, 2);
+  drawCloud(g, [{d}], {top:Y(0.6), bot:Y(0.38), light:"#e5e8ee", mid:"#ccd2dd", dark:"#aeb6c6", detail:false});
+  label("stratus", 690, Y(0.62) - 4);
+})();
+
+// sea fog bank
+(function(){
+  const g = cloudGroup("fog"); const R = rng(111);
+  const d = band(700, 872, Y(0.16), GROUND + 4, R, 5, 0);
+  el("path", {d, fill:"#ffffff", opacity:0.8, filter:"url(#soft2)"}, g);
+  el("path", {d, fill:"none", stroke:INK, "stroke-width":1.6, opacity:0.4, "stroke-dasharray":"10 6"}, g);
+  label("sea fog", 872, GROUND - 10, null, "end");
+})();
+
+/* ---------- ground ---------- */
+(function(){
+  const G = L.ground;
+  // mountains (wind left to right)
+  const R = rng(5);
+  const far = `M46,${GROUND} L46,${Y(0.9)} C100,${Y(1.2)} 130,${Y(1.6)} 170,${Y(1.45)} C200,${Y(1.35)} 210,${Y(2.0)} 240,${Y(2.35)} C260,${Y(2.6)} 272,${Y(2.62)} 290,${Y(2.2)} C320,${Y(1.5)} 360,${Y(0.8)} 420,${Y(0.25)} L470,${GROUND} Z`;
+  el("path", {d:far, fill:grad([[0,"#8b9fb6"],[1,"#9fb4a0"]], 0, Y(2.6), 0, GROUND), stroke:INK, "stroke-width":2.4, "stroke-linejoin":"round"}, G);
+  const near = `M46,${GROUND} L46,${Y(0.5)} C90,${Y(0.75)} 120,${Y(1.05)} 160,${Y(0.95)} C190,${Y(0.9)} 205,${Y(1.25)} 225,${Y(1.2)} C255,${Y(1.1)} 300,${Y(0.55)} 360,${Y(0.25)} C400,${Y(0.12)} 430,${Y(0.06)} 470,${Y(0.04)} L470,${GROUND} Z`;
+  el("path", {d:near, fill:grad([[0,"#7f9d62"],[1,"#5f7d48"]], 0, Y(1.2), 0, GROUND), stroke:INK, "stroke-width":2.4, "stroke-linejoin":"round"}, G);
+  // ridge highlights
+  el("path", {d:`M240,${Y(2.35)} C232,${Y(2.0)} 222,${Y(1.8)} 200,${Y(1.6)}`, fill:"none", stroke:"#f4f1e6", "stroke-width":3, opacity:0.6, "stroke-linecap":"round"}, G);
+  // plain
+  el("path", {d:`M440,${GROUND - 4} C520,${GROUND - 12} 600,${GROUND - 8} 650,${GROUND - 3} L660,${GROUND + 6} L660,1620 L0,1620 L0,${GROUND - 4} Z`, fill:grad([[0,"#9bb56a"],[0.35,"#7d9b52"],[1,"#5d7a3c"]], 0, GROUND - 12, 0, 1620), stroke:INK, "stroke-width":2.4, "stroke-linejoin":"round"}, G);
+  // sea
+  el("path", {d:`M636,${GROUND + 2} C660,${GROUND} 700,${GROUND} 1000,${GROUND} L1000,1620 L660,1620 Z`, fill:grad([[0,"#4c9cc0"],[0.5,"#2f7aa4"],[1,"#1f5a83"]], 0, GROUND, 0, 1620), stroke:INK, "stroke-width":2.4}, G);
+  // beach
+  el("path", {d:`M600,${GROUND - 6} C625,${GROUND - 6} 640,${GROUND - 2} 668,${GROUND + 10} L668,${GROUND + 40} C640,${GROUND + 26} 620,${GROUND + 12} 590,${GROUND + 4} Z`, fill:"#ecd59c", stroke:INK, "stroke-width":2, "stroke-linejoin":"round"}, G);
+  // waves
+  for (let i = 0; i < 26; i++){ const x = 680 + R() * 310, y = GROUND + 18 + R() * 115; el("path", {d:`M${x},${y} q8,-6 16,0 q8,6 16,0`, fill:"none", stroke:"#d9f0f7", "stroke-width":2, opacity:0.7, "stroke-linecap":"round"}, G); }
+  // trees on plain and slopes
+  for (let i = 0; i < 26; i++){
+    const x = 70 + R() * 560, onPlain = x > 470; const base = onPlain ? GROUND - 6 + R() * 50 : GROUND + 10 + R() * 70;
+    const s = 9 + R() * 8; const c = ["#4f7a3a","#5f8a45","#3f6a33","#6d9550"][Math.floor(R() * 4)];
+    el("line", {x1:x, y1:base, x2:x, y2:base - s * 1.3, stroke:INK, "stroke-width":2}, G);
+    el("ellipse", {cx:x, cy:base - s * 1.6, rx:s * 0.75, ry:s, fill:c, stroke:INK, "stroke-width":2}, G);
+  }
+  // a little village roof row
+  for (let i = 0; i < 5; i++){ const x = 520 + i * 18, y = GROUND + 30 + (i % 2) * 6; el("path", {d:`M${x},${y} v-12 l8,-8 l8,8 v12 z`, fill: i % 2 ? "#f2e3c5" : "#eed6b3", stroke:INK, "stroke-width":1.6, "stroke-linejoin":"round"}, G); el("path", {d:`M${x - 1},${y - 12} l9,-9 l9,9`, fill:"#c4643c", stroke:INK, "stroke-width":1.6, "stroke-linejoin":"round"}, G); }
+  el("text", {x:80, y:1600, class:"note", fill:"#f6f1e6"}, G).textContent = "";
+})();
+
+/* ---------- props: sailboat, wing-foiler ---------- */
+(function(){
+  const P = L.props;
+  // sailboat emerging from fog
+  const b = el("g", {transform:`translate(780 ${GROUND + 2})`}, P);
+  el("path", {d:"M-28,0 h56 l-8,12 h-40 z", fill:"#f4efe2", stroke:INK, "stroke-width":2.2, "stroke-linejoin":"round"}, b);
+  el("line", {x1:0, y1:0, x2:0, y2:-62, stroke:INK, "stroke-width":2.2}, b);
+  el("path", {d:"M2,-60 L26,-6 H2 Z", fill:"#fff", stroke:INK, "stroke-width":2, "stroke-linejoin":"round"}, b);
+  el("path", {d:"M-3,-52 L-24,-6 H-3 Z", fill:"#f0b48a", stroke:INK, "stroke-width":2, "stroke-linejoin":"round"}, b);
+  // wing foiler near shore
+  const f = el("g", {transform:`translate(700 ${GROUND + 16})`}, P);
+  el("line", {x1:-2, y1:6, x2:-2, y2:20, stroke:INK, "stroke-width":2}, f);
+  el("path", {d:"M-14,20 h22", stroke:INK, "stroke-width":2.4, "stroke-linecap":"round"}, f);
+  el("path", {d:"M-12,4 h22 l-3,4 h-18 z", fill:"#f6d06a", stroke:INK, "stroke-width":1.8, "stroke-linejoin":"round"}, f);
+  el("path", {d:"M-2,4 l0,-16", stroke:INK, "stroke-width":2.6, "stroke-linecap":"round"}, f);
+  el("circle", {cx:-2, cy:-16, r:3.5, fill:"#f2c7a5", stroke:INK, "stroke-width":1.6}, f);
+  el("path", {d:"M4,-24 C18,-36 30,-20 26,-4 C18,-10 10,-14 4,-24 Z", fill:"#e0794a", stroke:INK, "stroke-width":2, "stroke-linejoin":"round"}, f);
+})();
+
+// sea-breeze circulation (opacity driven by time)
+const breeze = el("g", {opacity:0}, L.props);
+(function(){
+  const s = {fill:"none", stroke:"#1b1a22", "stroke-width":2.4, "stroke-linecap":"round", "stroke-linejoin":"round"};
+  el("path", Object.assign({d:`M940,${GROUND - 40} C840,${GROUND - 48} 720,${GROUND - 46} 620,${GROUND - 40} m12,-8 l-12,8 l12,7`}, s), breeze);
+  el("text", {x:950, y:GROUND - 50, class:"note", "text-anchor":"end"}, breeze).textContent = "sea breeze";
+  el("path", Object.assign({d:`M560,${Y(1.75)} C700,${Y(1.85)} 820,${Y(1.85)} 960,${Y(1.75)}`, "stroke-dasharray":"4 9", opacity:0.6}, s), breeze);
+})();
+
+/* ---------- dynamic convection column ---------- */
+const COLX = 480;
+let state = {t:12, td:13, unstable:false};
+function surfaceT(t){ // °C, rough summer coastal day
+  if (t <= 15) return 15 + 12 * Math.sin((Math.PI / 2) * clamp((t - 6) / 9, 0, 1));
+  return 27 - 3.5 * smooth((t - 15) / 4);
+}
+function compute(){
+  const T = surfaceT(state.t), Td = Math.min(state.td, T), spread = T - Td;
+  const base = 0.125 * spread;        // km, rule of thumb
+  const inv = 2.6;                    // capping inversion on the stable day
+  let top = base, stage = "none";
+  const t = state.t;
+  if (spread < 2.5 && t < 10.5){ stage = "fog"; }
+  else if (!state.unstable){
+    const grow = interp([[10,0],[10.6,0.18],[11.5,0.4],[13,0.85],[15,1.0],[16.5,0.9],[17.5,0.45],[18,0.15]], t);
+    if (base > inv - 0.2 && t >= 10) stage = "blue";
+    else if (grow > 0.08){ top = Math.min(base + grow, inv); stage = top - base > 0.55 ? "mediocris" : "humilis"; }
+  } else {
+    const grow = interp([[10,0],[10.6,0.2],[11.5,0.55],[12.5,1.3],[13.5,3.6],[14.3,7.0],[15.2,10.5],[18,10.5]], t);
+    if (grow > 0.08){ top = Math.min(base + grow, 11.0); stage = top >= 9 ? "cb" : top - base > 2.2 ? "congestus" : top - base > 0.55 ? "mediocris" : "humilis"; }
+  }
+  return {T, Td, spread, base, top, stage, inv};
+}
+
+let lastKey = "";
+function drawDynamic(){
+  const s = compute();
+  const key = [s.stage, s.base.toFixed(2), s.top.toFixed(2), state.t.toFixed(2), state.unstable].join("|");
+  if (key === lastKey) return s; lastKey = key;
+  // purge old dyn defs
+  L.dyn.innerHTML = ""; L.dynTop.innerHTML = "";
+  ["cumulus","congestus","cumulonimbus","mammatus","arcus","landfog"].forEach(k => delete CL[k]);
+  const D = L.dyn, R = rng(777);
+  const bY = Y(s.base), tY = Y(s.top), t = state.t;
+  breeze.setAttribute("opacity", (smooth((t - 10.5) / 2) * (s.stage === "cb" ? 0.15 : s.stage === "fog" ? 0 : 0.85)).toFixed(2));
+  stormShade.setAttribute("opacity", s.stage === "cb" ? (0.16 * smooth((t - 14.3) / 1.2)).toFixed(2) : s.stage === "congestus" ? 0.06 : 0);
+  const glider = document.getElementById("glider");
+
+  if (s.stage === "fog"){
+    const g = cloudGroup("fog", L.dynTop);
+    const d = band(410, 650, Y(0.2), GROUND + 14, R, 6, 0);
+    el("path", {d, fill:"#ffffff", opacity:0.92, filter:"url(#soft2)"}, g);
+    el("path", {d, fill:"none", stroke:INK, "stroke-width":1.6, opacity:0.4, "stroke-dasharray":"10 6"}, g);
+    CL.landfog = g;
+  }
+  // thermals: rising dotted curls
+  if (["humilis","mediocris","congestus","blue","cb"].includes(s.stage)){
+    const th = el("g", {fill:"none", stroke:"#c0562c", "stroke-width":2, "stroke-linecap":"round", "stroke-dasharray":"2 8", opacity:s.stage === "cb" ? 0.25 : 0.7}, D);
+    const ceil = s.stage === "blue" ? Y(Math.min(s.inv - 0.25, s.base - 0.1)) : bY + 20;
+    [-70, 0, 70].forEach((dx, i) => { const x = COLX + dx; el("path", {d:`M${x},${GROUND - 6} C${x - 18},${lerp(GROUND, ceil, 0.33)} ${x + 18},${lerp(GROUND, ceil, 0.66)} ${x},${ceil}`}, th); });
+    el("path", {d:`M${COLX - 6},${ceil + 14} l6,-12 l6,12`, stroke:"#c0562c", "stroke-dasharray":"none"}, th);
+  }
+  if (s.stage === "blue"){
+    el("line", {x1:300, x2:660, y1:Y(s.inv), y2:Y(s.inv), stroke:"#c0562c", "stroke-width":1.6, "stroke-dasharray":"6 6", opacity:0.7}, D);
+    el("text", {x:650, y:Y(s.inv) + 22, class:"note", "text-anchor":"end"}, D).textContent = "inversion: thermals stop here, below their condensation level";
+  }
+
+  const cu = ["humilis","mediocris","congestus","cb"].includes(s.stage);
+  if (cu){
+    const id = s.stage === "cb" ? "cumulonimbus" : s.stage === "congestus" ? "congestus" : "cumulus";
+    const g = cloudGroup(id, D);
+    const h = bY - tY;
+    // rain + hail shaft first (behind)
+    if (s.stage === "cb"){
+      const rg = el("g", {stroke:"#4c566e", "stroke-width":2.4, "stroke-linecap":"round", opacity:0.6}, g);
+      for (let i = 0; i < 36; i++){ const x = COLX - 60 + R() * 150, y = bY + 8 + R() * 30; el("line", {x1:x, y1:y, x2:x - 22, y2:GROUND - R() * 20}, rg); }
+      el("path", {d:`M${COLX - 70},${bY + 10} L${COLX + 100},${bY + 10} L${COLX + 70},${GROUND} L${COLX - 100},${GROUND} Z`, fill:"#56607a", opacity:0.22}, g);
+    }
+    // small satellite cumuli for a nicer sky
+    const cloudsW = s.stage === "humilis" ? 150 : s.stage === "mediocris" ? 170 : s.stage === "congestus" ? 210 : 280;
+    const prof = s.stage === "humilis" || s.stage === "mediocris" ? (f => Math.sqrt(Math.max(0, 1 - Math.pow(f, 2.4))))
+               : (f => f < 0.6 ? 1 - 0.3 * f : 0.82 * Math.sqrt(Math.max(0, 1 - Math.pow((f - 0.6) / 0.4, 2))) + 0.08);
+    const towerTop = s.stage === "cb" ? Y(Math.min(s.top, 9.6)) : tY;
+    const S = heap(COLX, bY, towerTop, cloudsW, R, {prof, rmax: s.stage === "humilis" ? 30 : 52, bumps: Math.round(cloudsW / 16)});
+    if (s.stage === "congestus" || s.stage === "mediocris"){ // uneven turrets
+      const hh = bY - towerTop;
+      [[-0.28, 0.72, 0.3], [0.3, 0.6, 0.26], [0.05, 0.92, 0.22]].forEach(([dx, f, ww]) => { if (s.stage === "mediocris" && f > 0.8) return;
+        heap(COLX + dx * cloudsW, bY - f * hh + 10, bY - f * hh - ww * cloudsW * 0.9, ww * cloudsW * 1.2, R, {bumps:2, rmax:30}).forEach(c => S.push(c)); });
+    }
+    let anvilTop = 0;
+    if (s.stage === "cb"){
+      const grow = smooth((s.top - 9) / 1.6);
+      const aT = Y(11.0), aB = Y(9.9), left = COLX - 70 - 140 * grow, right = COLX + 120 + 300 * grow;
+      anvilTop = aT;
+      S.push({d:`M${COLX - 90},${aB + 60} C${COLX - 80},${aB} ${left + 60},${aB + 8} ${left},${aB - 8} C${left - 20},${aB - 30} ${left + 30},${aT + 8} ${COLX - 20},${aT} C${COLX + 120},${aT - 6} ${right - 60},${aT - 2} ${right},${aT + 14} C${right + 24},${aT + 30} ${right - 10},${aB} ${right - 80},${aB + 10} C${COLX + 160},${aB + 18} ${COLX + 110},${aB + 50} ${COLX + 90},${aB + 80} Z`});
+      // overshooting top
+      S.push({c:[COLX + 10, aT + 4, 26]}); S.push({c:[COLX - 18, aT + 12, 22]});
+    }
+    drawCloud(g, S, {clipY:bY, top:anvilTop || tY - 30, bot:bY, light:"#ffffff", mid: s.stage === "cb" ? "#dfe3ec" : "#f3f4f8", dark: s.stage === "cb" ? "#5d6780" : s.stage === "congestus" ? "#a3adc4" : "#bec6d8", ink:2.7});
+    // anvil fibres (capillatus)
+    if (s.stage === "cb"){
+      const fg = el("g", {fill:"none", stroke:"#ffffff", "stroke-width":1.6, opacity:0.7, "stroke-linecap":"round"}, g);
+      for (let i = 0; i < 12; i++){ const y = Y(10.1 + R() * 0.8), x = COLX + 20 + R() * 260; el("path", {d:`M${x},${y} q40,-4 ${70 + R()*40},4`}, fg); }
+    }
+    // mammatus under the anvil overhang
+    if (s.stage === "cb" && t >= 15.6){
+      const mg = cloudGroup("mammatus", D);
+      const M = [], aB = Y(9.9) + 4;
+      for (let i = 0; i < 9; i++){ const x = COLX + 150 + i * 28 + (R() - 0.5) * 6, r = 15 + R() * 4; M.push({d:`M${x - r},${aB} C${x - r},${aB + r * 2.6} ${x + r},${aB + r * 2.6} ${x + r},${aB} Z`}); }
+      drawCloud(mg, M, {top:aB - 10, bot:aB + 30, light:"#eef0f5", mid:"#c9cfdc", dark:"#7d879e", ink:2, detail:false});
+      D.insertBefore(mg, D.firstChild);
+      label("mammatus", COLX + 160, aB + 66, D);
+    }
+    // shelf cloud (arcus) on the leading edge, moving right toward the coast
+    if (s.stage === "cb" && t >= 14.9){
+      const sg = cloudGroup("arcus", D);
+      const x0 = COLX + 90, yb = bY + 6;
+      const d = `M${x0},${yb - 18} C${x0 + 40},${yb - 24} ${x0 + 90},${yb - 6} ${x0 + 120},${yb + 34} C${x0 + 100},${yb + 44} ${x0 + 60},${yb + 30} ${x0 + 10},${yb + 30} C${x0 - 10},${yb + 22} ${x0 - 8},${yb - 4} ${x0},${yb - 18} Z`;
+      drawCloud(sg, [{d}], {top:yb - 20, bot:yb + 44, light:"#d9dde6", mid:"#9aa3b6", dark:"#525b70", ink:2.4, detail:false});
+      const ss = el("g", {fill:"none", stroke:INK, "stroke-width":1.4, opacity:0.5}, sg);
+      for (let k = 1; k < 4; k++) el("path", {d:`M${x0 + 8},${yb - 14 + k * 9} C${x0 + 60},${yb - 16 + k * 10} ${x0 + 80},${yb + k * 6} ${x0 + 105},${yb + 30}`}, ss);
+      // gust-front arrows
+      const ga = el("g", {fill:"none", stroke:"#1b1a22", "stroke-width":2.6, "stroke-linecap":"round", "stroke-linejoin":"round"}, D);
+      el("path", {d:`M${COLX + 40},${GROUND - 26} C${COLX + 90},${GROUND - 34} ${COLX + 150},${GROUND - 30} ${COLX + 230},${GROUND - 24} m-12,-8 l12,8 l-12,7`}, ga);
+      el("text", {x:COLX + 110, y:GROUND - 46, class:"note", "text-anchor":"middle"}, D).textContent = "gust front";
+      label("shelf cloud", x0 - 10, yb + 66, D);
+      // lightning
+      const lg = el("path", {d:`M${COLX - 20},${bY + 10} l-16,60 l18,-4 l-22,78 l40,-92 l-18,4 l14,-46 z`, fill:"#ffe066", stroke:INK, "stroke-width":2, "stroke-linejoin":"round"}, g);
+    }
+    const name = s.stage === "cb" ? "cumulonimbus" : s.stage === "congestus" ? "cumulus congestus" : "cumulus " + s.stage;
+    label(name, s.stage === "cb" ? COLX - 150 : COLX - cloudsW / 2 - 8, s.stage === "cb" ? Y(9.0) : tY + 26, D, "end");
+  }
+  // base line
+  if (s.stage !== "fog"){
+    const showBase = cu ? bY : (s.stage === "blue" ? Y(s.base) : null);
+    if (showBase != null){
+      el("line", {x1:360, x2:640, y1:showBase, y2:showBase, stroke:"#c0562c", "stroke-width":1.6, "stroke-dasharray":"3 6", opacity:0.8}, D);
+      el("text", {x:366, y:showBase - 8, class:"note"}, D).textContent = (s.stage === "blue" ? "would-be base " : "base ") + "≈ " + Math.round(s.base * 1000 / 50) * 50 + " m";
+    }
+  }
+  // paraglider under the base when there are cumulus
+  const pgOn = (s.stage === "humilis" || s.stage === "mediocris" || (s.stage === "congestus" && t < 13.9));
+  const pgY = cu ? bY + 70 : Y(1.2);
+  if (pgOn || s.stage === "blue"){
+    const p = el("g", {transform:`translate(${COLX - 95} ${s.stage === "blue" ? Y(Math.min(s.inv, s.base) - 0.5) : pgY})`}, D);
+    el("path", {d:"M-26,0 C-20,-14 20,-14 26,0 C16,-6 -16,-6 -26,0 Z", fill:"#e0794a", stroke:INK, "stroke-width":2, "stroke-linejoin":"round"}, p);
+    el("path", {d:"M-22,-1 L0,26 M22,-1 L0,26 M-8,-6 L0,26 M8,-6 L0,26", stroke:INK, "stroke-width":0.9, opacity:0.7}, p);
+    el("circle", {cx:0, cy:28, r:4, fill:"#2f5f99", stroke:INK, "stroke-width":1.6}, p);
+  }
+  bindClouds();
+  return s;
+}
+
+/* ---------- content ---------- */
+const ROT = '<span class="tag">rule of thumb</span>';
+const INFO = {
+  cirrus:{k:"High · genus (Ci)", n:"Cirrus", sp:"", lat:"<i>cirrus</i>: Latin for a curl or lock of hair. One of the three base names Luke Howard proposed in 1803.", base:"5–13 km in mid-latitudes", made:"ice crystals",
+    forms:"Ice crystals fall out of small high cloud heads and get drawn into streaks by winds that change with height. The hooked ends are the \"mares' tails\".",
+    para:"Thin, scattered cirrus on a blue morning changes nothing for thermals. If it thickens and spreads into a milky veil, the sun, and the lift, will weaken later.",
+    sail:"The streaks show the wind high up, which can differ from the surface wind. Cirrus that thickens into cirrostratus, then altostratus, is the classic warm-front sequence. \"Mares' tails and mackerel scales make tall ships take in their sails\" is folklore with a grain of truth.",
+    wing:"Thin cirrus barely dims the sun, so a thermal sea breeze is mostly untouched. Watch whether it thickens through the day."},
+  cirrocumulus:{k:"High · genus (Cc)", n:"Cirrocumulus", sp:"", lat:"Howard's <i>cirro-cumulus</i> (1803): small heaps at cirrus height.", base:"5–13 km", made:"mostly ice, sometimes supercooled droplets",
+    forms:"A thin high layer breaks into grains or ripples. The WMO test: each element looks less than 1° wide (narrower than your little finger at arm's length) and shows no shading. Larger, shaded elements are altocumulus.",
+    para:"Harmless and often short-lived. A pretty sign that the upper air is moist.",
+    sail:"Part of a \"mackerel sky\". It can come ahead of a front, but on its own it is a weak predictor " + ROT + ".",
+    wing:"Nothing to act on. Enjoy it, and glance west for a thickening veil."},
+  cirrostratus:{k:"High · genus (Cs)", n:"Cirrostratus", sp:"", lat:"Howard's <i>cirro-stratus</i>. <i>stratus</i> is Latin for spread out, laid flat.", base:"5–13 km", made:"ice crystals",
+    forms:"A thin, whitish veil from air slowly lifted over a wide area, as ahead of a warm front. Hexagonal ice crystals bend sunlight by about 22°, so this is the cloud that draws the 22° halo, roughly the span of an outstretched hand at arm's length, faintly reddish on the inside.",
+    para:"Less sun reaches the ground, so thermals weaken and the day may end early.",
+    sail:"A halo plus a veil thickening from upwind is the textbook sign of an approaching warm front: rain often within roughly 12–24 h " + ROT + ". The sequence is reliable, the timing is not.",
+    wing:"A thickening veil cuts the land heating that drives a sea breeze, so the afternoon breeze may come later or weaker " + ROT + "."},
+  altocumulus:{k:"Middle · genus (Ac)", n:"Altocumulus", sp:"", lat:"<i>altus</i>, high, plus <i>cumulus</i>, heap. The alto- genera were added in the 19th century, after Howard.", base:"2–7 km", made:"mostly water droplets, often supercooled",
+    forms:"Patches, rolls or waves of rounded, shaded masses, each about 1–5° wide (one to three fingers at arm's length), from gentle overturning or waves in a moist mid-level layer. Thin altocumulus often makes a corona: small coloured rings close around the sun or moon, from droplets.",
+    para:"On a summer morning, altocumulus with little turrets (castellanus) or tufts (floccus) means the mid-levels are unstable: an early warning of afternoon thunderstorms " + ROT + ".",
+    sail:"Fine on its own. Turreted altocumulus in the morning means keep an eye on the afternoon " + ROT + ".",
+    wing:"A spreading sheet shades the beach and the land behind it; the thermal breeze may stay soft."},
+  altostratus:{k:"Middle · genus (As)", n:"Altostratus", sp:"", lat:"<i>altus</i>, high, plus <i>stratus</i>, layer.", base:"2–7 km, often several km thick", made:"water droplets and ice",
+    forms:"A grey or bluish sheet from slow, large-scale lift, typically as cirrostratus thickens and lowers ahead of a warm front. The sun shows as if through ground glass, objects on the ground cast no shadows, and there is no halo.",
+    para:"Thermals switch off under it. A clear morning with a grey sheet advancing means your window is closing.",
+    sail:"Usually the step before nimbostratus and steady rain. In the northern hemisphere the wind tends to back and freshen as a warm front nears " + ROT + ".",
+    wing:"Flat grey light and no sun means no sea breeze. Any wind now belongs to the weather system."},
+  nimbostratus:{k:"Middle (thick, low base) · genus (Ns)", n:"Nimbostratus", sp:"", lat:"<i>nimbus</i>: Latin for rain cloud, and the name Howard gave to the rain cloud in 1803. Plus <i>stratus</i>, layer.", base:"usually low, often below 2 km and lower in rain; top several km up. WMO files it as a middle cloud because of its depth.", made:"water, ice, rain or snow",
+    forms:"A thick, dark, featureless layer from hours of steady lift over a large area, typically along a warm front. Thick enough to hide the sun completely.",
+    para:"No flying: rain, low ceiling, no thermals.",
+    sail:"Hours of continuous rain and poor visibility. Ragged low scud underneath can hide headlands.",
+    wing:"Rarely a session. Wind under it comes from the passing system, not the sea breeze."},
+  stratocumulus:{k:"Low · genus (Sc)", n:"Stratocumulus", sp:"", lat:"Layer plus heap. The name dates from the 19th century, after Howard.", base:"surface to 2 km, typically 0.5–2 km", made:"water droplets",
+    forms:"A lumpy grey-and-white sheet or patches, often trapped under an inversion. Elements look wider than 5° (more than three fingers at arm's length). Among the commonest clouds on Earth, especially over cool oceans.",
+    para:"Often a capped, weak-thermal day. Morning stratocumulus that breaks up into cumulus by late morning means convection is winning " + ROT + ".",
+    sail:"Usually grey sky and maybe light drizzle, little more.",
+    wing:"A lid over the coast cuts the heating, so the sea breeze tends to be weaker or late " + ROT + "."},
+  stratus:{k:"Low · genus (St)", n:"Stratus", sp:"", lat:"<i>stratus</i>: Latin for spread out, laid flat. Howard 1803.", base:"surface to 2 km, usually below about 0.5 km", made:"water droplets",
+    forms:"A low, grey, even layer. Often fog that has lifted, or moist air cooled from below as it moves over cold ground or water. Can drizzle.",
+    para:"Hilltops and launches vanish into it. Never launch into cloud.",
+    sail:"Drizzle, poor visibility, headlands in cloud.",
+    wing:"Often light wind. It may burn off by late morning if the sun gets through."},
+  cumulus:{k:"Low · genus (Cu)", n:"Cumulus", sp:"humilis · mediocris", lat:"<i>cumulus</i>: Latin for heap. Howard 1803. Species by size: <i>humilis</i> (low, humble), <i>mediocris</i> (middling), <i>congestus</i> (piled up).", base:"usually 0.5–2 km in mid-latitudes, higher in dry air. Rule of thumb: base ≈ 125 m × (T − T<sub>d</sub>)", made:"water droplets",
+    forms:"A thermal cools by about 10 °C per km as it rises, while its dew point drops only about 2 °C per km. Where the two meet, vapour condenses: the flat base is the condensation level, the same for every cloud in the area. Move the dew-point slider to see it.",
+    para:"Thermal markers. The base is your ceiling and the cloud tells you where the lift is, often under the sunny, building side. Near the base of a big one, beware of cloud suck.",
+    sail:"Fair weather. A line of cumulus a few km inland of the coast often marks the sea-breeze front.",
+    wing:"Cumulus popping over the hills behind the beach by late morning, with clear sky over the sea: the sea breeze is coming " + ROT + "."},
+  congestus:{k:"Low base, growing · cumulus species", n:"Cumulus", sp:"congestus", lat:"<i>congestus</i>: Latin for piled up, heaped. A species of cumulus.", base:"same base as other cumulus; tops several km up", made:"water droplets, ice near the top",
+    forms:"If the air above the cumulus is unstable, towers keep rising: tall, cauliflower-like, with hard, sharp edges. They can drop showers.",
+    para:"Overdevelopment. Towering cumulus by late morning or early afternoon means storms are possible within hours: land early " + ROT + ". Lift under them can be strong and wide, which is the trap.",
+    sail:"Squalls are possible later in the day. Watch which way the towers drift and how fast they grow.",
+    wing:"Watch the upwind sky. A tower like this can turn into a storm within an hour or so " + ROT + "."},
+  cumulonimbus:{k:"Spans all levels · genus (Cb)", n:"Cumulonimbus", sp:"calvus · capillatus · incus", lat:"<i>cumulus</i> plus <i>nimbus</i>: the heaped rain cloud. Species <i>calvus</i> (bald) while the top is soft, <i>capillatus</i> (hairy) once it turns to fibrous ice; the anvil is the feature <i>incus</i>, Latin for anvil.", base:"low, about 0.5–2 km; top up to the tropopause, roughly 9–12 km in mid-latitudes, up to about 18 km in the tropics", made:"water, ice, hail, rain",
+    forms:"A congestus that keeps rising until it reaches the tropopause, where the air stops getting colder with height. It cannot climb further and spreads into an anvil. Inside: violent updrafts and downdrafts, lightning, hail.",
+    para:"Do not fly anywhere near one. Cloud suck under it can carry a wing into cloud, and its gust front reaches far beyond the rain.",
+    sail:"Reef early. Expect a sudden wind shift and gusts at the gust front, then heavy rain. Lightning strikes well away from the storm: if you can hear thunder, you are within striking distance (US National Weather Service).",
+    wing:"Get off the water before it arrives, not when the wind changes. Downbursts can exceed 100 km/h."},
+  lenticular:{k:"Middle · altocumulus species", n:"Lenticular", sp:"Altocumulus lenticularis", lat:"<i>lenticularis</i>, from Latin <i>lenticula</i>, a lentil. The species also occurs in stratocumulus and cirrocumulus.", base:"usually 2–7 km; parked over or downwind of a ridge", made:"water droplets, sometimes ice",
+    forms:"Strong wind blowing across a ridge into a stable, moist layer sets up standing waves downwind. Air condenses at each wave crest and evaporates on the way down, so the cloud stays put while the wind races through it. Stacks look like piles of plates.",
+    para:"Strong wind aloft. Downwind of the ridge, under the wave, rotors can make violent turbulence near the ground. A no-fly sign for paragliders; sailplane pilots climb in the wave itself, well above.",
+    sail:"Wind aloft is strong; gusts can come down the lee slopes onto the coast " + ROT + ".",
+    wing:"Expect gusty, shifty wind near shore downwind of high ground " + ROT + "."},
+  mammatus:{k:"Supplementary feature (mamma)", n:"Mammatus", sp:"", lat:"<i>mamma</i>: Latin for udder or breast. The WMO name is <i>mamma</i>; \"mammatus\" is the everyday form.", base:"hanging under a cumulonimbus anvil here; also seen under altocumulus, altostratus, stratocumulus or cirrus", made:"ice and droplets",
+    forms:"Pouches of cold, cloud-laden air sinking out of the underside of the anvil. Under a cumulonimbus they mean you are looking at a mature storm.",
+    para:"The pouches are not the danger; the storm they hang from is. Find the storm core.",
+    sail:"Often seen as a storm passes or moves away. The worst wind may be elsewhere; look below the anvil, not at it.",
+    wing:"Do not trust a calm patch under an anvil. Locate the rain and the gust front first."},
+  arcus:{k:"Supplementary feature · shelf cloud", n:"Arcus", sp:"shelf cloud", lat:"<i>arcus</i>: Latin for arch or bow. Attached to a storm it is a shelf cloud; detached, a roll cloud.", base:"low, at or below the base of the parent storm", made:"water droplets",
+    forms:"Cold air from the storm's downdraft spreads along the ground as a gust front and shovels up the warm, moist air ahead of it, which condenses into a low, wedge-shaped shelf.",
+    para:"If you see one from the air, you are far too late. Land long before.",
+    sail:"The wind shift arrives with or just behind the shelf: sudden, strong, from a new direction, often with a drop in temperature. Have sail down before it reaches you.",
+    wing:"Be on land when it passes. The gust front can arrive before any rain and feel at first like a great gust."},
+  fog:{k:"At the surface · not a genus", n:"Fog", sp:"", lat:"Fog is cloud touching the ground. WMO definition: visibility below 1 km.", base:"at the surface", made:"water droplets",
+    forms:"Radiation fog: on clear, calm nights the ground cools the air above it to its dew point; it usually burns off in the morning. Advection fog (sea fog): warm, moist air flows over colder water and cools from below; it can last all day, even in a breeze. Set the clock to 8:00 and raise the dew point to about 17 °C to grow radiation fog on the plain.",
+    para:"Morning valley fog under a clear sky means a stable start; thermals come later. Wait for it to lift.",
+    sail:"Sea fog can persist in wind. Slow down, use radar, AIS and sound signals (COLREGs rule 19, restricted visibility).",
+    wing:"Do not go out if you cannot see the shore. Orientation goes within minutes."}
+};
+const GROUPS = [["High",["cirrus","cirrocumulus","cirrostratus"]],["Middle",["altocumulus","altostratus","nimbostratus","lenticular"]],["Low",["stratocumulus","stratus","cumulus","fog"]],["Storm",["congestus","cumulonimbus","arcus","mammatus"]]];
+const CHIP_NAME = {congestus:"cumulus congestus", arcus:"shelf cloud", lenticular:"lenticular"};
+const ICONS = {
+  para:'<svg class="ic" viewBox="0 0 24 24"><path d="M2 9 C5 3 19 3 22 9 C17 7 7 7 2 9Z" fill="#e0794a" stroke="#1b1a22" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 9 L12 19 M21 9 L12 19" stroke="#1b1a22" stroke-width="1"/><circle cx="12" cy="20" r="2.3" fill="#2f5f99" stroke="#1b1a22" stroke-width="1.2"/></svg>',
+  sail:'<svg class="ic" viewBox="0 0 24 24"><path d="M12 2 V18 M13 3 L21 16 H13Z M11 5 L4 16 H11Z" fill="#fff" stroke="#1b1a22" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 18 H21 L18 22 H6Z" fill="#f0b48a" stroke="#1b1a22" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+  wing:'<svg class="ic" viewBox="0 0 24 24"><path d="M8 13 C12 2 22 6 20 15 C16 12 12 12 8 13Z" fill="#e0794a" stroke="#1b1a22" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 19 H15 M9 19 V23 M6 23 H12" stroke="#1b1a22" stroke-width="1.6" stroke-linecap="round"/></svg>'
+};
+
+/* ---------- UI ---------- */
+const card = document.getElementById("card");
+let selected = "cumulus";
+function showCard(id, fromUser){
+  const d = INFO[id]; if (!d) return; selected = id;
+  card.innerHTML = `<button class="close" aria-label="Close">close</button>
+    <div class="kicker">${d.k}</div>
+    <h2>${d.n}${d.sp ? ` <i>${d.sp}</i>` : ""}</h2>
+    <p class="latin">${d.lat}</p>
+    <dl><dt>Height</dt><dd>${d.base}</dd><dt>Made of</dt><dd>${d.made}</dd></dl>
+    <p>${d.forms}</p>
+    <h4>What it tells you</h4>
+    <ul><li>${ICONS.para}<b>Paraglider.</b> ${d.para}</li><li>${ICONS.sail}<b>Sailor.</b> ${d.sail}</li><li>${ICONS.wing}<b>Wing-foiler.</b> ${d.wing}</li></ul>`;
+  card.classList.remove("idle");
+  if (fromUser && window.innerWidth <= 960) card.classList.add("sheet");
+  card.querySelector(".close").onclick = () => { card.classList.remove("sheet"); card.classList.add("idle"); };
+  document.querySelectorAll(".chip").forEach(c => c.classList.toggle("on", c.dataset.id === id));
+  markSel();
+}
+function markSel(){ Object.entries(CL).forEach(([k, g]) => g.classList.toggle("sel", g.getAttribute("data-id") === selected)); }
+function bindClouds(){
+  Object.values(CL).forEach(g => {
+    if (g._b) return; g._b = 1;
+    const id = g.getAttribute("data-id"); g.setAttribute("aria-label", (CHIP_NAME[id] || id) + ": show card");
+    g.addEventListener("click", e => { e.stopPropagation(); showCard(id, true); });
+    g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); showCard(id, true); } });
+  });
+  markSel();
+}
+// chips
+const chips = document.getElementById("chips");
+GROUPS.forEach(([g, ids]) => {
+  const row = document.createElement("div"); row.className = "grp"; row.innerHTML = `<b>${g}</b>`;
+  ids.forEach(id => { const b = document.createElement("button"); b.className = "chip"; b.dataset.id = id; b.textContent = CHIP_NAME[id] || id; b.onclick = () => jumpTo(id); row.appendChild(b); });
+  chips.appendChild(row);
+});
+const NEEDS = {cumulus:[12, false, null], congestus:[13.7, true, null], cumulonimbus:[15.4, true, null], arcus:[15.4, true, null], mammatus:[16.5, true, null]};
+function jumpTo(id){
+  const s = compute();
+  if (NEEDS[id]){
+    const [t, uns] = NEEDS[id];
+    const present = (id === "cumulus" && (s.stage === "humilis" || s.stage === "mediocris")) || (id === "congestus" && s.stage === "congestus") || (id === "cumulonimbus" && s.stage === "cb") || (id === "arcus" && CL.arcus) || (id === "mammatus" && CL.mammatus);
+    if (!present){ state.t = t; state.unstable = uns; if (state.td < 9) state.td = 13; syncInputs(); update(); }
+  }
+  showCard(id, true);
+  const g = CL[id];
+  if (g && window.innerWidth > 960){ const r = g.getBoundingClientRect(); if (r.top < 60 || r.bottom > window.innerHeight) window.scrollBy({top: r.top - window.innerHeight * 0.35, behavior: RM ? "auto" : "smooth"}); }
+}
+
+const $t = document.getElementById("time"), $d = document.getElementById("dew");
+const $st = document.getElementById("stable"), $un = document.getElementById("unstable");
+function syncInputs(){ $t.value = state.t; $d.value = state.td; $st.setAttribute("aria-pressed", !state.unstable); $un.setAttribute("aria-pressed", state.unstable); }
+function hhmm(t){ const h = Math.floor(t), m = Math.round((t - h) * 60 / 5) * 5; return (m === 60 ? h + 1 : h) + ":" + String(m === 60 ? 0 : m).padStart(2, "0"); }
+const VERDICT = {
+  none:"Early: the ground is still warming. Thermals have not started.",
+  fog:"Moist air cooled overnight to its dew point: radiation fog on the plain. It lifts as the sun heats the ground.",
+  blue:"Blue thermals: the air is so dry that thermals stop at the inversion before they reach condensation. Lift, but no clouds to mark it.",
+  humilis:"Fair-weather cumulus, flat and wide apart. A good thermal day; the sea breeze is building along the coast.",
+  mediocris:"Cumulus of medium height. Solid thermals. On a capped day they stop growing at the inversion.",
+  congestus:"Towers. Overdevelopment by early afternoon: time to land or head for shore " + ROT + ".",
+  cb:"Cumulonimbus. Gust front, downbursts, lightning. Off the hill, off the water."
+};
+function update(){
+  const s = drawDynamic();
+  document.getElementById("timeOut").textContent = hhmm(state.t);
+  document.getElementById("dewOut").textContent = state.td.toFixed(state.td % 1 ? 1 : 0) + " °C";
+  const r = document.getElementById("readout");
+  r.innerHTML = `<span class="big">T ${s.T.toFixed(0)} °C · T<sub>d</sub> ${s.Td.toFixed(0)} °C → base ≈ 125 m × ${s.spread.toFixed(1)} = ${Math.round(s.base * 1000 / 10) * 10} m</span> ${ROT}<span class="verdict">${VERDICT[s.stage]}</span>`;
+  if (selected && !CL[selected] && ["cumulus","congestus","cumulonimbus"].includes(selected)){
+    const now = s.stage === "cb" ? "cumulonimbus" : s.stage === "congestus" ? "congestus" : (s.stage === "humilis" || s.stage === "mediocris") ? "cumulus" : null;
+    if (now) showCard(now, false);
+  }
+  markSel();
+}
+$t.addEventListener("input", () => { state.t = +$t.value; update(); });
+$d.addEventListener("input", () => { state.td = +$d.value; update(); });
+$st.onclick = () => { state.unstable = false; syncInputs(); update(); };
+$un.onclick = () => { state.unstable = true; syncInputs(); update(); };
+let playing = null;
+document.getElementById("play").onclick = function(){
+  if (playing){ clearInterval(playing); playing = null; this.textContent = "▶ run the day"; return; }
+  if (state.t >= 17.9) state.t = 8;
+  this.textContent = "❚❚ pause";
+  const step = RM ? 1 : 0.05, ms = RM ? 900 : 60;
+  playing = setInterval(() => { state.t = Math.min(18, state.t + step); syncInputs(); update(); if (state.t >= 18){ clearInterval(playing); playing = null; this.textContent = "▶ run the day"; } }, ms);
+};
+
+// light drift on high clouds, unless reduced motion
+if (!RM){ CL.cirrus.classList.add("drift"); CL.cirrocumulus.classList.add("drift2"); CL.altocumulus.classList.add("drift"); }
+// paper grain on top
+el("rect", {x:0, y:0, width:1000, height:1620, filter:"url(#grain)", "pointer-events":"none"}, L.top);
+
+// URL params for snapshots: ?t=15.5&u=1&td=13&c=cumulonimbus
+const Q = new URLSearchParams(location.search);
+if (Q.has("t")) state.t = clamp(+Q.get("t"), 8, 18);
+if (Q.has("td")) state.td = clamp(+Q.get("td"), 2, 20);
+if (Q.get("u") === "1") state.unstable = true;
+syncInputs(); bindClouds(); update(); { const st = compute().stage; showCard(Q.get("c") && INFO[Q.get("c")] ? Q.get("c") : st === "cb" ? "cumulonimbus" : st === "congestus" ? "congestus" : st === "fog" ? "fog" : "cumulus", false); }
+</script>
+</body>
+</html>

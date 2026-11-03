@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The flower clock · art · Corentin Bel</title>
+<meta name="description" content="Linnaeus's horologium florae (1751) as a living garden dial: flowers that open and close at their own hours, set to your local time.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌼</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400;1,9..144,600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1b1a22; --paper:#fbf3e2; --paper2:#f2e4c4; --leaf:#5f9a4a; --leafdk:#3d6e34;
+  --rust:#b9512f; --muted:#6d6457;
+  --sky1:#5fb0ea; --sky2:#d4ecf7; --heroink:#1b1a22;
+  --serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--rust)}
+.bar{position:fixed;top:0;left:0;z-index:20;padding:9px 16px;font-size:13.5px;letter-spacing:.02em;
+  background:rgba(251,243,226,.82);backdrop-filter:blur(6px);border-bottom-right-radius:12px;border:1.5px solid var(--ink);border-top:0;border-left:0}
+.bar a{color:var(--ink);text-decoration:none;font-weight:600}
+.bar a:hover{color:var(--rust)}
+.bar span{color:var(--muted);margin:0 4px}
+
+/* ---------- sky stage ---------- */
+.sky{position:relative;background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 78%,var(--paper) 100%);padding:64px 20px 40px;overflow:hidden}
+.hero{max-width:1240px;margin:0 auto;color:var(--heroink)}
+.hero h1{font-family:var(--serif);font-weight:600;font-size:clamp(2.3rem,5.4vw,4.1rem);line-height:1.02;margin:0 0 .2em;letter-spacing:-.01em}
+.hero h1 em{font-style:italic;font-weight:400}
+.hero p{max-width:640px;margin:0;font-size:1.06rem;opacity:.92}
+.stage{max-width:1240px;margin:22px auto 0;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:28px;align-items:center}
+.dialwrap{position:relative;width:100%;max-width:820px;margin:0 auto;aspect-ratio:1/1}
+#dial{width:100%;height:100%;display:block;touch-action:manipulation;cursor:default}
+.panel{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--paper);border:2px solid var(--ink);border-radius:16px;box-shadow:4px 5px 0 rgba(27,26,34,.85);padding:14px 16px}
+.readout{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.readout .t{font-family:var(--serif);font-size:3rem;line-height:1;font-weight:600;font-variant-numeric:tabular-nums}
+.readout .s{font-size:.86rem;color:var(--muted)}
+.ctrl{display:flex;align-items:center;gap:8px;margin-top:10px}
+.btn{font:600 .88rem var(--sans);color:var(--ink);background:var(--paper2);border:2px solid var(--ink);border-radius:999px;padding:6px 13px;cursor:pointer;box-shadow:2px 2px 0 var(--ink);white-space:nowrap}
+.btn:hover{background:#ffe9b8}
+.btn:active{transform:translate(2px,2px);box-shadow:none}
+.btn.on{background:#f6c445}
+input[type=range]{flex:1;min-width:60px;accent-color:var(--rust);height:28px}
+.fl-name{font-family:var(--serif);font-size:1.45rem;font-weight:600;line-height:1.1;margin:0}
+.fl-latin{font-family:var(--serif);font-style:italic;color:var(--muted);margin:2px 0 8px}
+.fl-times{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:.9rem;margin-bottom:8px}
+.fl-times b{font-weight:600}
+.fl-note{font-size:.93rem;margin:0}
+.tag{display:inline-block;font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border:1.5px solid var(--ink);border-radius:6px;padding:0 6px;margin-left:6px;vertical-align:2px}
+.tag.L{background:#f6d77a}.tag.G{background:#cfe3c4}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{font-size:.8rem;border:1.5px solid var(--ink);border-radius:999px;padding:1px 9px 1px 6px;background:#fff8ea;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.chip i{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink);display:inline-block}
+.chip.dim{opacity:.45}
+.small{font-size:.82rem;color:var(--muted)}
+.guessbox{display:none;margin-top:8px;font-size:.92rem}
+.guessbox.on{display:block}
+
+/* ---------- text ---------- */
+main{max-width:760px;margin:0 auto;padding:30px 20px 10px}
+main h2{font-family:var(--serif);font-weight:600;font-size:1.85rem;line-height:1.15;margin:2.1em 0 .45em}
+main h2 .n{font-style:italic;font-weight:400;color:var(--rust);margin-right:.25em}
+main p{margin:.6em 0}
+.latin{font-family:var(--serif);font-style:italic}
+.kinds{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+.kind{background:#fff8ea;border:2px solid var(--ink);border-radius:14px;padding:10px 12px;font-size:.92rem}
+.kind h3{font-family:var(--serif);font-style:italic;font-weight:600;margin:0 0 4px;font-size:1.15rem}
+.wide{max-width:980px;margin:0 auto;padding:0 20px}
+#gantt{width:100%;height:auto;display:block;background:#fff8ea;border:2px solid var(--ink);border-radius:16px;box-shadow:4px 5px 0 rgba(27,26,34,.85)}
+.gscroll{overflow-x:auto;padding:0 6px 8px 0}
+@media (max-width:640px){#gantt{min-width:640px}}
+.legend{font-size:.84rem;color:var(--muted);margin:10px 4px 0}
+.mine{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:18px 0}
+.mine .card{padding:10px 12px 12px}
+.mine canvas{width:100%;aspect-ratio:4/3;display:block;border-radius:10px;border:1.5px solid var(--ink);background:#fff8ea}
+.mine h3{font-family:var(--serif);font-size:1.15rem;margin:8px 0 2px}
+.mine p{font-size:.88rem;margin:0}
+blockquote{margin:1em 0;padding:.4em 1em;border-left:4px solid var(--rust);font-family:var(--serif);font-style:italic;font-size:1.08rem;background:#fff8ea;border-radius:0 10px 10px 0}
+footer{max-width:760px;margin:30px auto 0;padding:10px 20px 60px;font-size:.86rem;color:#4a443b}
+footer h2{font-family:var(--serif);font-size:1.3rem;margin:0 0 .4em;color:var(--ink)}
+footer li{margin:.35em 0}
+@media (max-width:1000px){
+  .stage{grid-template-columns:1fr}
+  .panel{max-width:620px;margin:0 auto;width:100%}
+}
+@media (max-width:640px){
+  body{font-size:15.5px}
+  .sky{padding:58px 12px 28px}
+  .kinds,.mine{grid-template-columns:1fr}
+  .readout .t{font-size:2.4rem}
+}
+
+</style>
+</head>
+<body>
+<nav class="bar"><a href="../">← art</a><span>·</span><a href="https://corentinbel.com">home</a></nav>
+
+<section class="sky" id="sky">
+  <div class="hero">
+    <h1>The <em>flower</em> clock</h1>
+    <p>In 1751 Carl Linnaeus proposed a garden that tells the time: plant flowers that open and shut at known hours, and read the hour from which ones are open. Here is that garden, set to your clock.</p>
+  </div>
+  <div class="stage">
+    <div class="dialwrap"><canvas id="dial" aria-label="A circular garden dial: flowers around a 24-hour face, open or closed according to the time"></canvas></div>
+    <div class="panel">
+      <div class="card">
+        <div class="readout"><span class="t" id="tm">--:--</span><span class="s" id="tmsub">your local time</span></div>
+        <div class="ctrl">
+          <button class="btn" id="play" aria-label="play the day">▶ play the day</button>
+          <button class="btn" id="now">now</button>
+          <button class="btn" id="guess">guess</button>
+        </div>
+        <div class="ctrl"><input type="range" id="scrub" min="0" max="1439" step="1" aria-label="time of day"></div>
+        <div class="guessbox" id="guessbox"></div>
+        <div class="small" id="countline"></div>
+      </div>
+      <div class="card" id="flcard"></div>
+      <div class="card">
+        <div class="small">Open at this hour (roughly, for a northern summer day):</div>
+        <div class="chips" id="chips"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main>
+  <h2><span class="n">i.</span>How to read the garden</h2>
+  <p>The dial runs once around in 24 hours: midnight at the bottom, noon at the top, morning on the left. Each flower's stem is planted at the hour it opens. Tap a flower to see its hours, drag the slider to move the day, or press <b>play</b> and watch the garden wake up from the left and fall asleep on the right. The little window in the middle is the sky over Uppsala, with its cathedral's twin spires.</p>
+  <p>Try <b>guess</b>: the hand and the hour disappear, and you read the time from the flowers alone, as Linnaeus hoped a gardener could.</p>
+
+  <h2><span class="n">ii.</span>Linnaeus's list</h2>
+  <p>In <span class="latin">Philosophia Botanica</span> (1751) Linnaeus gave a <span class="latin">horologium florae</span>, a flower clock: a list of plants with the hours at which their flowers opened and closed, as observed in Uppsala, at about 60° north. Most of the entries are dandelion relatives (goat's-beard, chicory, hawkweeds, sow-thistles, cat's-ears), whose flower heads open and shut day after day. For some plants he recorded only an opening time, for others only a closing time.</p>
+  <p>He also sorted the flowers that move each day into three kinds. Only one kind is any use for a clock.</p>
+  <div class="kinds">
+    <div class="kind"><h3>meteorici</h3>Open and close with the weather: later, or not at all, when the air is damp, cloudy or cold.</div>
+    <div class="kind"><h3>tropici</h3>Open in the morning and close before evening, but the hours drift through the season as the days lengthen and shorten.</div>
+    <div class="kind"><h3>aequinoctiales</h3>Open and close at fixed hours, whatever the day. These are the clock flowers.</div>
+  </div>
+  <p>The times on this page are his where he gave them, and marked otherwise where they are not. Read them all as "about". He kept local solar time in a northern summer; your clock, your latitude and your weather will move them, often by an hour or more.</p>
+
+  <h2><span class="n">iii.</span>Why a flower keeps hours</h2>
+  <p><b>The movement.</b> A petal opens when its inner face grows or swells more than its outer face, so it bends outward; it closes when the balance reverses. In flowers that open and close many times, like the dandelion family and water lilies, this is done by repeated growth or by changes in water pressure in the petal cells. Many other flowers open once and never close again (van Doorn &amp; van Meeteren 2003).</p>
+  <p><b>The cues.</b> Light and temperature trigger many of these movements: tulips and crocuses open in a warm room and shut in the cold. But in a number of species the rhythm carries on for a while in constant light or darkness, which shows that an internal circadian clock is doing part of the timing. In petunia, a core clock gene (<span class="latin">LHY</span>) holds back scent production until evening, when the hawkmoths that pollinate it fly (Fenske et al. 2015).</p>
+  <p><b>The name.</b> Daily opening and closing of flowers and leaves is called <i>nyctinasty</i>, from the Greek for night and pressing together. The same family of movements folds the leaflets of beans, clovers and mimosa at dusk.</p>
+  <p><b>The reasons.</b> The usual explanations are timing and protection: be open when your pollinators are about (bees in the morning, moths at dusk) and keep pollen dry and warm at night or in rain. These are plausible and partly tested, but they differ from species to species.</p>
+
+  <h2><span class="n">iv.</span>Why it never quite worked</h2>
+  <blockquote>A clock that stops on cloudy days, runs fast in the south, and is only fully planted for a few weeks a year.</blockquote>
+  <p>Weather shifts the hours, which Linnaeus knew: that is his <i>meteorici</i>. Day length shifts them across the season. Latitude shifts them too, so a list made in Uppsala is wrong in Paris or Fréjus. Worst of all, the plants on the list do not all flower in the same months, so the full garden never exists at once. Linnaeus may never have planted one. Several botanical gardens tried in the nineteenth century, with mixed results.</p>
+  <p>Still, the idea stuck, because it is true in spirit. A meadow does run on a schedule. Go out at seven and at three and you will see a different set of flowers.</p>
+
+  <h2><span class="n">v.</span>The mechanical cousin</h2>
+  <p>Today "floral clock" usually means something else: a real clock movement whose hands sweep over a flower bed planted as a dial. Edinburgh's in Princes Street Gardens (1903) is often called the first. Geneva's <i>L'horloge fleurie</i>, in the Jardin Anglais by the lake, was installed in 1955 and replanted with the seasons ever since. They keep perfect time, and the flowers in them do nothing at all. Linnaeus's version is the opposite: no machinery, and the flowers are the hands.</p>
+</main>
+
+<div class="wide">
+  <h2 style="font-family:var(--serif);font-weight:600;font-size:1.85rem;margin:1.6em 0 .5em;max-width:720px;margin-left:auto;margin-right:auto"><span style="font-style:italic;font-weight:400;color:var(--rust);margin-right:.25em">vi.</span>The whole day at a glance</h2>
+  <div class="gscroll"><svg id="gantt" role="img" aria-label="Opening hours of every flower on the clock, over 24 hours"></svg></div>
+  <p class="legend">Bars show roughly when each flower is open. Solid outline: both times from Linnaeus's 1751 table. Dashed outline: at least one time from later garden accounts (his table is blank there, or the plant is not in it). The red line is the clock's current time. Tap a row to find the flower on the dial.</p>
+</div>
+
+<main>
+  <h2><span class="n">vii.</span>Three I love</h2>
+  <p>None of these is on Linnaeus's list, but each keeps, or refuses, hours of its own. The mimosa below follows the clock at the top of the page.</p>
+  <div class="mine">
+    <div class="card"><canvas id="c-mimosa" width="400" height="300"></canvas><h3>Mimosa</h3><p><span class="latin">Acacia dealbata</span>, the winter gold of the Tanneron hills above the Côte d'Azur. Its feathery leaves fold their leaflets together at night, a sleep movement of the same kind that shuts the flowers.</p></div>
+    <div class="card"><canvas id="c-violet" width="400" height="300"></canvas><h3>Sweet violet</h3><p><span class="latin">Viola odorata</span> opens its scented flowers in early spring. Later it makes small flowers that never open at all and pollinate themselves inside the bud (cleistogamy): flowers that ignore the clock entirely.</p></div>
+    <div class="card"><canvas id="c-rose" width="400" height="300"></canvas><h3>Damask rose</h3><p><span class="latin">Rosa × damascena</span> is the main rose grown for rose oil, around Kazanlak in Bulgaria and Isparta in Turkey. Its flowers are picked by hand early in the morning, which growers say gives the richest oil.</p></div>
+  </div>
+</main>
+
+<footer>
+  <h2>Sources</h2>
+  <ul>
+    <li>Linnaeus, C. (1751). <i>Philosophia Botanica</i>. Stockholm. The <i>horologium florae</i> passage, with the three kinds of daily-moving flowers.</li>
+    <li>Wikipedia contributors, "Linnaeus's flower clock" (table of species with opening and closing times transcribed from Linnaeus, with modern names). <a href="https://en.wikipedia.org/wiki/Linnaeus%27_flower_clock">en.wikipedia.org</a></li>
+    <li>van Doorn, W. G. &amp; van Meeteren, U. (2003). Flower opening and closure: a review. <i>Journal of Experimental Botany</i> 54, 1801–1812.</li>
+    <li>Fenske, M. P. et al. (2015). Circadian clock gene <i>LATE ELONGATED HYPOCOTYL</i> directly regulates the timing of floral scent emission in <i>Petunia</i>. <i>PNAS</i> 112.</li>
+    <li>Ville de Genève, L'horloge fleurie, Jardin Anglais (1955). City of Edinburgh Council, Floral Clock, West Princes Street Gardens (1903).</li>
+  </ul>
+  <p>Times are approximate. Evening flowers (four o'clock, evening primrose, night-flowering catchfly) are not in Linnaeus's table; their hours are common garden knowledge and vary a lot. Close times marked "not in his table" are likewise later, rougher figures.</p>
+</footer>
+
+<script>
+"use strict";
+// ---------------- utilities ----------------
+function rng(seed){let a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
+const TAU=Math.PI*2;
+function hex(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function mix(a,b,t){const A=hex(a),B=hex(b);return'#'+A.map((v,i)=>Math.round(lerp(v,B[i],t)).toString(16).padStart(2,'0')).join('');}
+function lum(h){const[r,g,b]=hex(h);return(0.299*r+0.587*g+0.114*b)/255;}
+function fmt(h){h=((h%24)+24)%24;let m=Math.round(h*60)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
+function ampm(h){h=((h%24)+24)%24;const H=Math.floor(h),M=Math.round((h-H)*60);const hh=(H%12)||12;return hh+(M?':'+String(M).padStart(2,'0'):'')+(H<12?' am':' pm');}
+const INK='#1b1a22';
+const REDUCED=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------------- the flowers ----------------
+// o/c = opening/closing hour (decimal). oL/cL = true if that time is in Linnaeus's 1751 table.
+const FL=[
+ {name:"Goat's-beard",latin:"Tragopogon pratensis",o:3,c:12,oL:true,cL:false,oTxt:"about 3 am",cTxt:"around midday",
+  kind:'ray',n:16,pw:.30,col:'#f5c531',col2:'#e9a91d',ctr:'#c98a12',cr:.24,bracts:true,
+  note:"Its English country name is Jack-go-to-bed-at-noon. Long green bracts poke out between the yellow rays and wrap the head when it shuts."},
+ {name:"Chicory",latin:"Cichorium intybus",o:4.5,c:12.5,oL:true,cL:false,oTxt:"4 to 5 am",cTxt:"usually by early afternoon",
+  kind:'ray',n:15,pw:.34,col:'#86afee',col2:'#6d93db',ctr:'#4a69bd',cr:.2,
+  note:"Sky-blue heads on stiff roadside stems. Each head opens for a single day."},
+ {name:"Sow-thistle",latin:"Sonchus oleraceus",o:5,c:12,oL:true,cL:true,oTxt:"about 5 am",cTxt:"about noon",
+  kind:'ray',n:22,pw:.22,col:'#f7dc5e',col2:'#ecc443',ctr:'#d9a91f',cr:.22,
+  note:"A weed of every pavement crack. Linnaeus gave it about seven hours of opening."},
+ {name:"Dwarf morning glory",latin:"Convolvulus tricolor",o:5,c:15,oL:true,cL:false,oTxt:"about 5 am",cTxt:"in the afternoon",
+  kind:'round',n:5,pw:1.05,col:'#3f63c9',col2:'#3f63c9',ctr:'#f3d34a',cr:.16,tri:true,rib:'#2a4596',
+  note:"Three colours in rings: a blue rim, a white band, a yellow throat. Each flower lasts about a day."},
+ {name:"Spotted cat's-ear",latin:"Hypochaeris maculata",o:6,c:16.5,oL:true,cL:true,oTxt:"about 6 am",cTxt:"4 to 5 pm",
+  kind:'ray',n:20,pw:.25,col:'#f2b829',col2:'#e09a17',ctr:'#c47a10',cr:.22,
+  note:"One of the longest shifts on the list: open for about ten hours."},
+ {name:"Hawkweed",latin:"Hieracium umbellatum",o:6,c:17,oL:true,cL:true,oTxt:"about 6 am",cTxt:"about 5 pm",
+  kind:'ray',n:18,pw:.27,col:'#f4a62a',col2:'#e18a1c',ctr:'#b8650e',cr:.2,
+  note:"Hawkweeds fill Linnaeus's list. He timed several species, each keeping its own hours."},
+ {name:"White water lily",latin:"Nymphaea alba",o:7,c:17,oL:true,cL:true,oTxt:"about 7 am",cTxt:"about 5 pm",
+  kind:'pointed',n:12,pw:.42,col:'#fffdf6',col2:'#f6e9ef',ctr:'#f0c43c',cr:.24,pad:true,layer2:true,
+  note:"Floats on still water. Each flower opens in the morning and shuts in the late afternoon, for several days in a row."},
+ {name:"Garden lettuce",latin:"Lactuca sativa",o:7,c:10,oL:true,cL:true,oTxt:"about 7 am",cTxt:"about 10 am",
+  kind:'ray',n:14,pw:.3,col:'#f0e48c',col2:'#e2d26b',ctr:'#c9b13d',cr:.2,
+  note:"Yes, lettuce, left to bolt and flower. Open for only about three hours a day."},
+ {name:"Cape rain daisy",latin:"Calendula pluvialis",o:7,c:15.5,oL:true,cL:true,oTxt:"about 7 am",cTxt:"3 to 4 pm",
+  kind:'ray',n:16,pw:.3,col:'#fbf7f0',col2:'#e7d8ee',ctr:'#4a2a5a',cr:.27,ring:'#8a5aa8',
+  note:"Linnaeus's “marigold of the rain” (now Dimorphotheca pluvialis). The name records the belief that it stays shut when rain is coming."},
+ {name:"Scarlet pimpernel",latin:"Anagallis arvensis",o:8,c:15,oL:true,cL:false,oTxt:"about 8 am",cTxt:"mid-afternoon",
+  kind:'round',n:5,pw:.95,col:'#ec5b3c',col2:'#ec5b3c',ctr:'#6a2a52',cr:.24,eye:true,
+  note:"Known as the poor man's weather-glass, because it shuts when the sky turns dull."},
+ {name:"Proliferous pink",latin:"Petrorhagia prolifera",o:8,c:13,oL:true,cL:true,oTxt:"about 8 am",cTxt:"about 1 pm",
+  kind:'heart',n:5,pw:.82,col:'#ef93b8',col2:'#ef93b8',ctr:'#c25a86',cr:.14,rib:'#c25a86',
+  note:"Small pink flowers, only one or two at a time, from a papery brown head."},
+ {name:"Sand spurrey",latin:"Spergularia rubra",o:9.5,c:14.5,oL:true,cL:true,oTxt:"9 to 10 am",cTxt:"2 to 3 pm",
+  kind:'round',n:5,pw:.78,col:'#dc90c8',col2:'#dc90c8',ctr:'#f2e2a0',cr:.18,rib:'#b56aa3',
+  note:"Tiny pink stars on sandy paths, open for about five hours around midday."},
+ {name:"Ice plant",latin:"Mesembryanthemum crystallinum",o:9.5,c:15.5,oL:true,cL:true,oTxt:"9 to 10 am",cTxt:"3 to 4 pm",
+  kind:'needle',n:22,pw:.15,col:'#f7e8f2',col2:'#ecd2e4',ctr:'#efd98a',cr:.2,layer2:true,
+  note:"Its leaves glitter with swollen water-filled cells on the surface, hence “crystallinum”."},
+ {name:"Four o'clock flower",latin:"Mirabilis jalapa",o:16.5,c:7,oL:false,cL:false,oTxt:"late afternoon",cTxt:"next morning",
+  kind:'round',n:5,pw:1.05,col:'#d6378a',col2:'#d6378a',ctr:'#f6d2e4',cr:.14,throat:true,rib:'#a01f63',
+  note:"Named for its opening hour. From tropical America; one plant can carry flowers of several colours. Scented in the evening and visited by moths."},
+ {name:"Evening primrose",latin:"Oenothera biennis",o:19,c:10,oL:false,cL:false,oTxt:"at dusk",cTxt:"next morning",
+  kind:'heart',n:4,pw:1.15,col:'#f8e24f',col2:'#f8e24f',ctr:'#d9e7a0',cr:.12,cross:true,rib:'#d7b62a',
+  note:"The buds open at dusk, sometimes in a few minutes, fast enough to watch. Hawkmoths are its night visitors."},
+ {name:"Night-flowering catchfly",latin:"Silene noctiflora",o:20.5,c:8,oL:false,cL:false,oTxt:"in the evening",cTxt:"next morning",
+  kind:'bilobed',n:5,pw:.75,col:'#f9eef1',col2:'#f9eef1',ctr:'#e8d6a8',cr:.12,rib:'#d9b7c2',
+  note:"The petals unroll in the evening and are scented at night; by morning they have curled up again."},
+];
+FL.forEach((f,i)=>{f.i=i;f.dur=((f.c-f.o)+24)%24;});
+
+// openness 0..1 at hour t
+function openness(f,t){
+  const tr=.55; const ph=((t-f.o+tr*.5)%24+24)%24;
+  if(ph>f.dur+tr) return 0;
+  return smooth(0,tr,ph)*(1-smooth(f.dur,f.dur+tr,ph));
+}
+function isOpen(f,t){return openness(f,t)>.5;}
+
+// ---------------- sky ----------------
+const SKY=[[0,'#0b1030','#1c2452'],[3.4,'#121a42','#3b3768'],[4.5,'#3e4f92','#e59a78'],[6,'#78aee0','#f7d7a6'],[12,'#5fb0ea','#d4ecf7'],[17.5,'#6ea4dc','#f4dca8'],[19.6,'#575d9e','#f0926a'],[20.8,'#262c62','#7c4f78'],[22,'#121842','#272955'],[24,'#0b1030','#1c2452']];
+function skyAt(h){h=((h%24)+24)%24;for(let k=0;k<SKY.length-1;k++){const a=SKY[k],b=SKY[k+1];if(h>=a[0]&&h<=b[0]){const u=(h-a[0])/(b[0]-a[0]);return[mix(a[1],b[1],u),mix(a[2],b[2],u)];}}return[SKY[0][1],SKY[0][2]];}
+function dayF(h){h=((h%24)+24)%24;return smooth(3.4,5.6,h)*(1-smooth(19,21,h));}
+const SUNRISE=4, SUNSET=20.5;
+
+// ---------------- state ----------------
+const state={t:0,live:true,playing:false,sel:6,guess:null,guessT:null,hover:-1};
+function nowHours(){const d=new Date();return d.getHours()+d.getMinutes()/60+d.getSeconds()/3600;}
+state.t=nowHours();
+(function(){const m=location.search.match(/[?&]t=([\d.]+)/);if(m){state.t=parseFloat(m[1])%24;state.live=false;}})();
+
+// ---------------- dial geometry ----------------
+const cv=document.getElementById('dial'), cx2=cv.getContext('2d');
+let S=600, CX=300, CY=300, DPR=1;
+const G={r0:.232,band:.30,rB:.312,r1:.362,r2:.432,rH:.037,gOut:.474};
+const ang=h=>Math.PI/2+h/24*TAU;
+let POS=[];
+function layout(){
+  const rect=cv.getBoundingClientRect();
+  S=Math.max(240,rect.width||600); DPR=Math.min(2.5,window.devicePixelRatio||1);
+  cv.width=Math.round(S*DPR); cv.height=Math.round(S*DPR); CX=S/2; CY=S/2;
+  // assign rows alternately (sorted by opening hour), then relax angles
+  const ord=FL.slice().sort((a,b)=>a.o-b.o||a.i-b.i);
+  const rows=[[],[]]; ord.forEach((f,k)=>rows[k%2].push({f,a:ang(f.o)}));
+  [0,1].forEach(r=>{
+    const R=r?G.r2:G.r1, gap=2.35*G.rH/R, arr=rows[r];
+    for(let it=0;it<400;it++){
+      for(let k=0;k<arr.length-1;k++){const d=arr[k+1].a-arr[k].a; if(d<gap){const p=(gap-d)/2; arr[k].a-=p; arr[k+1].a+=p;}}
+      arr.forEach(e=>{e.a+= (ang(e.f.o)-e.a)*.01;});
+    }
+    arr.forEach(e=>{POS[e.f.i]={a:e.a,r:R,row:r};});
+  });
+}
+
+// ---------------- drawing primitives ----------------
+function petalPath(c,k,L,w){
+  c.beginPath();
+  if(k==='ray'){c.moveTo(0,-w*.22);c.bezierCurveTo(L*.35,-w*.62,L*.8,-w*.56,L,-w*.48);c.lineTo(L*.94,-w*.24);c.lineTo(L,0);c.lineTo(L*.94,w*.24);c.lineTo(L,w*.48);c.bezierCurveTo(L*.8,w*.56,L*.35,w*.62,0,w*.22);c.closePath();}
+  else if(k==='pointed'||k==='needle'){c.moveTo(0,0);c.bezierCurveTo(L*.3,-w*.62,L*.72,-w*.5,L,0);c.bezierCurveTo(L*.72,w*.5,L*.3,w*.62,0,0);}
+  else if(k==='round'){c.moveTo(0,0);c.bezierCurveTo(L*.12,-w*.72,L*1.08,-w*.78,L,0);c.bezierCurveTo(L*1.08,w*.78,L*.12,w*.72,0,0);}
+  else {const d=k==='bilobed'?.32:.12;c.moveTo(0,0);c.bezierCurveTo(L*.12,-w*.62,L*1.03,-w*.86,L*.99,-w*.2);c.quadraticCurveTo(L*.97,-w*.03,L*(1-d),0);c.quadraticCurveTo(L*.97,w*.03,L*.99,w*.2);c.bezierCurveTo(L*1.03,w*.86,L*.12,w*.62,0,0);}
+}
+function ease(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;}
+
+function drawFlower(c,f,o,x,y,phi,R,lw,night){
+  const e=ease(clamp(o,0,1));
+  const dim=night*.28*(1-e*.4);
+  const C1=mix(f.col,'#2a2f5a',dim), C2=mix(f.col2,'#2a2f5a',dim);
+  c.save(); c.translate(x,y); c.lineJoin='round'; c.lineCap='round'; c.strokeStyle=INK; c.lineWidth=lw;
+  if(f.pad){ // lily pad + water
+    c.save();c.rotate(phi+Math.PI*.8);
+    c.fillStyle=mix('#7fb7d6','#2b3d6a',night*.6);c.beginPath();c.ellipse(0,0,R*1.42,R*1.2,0,0,TAU);c.fill();
+    c.fillStyle=mix('#5b9a4c','#24402e',night*.5);c.beginPath();c.moveTo(0,0);c.arc(0,0,R*1.12,.32,TAU-.05);c.closePath();c.fill();c.stroke();
+    c.lineWidth=lw*.6;c.strokeStyle='rgba(27,26,34,.45)';for(let k=0;k<5;k++){const a=.6+k*1.15;c.beginPath();c.moveTo(0,0);c.lineTo(Math.cos(a)*R*.95,Math.sin(a)*R*.95);c.stroke();}
+    c.restore(); c.strokeStyle=INK; c.lineWidth=lw;
+  }
+  const spread=.42+(TAU-.42)*e;
+  const order=[...Array(f.n).keys()].sort((a,b)=>Math.abs(b-(f.n-1)/2)-Math.abs(a-(f.n-1)/2));
+  const angOf=(i,n,sp,off)=>phi+((i+.5+(off||0))/n-.5)*sp;
+  if(f.bracts){ // long green bracts (goat's-beard)
+    const nb=8, Lb=R*(1.08+.22*(1-e)), sp=.3+(TAU-.3)*e;
+    for(let i=0;i<nb;i++){c.save();c.rotate(angOf(i,nb,sp,.5));petalPath(c,'pointed',Lb,R*.17);c.fillStyle=mix('#86b85a','#2d4a3a',night*.4);c.fill();c.stroke();c.restore();}
+  }
+  const L=R*(.62+.38*e)*(f.kind==='round'||f.kind==='heart'||f.kind==='bilobed'?.95:1), w=R*f.pw*(.62+.38*e);
+  const layers=f.layer2?[{n:f.n,L:L,w:w,col:C1,off:0},{n:f.n,L:L*.78,w:w*.9,col:C2,off:.5}]:[{n:f.n,L:L,w:w,col:C1,off:0}];
+  layers.forEach((ly,li)=>{
+    const sp=li?spread*.96:spread;
+    order.forEach(i=>{
+      c.save(); c.rotate(angOf(i,ly.n,sp,ly.off)); c.translate(R*.06,0);
+      petalPath(c,f.kind,ly.L,ly.w);
+      if(f.tri){const g=c.createRadialGradient(0,0,0,0,0,ly.L);g.addColorStop(0,'#fffbe6');g.addColorStop(.5,'#fffbe6');g.addColorStop(.62,C1);g.addColorStop(1,C1);c.fillStyle=g;}
+      else if(f.throat){const g=c.createLinearGradient(0,0,ly.L,0);g.addColorStop(0,mix(f.ctr,'#2a2f5a',dim));g.addColorStop(.45,C1);c.fillStyle=g;}
+      else if(f.ring){const g=c.createLinearGradient(0,0,ly.L,0);g.addColorStop(0,f.ring);g.addColorStop(.3,f.ring);g.addColorStop(.36,ly.col);c.fillStyle=g;}
+      else c.fillStyle=ly.col;
+      c.fill(); if(f.kind==='needle'){c.save();c.lineWidth=lw*.55;c.stroke();c.restore();} else c.stroke();
+      if(f.rib&&e>.3){c.save();c.globalAlpha=(e-.3)/.7;c.strokeStyle=f.rib;c.lineWidth=lw*.7;c.beginPath();c.moveTo(ly.L*.2,0);c.lineTo(ly.L*.78,0);c.stroke();c.restore();}
+      if(f.kind==='ray'&&e>.5){c.save();c.globalAlpha=.35*(e-.5)*2;c.strokeStyle=INK;c.lineWidth=lw*.45;c.beginPath();c.moveTo(ly.L*.35,0);c.lineTo(ly.L*.85,0);c.stroke();c.restore();}
+      c.restore();
+    });
+  });
+  // calyx over the bud base
+  const ca=clamp(1-e*1.7,0,1);
+  if(ca>0){c.save();c.globalAlpha=ca;for(let k=-1;k<=1;k++){c.save();c.rotate(phi+k*.42);petalPath(c,'pointed',R*.5,R*.3);c.fillStyle=mix('#6fa54e','#2d4a3a',night*.4);c.fill();c.stroke();c.restore();}c.restore();}
+  // centre
+  const cr=R*f.cr*(.3+.7*e)*1.15;
+  if(e>.12){
+    c.save();c.globalAlpha=clamp((e-.12)*3,0,1);
+    if(f.eye){c.fillStyle=mix(f.ctr,'#2a2f5a',dim);c.beginPath();c.arc(0,0,cr*1.3,0,TAU);c.fill();c.fillStyle='#f6d34a';c.beginPath();c.arc(0,0,cr*.55,0,TAU);c.fill();c.stroke();}
+    else if(f.cross){c.strokeStyle='#8fa840';c.lineWidth=lw*1.1;for(let k=0;k<4;k++){const a=phi+k*TAU/4+TAU/8;c.beginPath();c.moveTo(0,0);c.lineTo(Math.cos(a)*cr*1.8,Math.sin(a)*cr*1.8);c.stroke();}c.fillStyle=f.ctr;c.beginPath();c.arc(0,0,cr*.7,0,TAU);c.fill();c.strokeStyle=INK;c.lineWidth=lw;c.stroke();}
+    else {c.fillStyle=mix(f.ctr,'#2a2f5a',dim);c.beginPath();c.arc(0,0,cr,0,TAU);c.fill();c.stroke();
+      if(f.kind==='ray'||f.kind==='pointed'||f.kind==='needle'){const r=rng(f.i*31+7);c.fillStyle='rgba(27,26,34,.35)';for(let k=0;k<7;k++){const a=r()*TAU,d=Math.sqrt(r())*cr*.7;c.beginPath();c.arc(Math.cos(a)*d,Math.sin(a)*d,Math.max(.6,cr*.09),0,TAU);c.fill();}}}
+    if(f.kind==='round'&&!f.eye){c.fillStyle='rgba(255,255,255,.55)';c.beginPath();c.arc(-cr*.25,-cr*.25,cr*.35,0,TAU);c.fill();}
+    c.restore();
+  }
+  c.restore();
+}
+
+// ---------------- static decor (seeded) ----------------
+let DECOR=null;
+function buildDecor(){
+  const r=rng(1751), d={grass:[],pebbles:[],clover:[],stars:[],hills:[]};
+  for(let k=0;k<260;k++){const a=r()*TAU,rr=lerp(G.rB+.012,G.gOut-.006,r());d.grass.push({a,rr,l:.008+r()*.012,b:(r()-.5)*.5,s:r()});}
+  for(let k=0;k<26;k++){d.pebbles.push({a:r()*TAU,rr:lerp(G.rB+.02,G.gOut-.015,r()),s:.004+r()*.006,rot:r()*TAU});}
+  for(let k=0;k<14;k++){d.clover.push({a:r()*TAU,rr:lerp(G.rB+.02,G.gOut-.02,r()),s:.007+r()*.004,rot:r()*TAU});}
+  for(let k=0;k<55;k++){d.stars.push({x:r()*2-1,y:-r()*.95,s:.4+r()*1.1,tw:r()*TAU});}
+  for(let L=0;L<2;L++){const ph=[r()*TAU,r()*TAU,r()*TAU];d.hills.push(ph);}
+  DECOR=d;
+}
+
+// ---------------- dial ----------------
+let animClock=0;
+function drawDial(){
+  const c=cx2, t=state.t, night=1-dayF(t), sk=skyAt(t);
+  c.setTransform(DPR,0,0,DPR,0,0); c.clearRect(0,0,S,S);
+  const u=S, lw=Math.max(1.1,S/360);
+  // hedge scallops
+  c.save();c.translate(CX,CY);
+  const nh=Math.round(64), hr=.021*u, hedge=mix('#4a8a44','#1f3a34',night*.6), hedgeDk=mix('#3a7036','#18302c',night*.6);
+  for(let k=0;k<nh;k++){const a=k/nh*TAU, rr=(G.gOut+.004)*u;c.beginPath();c.arc(Math.cos(a)*rr,Math.sin(a)*rr,hr*(1+.18*Math.sin(k*2.3)),0,TAU);c.fillStyle=k%2?hedge:hedgeDk;c.fill();c.lineWidth=lw;c.strokeStyle=INK;c.stroke();}
+  // garden ring
+  const gg=c.createRadialGradient(0,0,G.band*u,0,0,G.gOut*u);
+  gg.addColorStop(0,mix('#9cc66a','#2b4a46',night*.62));gg.addColorStop(1,mix('#78ad55','#213c3a',night*.62));
+  c.beginPath();c.arc(0,0,G.gOut*u,0,TAU);c.arc(0,0,G.band*u,0,TAU,true);c.fillStyle=gg;c.fill();
+  // light wedge
+  const wa=ang(t), wg=c.createRadialGradient(0,0,G.r0*u,0,0,G.gOut*u);
+  const lc=night>.5?'190,205,255':'255,236,170';
+  wg.addColorStop(0,`rgba(${lc},.0)`);wg.addColorStop(.35,`rgba(${lc},${night>.5?.08:.3})`);wg.addColorStop(1,`rgba(${lc},0)`);
+  c.beginPath();c.moveTo(0,0);c.arc(0,0,G.gOut*u,wa-.16,wa+.16);c.closePath();c.fillStyle=wg;c.fill();
+  // grass, pebbles, clover
+  c.lineCap='round';
+  DECOR.grass.forEach(g=>{const x=Math.cos(g.a)*g.rr*u,y=Math.sin(g.a)*g.rr*u, l=g.l*u;c.strokeStyle=mix(g.s>.5?'#4f8a3c':'#6aa84a','#1d3533',night*.55);c.lineWidth=lw*.8;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+l*.2,y-l*.6,x+l*g.b,y-l);c.stroke();});
+  DECOR.pebbles.forEach(p=>{const x=Math.cos(p.a)*p.rr*u,y=Math.sin(p.a)*p.rr*u;c.save();c.translate(x,y);c.rotate(p.rot);c.beginPath();c.ellipse(0,0,p.s*u,p.s*u*.7,0,0,TAU);c.fillStyle=mix('#d9cdb4','#4c5068',night*.6);c.fill();c.lineWidth=lw*.7;c.strokeStyle=INK;c.stroke();c.restore();});
+  DECOR.clover.forEach(p=>{const x=Math.cos(p.a)*p.rr*u,y=Math.sin(p.a)*p.rr*u;c.save();c.translate(x,y);c.rotate(p.rot);const fold=night; // clover leaflets fold at night too
+    for(let k=0;k<3;k++){c.save();c.rotate(k*TAU/3);c.scale(1,1-fold*.6);c.beginPath();c.ellipse(p.s*u*.55,0,p.s*u*.55,p.s*u*.42,0,0,TAU);c.fillStyle=mix('#5a9a42','#24443a',night*.5);c.fill();c.lineWidth=lw*.6;c.strokeStyle=INK;c.stroke();c.restore();}c.restore();});
+  // ring outlines
+  c.lineWidth=lw*1.4;c.strokeStyle=INK;c.beginPath();c.arc(0,0,G.gOut*u,0,TAU);c.stroke();
+  // numeral band
+  c.beginPath();c.arc(0,0,G.band*u,0,TAU);c.arc(0,0,G.r0*u,0,TAU,true);
+  c.fillStyle=mix('#fbf1da','#cfc6b4',night*.35);c.fill();
+  c.lineWidth=lw*1.6;c.beginPath();c.arc(0,0,G.band*u,0,TAU);c.stroke();
+  const hide=state.guess==='ask';
+  // selected flower's open arc
+  const sf=FL[state.sel];
+  if(sf&&!hide){const a0=ang(sf.o),a1=ang(sf.o+sf.dur), rr=(G.r0+.011)*u;
+    c.lineCap='round';c.lineWidth=.011*u+lw*2;c.strokeStyle=INK;c.beginPath();c.arc(0,0,rr,a0,a1);c.stroke();
+    c.lineWidth=.011*u;c.strokeStyle=sf.col==='#fffdf6'||sf.col==='#fbf7f0'||sf.col==='#f9eef1'||sf.col==='#f7e8f2'?'#e9d9a8':sf.col;c.beginPath();c.arc(0,0,rr,a0,a1);c.stroke();}
+  // ticks + numerals
+  for(let q=0;q<96;q++){const a=ang(q/4), major=q%4===0, big=q%24===0;
+    const r1=G.band*u, r2=(G.band-(big?.024:major?.014:.007))*u;
+    c.lineWidth=big?lw*1.5:major?lw:lw*.6;c.strokeStyle=INK;c.beginPath();c.moveTo(Math.cos(a)*r1,Math.sin(a)*r1);c.lineTo(Math.cos(a)*r2,Math.sin(a)*r2);c.stroke();}
+  if(!hide){
+    c.fillStyle=INK;c.textAlign='center';c.textBaseline='middle';
+    const step=S<520?3:1;
+    for(let h=0;h<24;h+=step){const a=ang(h), rr=(G.band-.038)*u, big=h%6===0;
+      c.font=`${big?600:400} ${Math.round(u*(big?.03:.021))}px Fraunces, Georgia, serif`;
+      c.fillText(h===0?'24':String(h),Math.cos(a)*rr,Math.sin(a)*rr+1);}
+  }
+  c.restore();
+  // stems (behind heads)
+  const sway=REDUCED?0:1;
+  FL.forEach(f=>{const p=POS[f.i];if(!p)return;const a0=ang(f.o), bx=CX+Math.cos(a0)*G.rB*u, by=CY+Math.sin(a0)*G.rB*u;
+    const sw=sway*Math.sin(animClock*1.3+f.i*1.7)*.012;
+    const hx=CX+Math.cos(p.a+sw)*p.r*u, hy=CY+Math.sin(p.a+sw)*p.r*u;
+    const mr=(G.rB+(p.r-G.rB)*.55)*u, mx=CX+Math.cos(lerp(a0,p.a,.85))*mr, my=CY+Math.sin(lerp(a0,p.a,.85))*mr;
+    if(f.pad) return;
+    c.lineCap='round';c.strokeStyle=INK;c.lineWidth=lw*2.6;c.beginPath();c.moveTo(bx,by);c.quadraticCurveTo(mx,my,hx,hy);c.stroke();
+    c.strokeStyle=mix('#5e9a43','#2c4a3a',night*.5);c.lineWidth=lw*1.15;c.beginPath();c.moveTo(bx,by);c.quadraticCurveTo(mx,my,hx,hy);c.stroke();
+    // a leaf
+    const tq=.45, lx=(1-tq)*(1-tq)*bx+2*(1-tq)*tq*mx+tq*tq*hx, ly=(1-tq)*(1-tq)*by+2*(1-tq)*tq*my+tq*tq*hy;
+    const la=Math.atan2(hy-by,hx-bx)+(f.i%2?.9:-.9);
+    c.save();c.translate(lx,ly);c.rotate(la);petalPath(c,'pointed',G.rH*u*.95,G.rH*u*.42);c.fillStyle=mix('#6fae4f','#2d4a3a',night*.5);c.fill();c.lineWidth=lw*.9;c.strokeStyle=INK;c.stroke();c.restore();
+    // planting mound at the hour
+    c.beginPath();c.ellipse(bx,by,u*.007,u*.007,0,0,TAU);c.fillStyle='#8a5a3a';c.fill();c.lineWidth=lw*.8;c.stroke();
+  });
+  // heads
+  FL.forEach(f=>{const p=POS[f.i];if(!p)return;const sw=sway*Math.sin(animClock*1.3+f.i*1.7)*.012;
+    const hx=CX+Math.cos(p.a+sw)*p.r*u, hy=CY+Math.sin(p.a+sw)*p.r*u;
+    const o=openness(f,t);
+    if(f.i===state.sel&&!hide){c.save();c.setLineDash([lw*2.2,lw*2.2]);c.strokeStyle=INK;c.lineWidth=lw*1.1;c.beginPath();c.arc(hx,hy,G.rH*u*1.62,0,TAU);c.fillStyle='rgba(255,248,220,.35)';c.fill();c.stroke();c.restore();}
+    else if(f.i===state.hover){c.save();c.beginPath();c.arc(hx,hy,G.rH*u*1.5,0,TAU);c.fillStyle='rgba(255,248,220,.3)';c.fill();c.restore();}
+    drawFlower(c,f,o,hx,hy,p.a,G.rH*u,lw*.85,night);
+  });
+  drawCenter(c,t,night,sk,u,lw);
+  // hand
+  if(!hide){
+    c.save();c.translate(CX,CY);c.rotate(ang(t));
+    const r1=(G.r0-.004)*u, r2=(G.band+.012)*u, hw=.013*u;
+    c.beginPath();c.moveTo(r1,-hw*.55);c.lineTo(r2-hw*1.6,-hw);c.lineTo(r2,0);c.lineTo(r2-hw*1.6,hw);c.lineTo(r1,hw*.55);c.closePath();
+    c.fillStyle='#f2b630';c.fill();c.lineWidth=lw*1.3;c.strokeStyle=INK;c.stroke();
+    c.beginPath();c.moveTo(r1+hw,0);c.lineTo(r2-hw*1.8,0);c.lineWidth=lw*.7;c.strokeStyle='rgba(27,26,34,.5)';c.stroke();
+    c.restore();
+  }
+  // guess marker
+  if(state.guess==='shown'&&state.guessT!=null){
+    [[state.guessT,'#3a6fd8','your guess'],[state.t,'#b9512f','actual']].forEach(([h,col,lab],k)=>{
+      c.save();c.translate(CX,CY);c.rotate(ang(h));c.beginPath();c.moveTo((G.r0)*u,0);c.lineTo((G.gOut+.01)*u,0);c.lineWidth=lw*2.2;c.strokeStyle=col;c.setLineDash(k?[]:[lw*3,lw*2]);c.stroke();c.restore();});
+  }
+}
+
+function drawCenter(c,t,night,sk,u,lw){
+  const R=G.r0*u;
+  c.save();c.translate(CX,CY);
+  c.beginPath();c.arc(0,0,R,0,TAU);c.save();c.clip();
+  const g=c.createLinearGradient(0,-R,0,R*.4);g.addColorStop(0,sk[0]);g.addColorStop(1,sk[1]);c.fillStyle=g;c.fillRect(-R,-R,2*R,2*R);
+  // stars
+  if(night>.05){DECOR.stars.forEach(s=>{const a=night*(.55+.45*Math.sin(s.tw+(REDUCED?0:animClock*1.7)));c.fillStyle=`rgba(255,250,225,${a})`;c.beginPath();c.arc(s.x*R,s.y*R*.95,s.s*u/600*1.6,0,TAU);c.fill();});}
+  const hz=R*.22;
+  // sun or moon on an arc
+  const isDay=t>=SUNRISE&&t<=SUNSET;
+  const span=isDay?(SUNSET-SUNRISE):(24-(SUNSET-SUNRISE));
+  const ph=isDay?(t-SUNRISE)/span:(((t-SUNSET)+24)%24)/span;
+  const bx=(ph-.5)*2*R*.82, by=hz-Math.sin(ph*Math.PI)*R*.78+R*.05;
+  if(isDay){
+    const sr=R*.12; const gl=c.createRadialGradient(bx,by,sr*.5,bx,by,sr*3.2);gl.addColorStop(0,'rgba(255,230,140,.55)');gl.addColorStop(1,'rgba(255,230,140,0)');c.fillStyle=gl;c.beginPath();c.arc(bx,by,sr*3.2,0,TAU);c.fill();
+    c.save();c.translate(bx,by);c.rotate(REDUCED?0:animClock*.15);c.strokeStyle=INK;c.lineWidth=lw;for(let k=0;k<12;k++){c.rotate(TAU/12);c.beginPath();c.moveTo(sr*1.25,0);c.lineTo(sr*1.6,0);c.stroke();}c.restore();
+    c.beginPath();c.arc(bx,by,sr,0,TAU);c.fillStyle='#ffd447';c.fill();c.lineWidth=lw*1.2;c.stroke();
+  } else {
+    const mr=R*.095;c.beginPath();c.arc(bx,by,mr,0,TAU);c.fillStyle='#f6efcf';c.fill();c.lineWidth=lw*1.1;c.strokeStyle=INK;c.stroke();
+    c.beginPath();c.arc(bx+mr*.42,by-mr*.25,mr*.86,0,TAU);c.fillStyle=sk[0];c.fill();
+  }
+  // far hill + cathedral
+  const farC=mix('#7aa6a0','#1d2a4a',night*.8), nearC=mix('#7cb85a','#1e3a36',night*.7);
+  function hill(base,amp,ph,col){c.beginPath();c.moveTo(-R,R);for(let x=-R;x<=R;x+=R/40){const y=base-amp*(Math.sin(x/R*2.1+ph[0])*.55+Math.sin(x/R*4.3+ph[1])*.3+Math.sin(x/R*7.7+ph[2])*.15);c.lineTo(x,y);}c.lineTo(R,R);c.closePath();c.fillStyle=col;c.fill();c.lineWidth=lw;c.strokeStyle=INK;c.stroke();}
+  hill(hz,R*.06,DECOR.hills[0],farC);
+  // Uppsala cathedral: twin spires
+  const kx=R*.28, ky=hz-R*.02, kw=R*.32, sc=R/100;
+  c.save();c.translate(kx,ky);c.fillStyle=mix('#c98a6a','#2a2440',night*.75);c.strokeStyle=INK;c.lineWidth=lw;
+  c.beginPath();c.rect(-kw*.5,-14*sc,kw*.62,14*sc);c.fill();c.stroke();// nave
+  c.beginPath();c.moveTo(-kw*.5,-14*sc);c.lineTo(-kw*.5+kw*.31,-22*sc);c.lineTo(-kw*.5+kw*.62,-14*sc);c.closePath();c.fill();c.stroke();
+  [[kw*.13,0],[kw*.32,0]].forEach(([tx])=>{c.beginPath();c.rect(tx-4.5*sc,-30*sc,9*sc,30*sc);c.fill();c.stroke();c.beginPath();c.moveTo(tx-5.5*sc,-30*sc);c.lineTo(tx,-56*sc);c.lineTo(tx+5.5*sc,-30*sc);c.closePath();c.fillStyle=mix('#4f7a72','#151a30',night*.7);c.fill();c.stroke();c.fillStyle=mix('#c98a6a','#2a2440',night*.75);});
+  if(night>.3){c.fillStyle=`rgba(255,214,110,${(night-.3)*1.3})`;[[-kw*.38,-8],[-kw*.2,-8],[kw*.13,-20],[kw*.32,-20]].forEach(([x,y])=>{c.fillRect(x-1.2*sc,y*sc,2.4*sc,4*sc);});}
+  c.restore();
+  hill(hz+R*.16,R*.07,DECOR.hills[1],nearC);
+  // tiny label
+  c.fillStyle=night>.5?'rgba(255,250,230,.75)':'rgba(27,26,34,.65)';c.textAlign='center';c.textBaseline='middle';
+  c.font=`600 ${Math.max(8,Math.round(u*.016))}px Inter, system-ui, sans-serif`;
+  c.fillText('UPPSALA · 60°N',0,R*.62);
+  c.restore();
+  c.lineWidth=lw*1.8;c.strokeStyle=INK;c.beginPath();c.arc(0,0,R,0,TAU);c.stroke();
+  c.restore();
+}
+
+// ---------------- panel ----------------
+const $=id=>document.getElementById(id);
+const tmEl=$('tm'),tmSub=$('tmsub'),scrub=$('scrub'),chipsEl=$('chips'),cardEl=$('flcard'),countEl=$('countline');
+function updatePanel(){
+  const t=state.t, hide=state.guess==='ask';
+  tmEl.textContent=hide?'??:??':fmt(t);
+  tmSub.textContent=hide?'read the flowers':state.live?'your local time':state.playing?'playing the day':'scrubbed time';
+  scrub.value=Math.round(((t%24)+24)%24*60)%1440;
+  $('now').classList.toggle('on',state.live);
+  $('play').textContent=state.playing?'❚❚ pause':'▶ play the day';
+  $('play').classList.toggle('on',state.playing);
+  const open=FL.filter(f=>isOpen(f,t));
+  countEl.textContent=hide?'':`${open.length} of ${FL.length} flowers open.`;
+  let html='';
+  FL.forEach(f=>{const on=isOpen(f,t);if(!on)return;html+=`<span class="chip" data-i="${f.i}"><i style="background:${f.col}"></i>${f.name}</span>`;});
+  chipsEl.innerHTML=html||'<span class="small">None. Linnaeus\'s garden is asleep; only the evening flowers, added from later sources, keep the night.</span>';
+  if(hide) chipsEl.innerHTML='<span class="small">Hidden while you guess.</span>';
+  const s=FL[state.sel];
+  cardEl.innerHTML=`<p class="fl-name">${s.name}</p><p class="fl-latin">${s.latin}</p>
+   <div class="fl-times"><b>opens</b><span>${s.oTxt}${s.oL?'<span class="tag L">Linnaeus</span>':'<span class="tag G">later sources</span>'}</span>
+   <b>closes</b><span>${s.cTxt}${s.cL?'<span class="tag L">Linnaeus</span>':'<span class="tag G">'+(s.oL?'not in his table':'later sources')+'</span>'}</span>
+   <b>now</b><span>${hide?'?':isOpen(s,t)?'open':'closed'}</span></div>
+   <p class="fl-note">${s.note}</p>`;
+  const sk=skyAt(t), sky=$('sky');
+  sky.style.setProperty('--sky1',sk[0]);sky.style.setProperty('--sky2',sk[1]);
+  sky.style.setProperty('--heroink',lum(sk[0])<.42?'#fbf3e2':'#1b1a22');
+  drawGanttNow();
+  drawMine();
+}
+chipsEl.addEventListener('click',e=>{const ch=e.target.closest('.chip');if(ch){state.sel=+ch.dataset.i;render();}});
+
+// ---------------- interaction ----------------
+function hitFlower(px,py){
+  let best=-1,bd=1e9;
+  FL.forEach(f=>{const p=POS[f.i];const hx=CX+Math.cos(p.a)*p.r*S, hy=CY+Math.sin(p.a)*p.r*S;const d=Math.hypot(px-hx,py-hy);if(d<G.rH*S*1.45&&d<bd){bd=d;best=f.i;}});
+  return best;
+}
+function evPos(e){const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*S/r.width,(e.clientY-r.top)*S/r.height];}
+cv.addEventListener('pointermove',e=>{const[x,y]=evPos(e);const h=hitFlower(x,y);if(h!==state.hover){state.hover=h;cv.style.cursor=h>=0||state.guess==='ask'?'pointer':'default';render(true);}});
+cv.addEventListener('pointerleave',()=>{state.hover=-1;render(true);});
+cv.addEventListener('click',e=>{
+  const[x,y]=evPos(e);
+  if(state.guess==='ask'){
+    const d=Math.hypot(x-CX,y-CY); if(d<G.r0*S*.5) return;
+    let a=Math.atan2(y-CY,x-CX)-Math.PI/2; a=((a%TAU)+TAU)%TAU; state.guessT=a/TAU*24; state.guess='shown';
+    let err=Math.abs(state.guessT-state.t); err=Math.min(err,24-err);
+    const hh=Math.floor(err), mm=Math.round((err-hh)*60);
+    const verdict=err<.75?'Linnaeus would be proud.':err<2?'Good enough to catch a coach in 1751.':'The flowers are a rough clock; try reading which ones have just opened.';
+    $('guessbox').innerHTML=`You said <b>${fmt(state.guessT)}</b>. It was <b>${fmt(state.t)}</b>: off by ${hh?hh+' h ':''}${mm} min. ${verdict} <button class="btn" id="again" style="margin-left:4px">again</button>`;
+    render(); return;
+  }
+  const h=hitFlower(x,y); if(h>=0){state.sel=h;render();}
+});
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='again'){startGuess();}});
+scrub.addEventListener('input',()=>{state.t=scrub.value/60;state.live=false;state.playing=false;if(state.guess)endGuess();render();});
+$('now').addEventListener('click',()=>{state.live=true;state.playing=false;if(state.guess)endGuess();state.t=nowHours();render();});
+$('play').addEventListener('click',()=>{state.playing=!state.playing;if(state.playing){state.live=false;if(state.guess)endGuess();}render();});
+$('guess').addEventListener('click',()=>{if(state.guess)endGuess();else startGuess();render();});
+function startGuess(){
+  const r=Math.random(); state.t=lerp(3.2,21.5,r); state.live=false; state.playing=false; state.guess='ask'; state.guessT=null;
+  $('guessbox').classList.add('on'); $('guessbox').innerHTML='What time is it? Tap the dial where you think the hand should point.';
+  $('guess').classList.add('on'); render();
+}
+function endGuess(){state.guess=null;state.guessT=null;$('guessbox').classList.remove('on');$('guess').classList.remove('on');}
+
+// ---------------- gantt ----------------
+const GS=$('gantt'), NS='http://www.w3.org/2000/svg';
+const GW=920, GL=250, GR=900, ROWH=30, GTOP=42;
+function gx(h){return GL+(h/24)*(GR-GL);}
+function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+let gNow=null;
+function buildGantt(){
+  const H=GTOP+FL.length*ROWH+16; GS.setAttribute('viewBox',`0 0 ${GW} ${H}`);
+  // night shading
+  [[0,SUNRISE],[SUNSET,24]].forEach(([a,b])=>el('rect',{x:gx(a),y:GTOP-8,width:gx(b)-gx(a),height:FL.length*ROWH+8,fill:'#e4e0f0'},GS));
+  for(let h=0;h<=24;h+=3){el('line',{x1:gx(h),x2:gx(h),y1:GTOP-8,y2:GTOP+FL.length*ROWH,stroke:'#1b1a22','stroke-opacity':h%12?.12:.3,'stroke-width':1},GS);
+    const tx=el('text',{x:gx(h),y:GTOP-16,'text-anchor':'middle','font-size':13,'font-family':'Inter, system-ui, sans-serif',fill:'#4a443b'},GS);tx.textContent=h===0?'midnight':h===12?'noon':h===24?'':String(h).padStart(2,'0')+':00';}
+  const ord=FL.slice().sort((a,b)=>a.o-b.o);
+  ord.forEach((f,k)=>{
+    const y=GTOP+k*ROWH, g=el('g',{style:'cursor:pointer'},GS);
+    g.addEventListener('click',()=>{state.sel=f.i;render();document.querySelector('.dialwrap').scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'center'});});
+    if(k%2===0) el('rect',{x:8,y:y,width:GW-16,height:ROWH,fill:'#1b1a22','fill-opacity':.035},g);
+    const nm=el('text',{x:18,y:y+ROWH/2+1,'dominant-baseline':'middle','font-size':14.5,'font-family':'Inter, system-ui, sans-serif','font-weight':600,fill:'#1b1a22'},g);nm.textContent=f.name;
+    const lt=el('text',{x:GL-10,y:y+ROWH/2+1,'dominant-baseline':'middle','text-anchor':'end','font-size':12,'font-style':'italic','font-family':'Fraunces, Georgia, serif',fill:'#6d6457'},g);lt.textContent=f.latin.split(' ')[0];
+    const segs=f.o+f.dur<=24?[[f.o,f.o+f.dur]]:[[f.o,24],[0,f.o+f.dur-24]];
+    const certain=f.oL&&f.cL;
+    const fill=['#fffdf6','#fbf7f0','#f9eef1','#f7e8f2'].includes(f.col)?'#efe3c8':f.col;
+    segs.forEach(([a,b])=>el('rect',{x:gx(a),y:y+8,width:gx(b)-gx(a),height:ROWH-16,rx:6,fill:fill,stroke:'#1b1a22','stroke-width':1.8,'stroke-dasharray':certain?'':'5 3'},g));
+  });
+  gNow=el('line',{x1:0,x2:0,y1:GTOP-8,y2:GTOP+FL.length*ROWH,stroke:'#b9512f','stroke-width':2.5},GS);
+}
+function drawGanttNow(){if(!gNow)return;const x=gx(((state.t%24)+24)%24);gNow.setAttribute('x1',x);gNow.setAttribute('x2',x);gNow.style.display=state.guess==='ask'?'none':'';}
+
+// ---------------- my three flowers ----------------
+function prep(id){const c=$(id);const x=c.getContext('2d');return[c,x];}
+function drawMine(){
+  const t=state.guess==='ask'?12:state.t, night=1-dayF(t);
+  // mimosa: bipinnate leaf, leaflets fold at night
+  {const[c,x]=prep('c-mimosa');const W=c.width,H=c.height;x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,W,H);
+   const sk=skyAt(t);const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,sk[0]);g.addColorStop(1,sk[1]);x.fillStyle=g;x.fillRect(0,0,W,H);
+   x.lineCap='round';x.lineJoin='round';x.strokeStyle=INK;
+   // branch
+   x.lineWidth=7;x.beginPath();x.moveTo(-10,250);x.quadraticCurveTo(170,210,410,120);x.stroke();x.strokeStyle='#7a5a3a';x.lineWidth=4;x.stroke();
+   const fold=smooth(0,1,night);
+   const leaf=(bx,by,ba,len)=>{x.save();x.translate(bx,by);x.rotate(ba);x.strokeStyle=INK;x.lineWidth=2;x.beginPath();x.moveTo(0,0);x.lineTo(len,0);x.stroke();
+     for(let p=1;p<=5;p++){const px=len*p/5.6;for(const sd of[-1,1]){x.save();x.translate(px,0);x.rotate(sd*(1.1-fold*.85));const pl=len*.38;x.strokeStyle=INK;x.lineWidth=1.4;x.beginPath();x.moveTo(0,0);x.lineTo(pl,0);x.stroke();
+       for(let q=1;q<=9;q++){const qx=pl*q/9.5;for(const s2 of[-1,1]){x.save();x.translate(qx,0);x.rotate(s2*(1.35-fold*1.15));x.beginPath();x.ellipse(4.3,0,4.6,1.7,0,0,TAU);x.fillStyle=mix('#9fbf9a','#3a5552',night*.6);x.fill();x.lineWidth=.9;x.stroke();x.restore();}}
+       x.restore();}}
+     x.restore();};
+   leaf(80,232,-1.55,110);leaf(200,196,-1.2,120);leaf(300,156,.95,95);
+   // pompom clusters
+   const r=rng(5);[[150,205],[260,170],[350,138],[120,215],[320,150]].forEach(([px,py],k)=>{for(let b=0;b<6;b++){const bx=px+(r()-.5)*44,by=py-12-r()*46;x.strokeStyle=INK;x.lineWidth=1;x.beginPath();x.moveTo(px,py);x.lineTo(bx,by);x.stroke();
+     x.beginPath();x.arc(bx,by,7+r()*2,0,TAU);x.fillStyle=mix('#ffd52e','#a08a3a',night*.45);x.fill();x.lineWidth=1.6;x.stroke();
+     x.fillStyle='rgba(255,250,200,.6)';x.beginPath();x.arc(bx-2,by-2,2.2,0,TAU);x.fill();}});
+   x.fillStyle=night>.5?'#fbf3e2':'#1b1a22';x.font='600 15px Inter, system-ui, sans-serif';x.fillText(night>.5?'leaflets folded (night)':'leaflets open (day)',14,26);
+  }
+  // violet
+  {const[c,x]=prep('c-violet');const W=c.width,H=c.height;x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,W,H);
+   x.fillStyle='#eef0dc';x.fillRect(0,0,W,H);x.fillStyle='#d9cfae';x.fillRect(0,250,W,50);x.strokeStyle=INK;x.lineWidth=2;x.beginPath();x.moveTo(0,250);x.lineTo(W,250);x.stroke();
+   x.lineCap='round';x.lineJoin='round';
+   const heart=(hx,hy,s,rot)=>{x.save();x.translate(hx,hy);x.rotate(rot);x.beginPath();x.moveTo(0,s*.9);x.bezierCurveTo(-s*1.2,s*.2,-s*.9,-s*.9,0,-s*.45);x.bezierCurveTo(s*.9,-s*.9,s*1.2,s*.2,0,s*.9);x.fillStyle='#4f8c45';x.fill();x.lineWidth=2;x.strokeStyle=INK;x.stroke();x.restore();};
+   heart(110,215,40,.3);heart(290,220,36,-.4);heart(200,232,30,0);
+   // stem
+   x.strokeStyle=INK;x.lineWidth=4.5;x.beginPath();x.moveTo(200,250);x.quadraticCurveTo(190,150,220,92);x.stroke();x.strokeStyle='#5e9a43';x.lineWidth=2.2;x.stroke();
+   // flower: two up, two side, one lip
+   x.save();x.translate(222,96);const vc='#7a4fb8';
+   [[-2.1,46,30],[-1.0,46,30],[2.8,40,28],[.35,40,28],[1.57,44,34]].forEach(([a,L,w],k)=>{x.save();x.rotate(a);petalPath(x,'round',L,w);x.fillStyle=k===4?'#8a5ec8':vc;x.fill();x.lineWidth=2;x.strokeStyle=INK;x.stroke();
+     if(k>=2){x.strokeStyle='#3a2266';x.lineWidth=1.1;for(const s of[-.15,0,.15]){x.beginPath();x.moveTo(6,0);x.lineTo(L*.45,L*s);x.stroke();}}x.restore();});
+   x.beginPath();x.arc(0,0,6,0,TAU);x.fillStyle='#f4e8f8';x.fill();x.lineWidth=1.6;x.stroke();x.beginPath();x.arc(0,2,2.8,0,TAU);x.fillStyle='#f2c230';x.fill();x.restore();
+   // cleistogamous bud near the ground
+   x.strokeStyle=INK;x.lineWidth=3;x.beginPath();x.moveTo(330,250);x.quadraticCurveTo(342,232,352,236);x.stroke();
+   x.save();x.translate(354,236);x.rotate(.5);petalPath(x,'pointed',20,12);x.fillStyle='#86b35c';x.fill();x.lineWidth=1.6;x.stroke();x.restore();
+   x.fillStyle=INK;x.font='italic 14px Fraunces, Georgia, serif';x.fillText('closed flower,',300,282);x.fillText('never opens',305,297);
+  }
+  // Damask rose
+  {const[c,x]=prep('c-rose');const W=c.width,H=c.height;x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,W,H);
+   const sk=skyAt(5.6);const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,sk[0]);g.addColorStop(1,sk[1]);x.fillStyle=g;x.fillRect(0,0,W,H);
+   x.lineJoin='round';x.lineCap='round';
+   // leaves
+   [[120,215,-.6],[285,220,.7]].forEach(([lx,ly,a])=>{x.save();x.translate(lx,ly);x.rotate(a+Math.PI);petalPath(x,'pointed',70,34);x.fillStyle='#4f8a44';x.fill();x.lineWidth=2;x.strokeStyle=INK;x.stroke();x.restore();});
+   x.save();x.translate(200,150);const r=rng(9);
+   for(let ring=4;ring>=0;ring--){const n=5+ring,R=22+ring*16;for(let k=0;k<n;k++){const a=k/n*TAU+ring*.5+r()*.2;x.save();x.rotate(a);petalPath(x,'round',R,R*.95);x.fillStyle=mix('#e57fa0','#b8385f',(4-ring)/5);x.fill();x.lineWidth=1.9;x.strokeStyle=INK;x.stroke();x.restore();}}
+   x.beginPath();for(let k=0;k<40;k++){const a=k*.42,rr=2+k*.42;x.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);}x.lineWidth=1.8;x.stroke();
+   x.restore();
+   // dew drops: early morning
+   [[150,110],[262,190],[228,92]].forEach(([dx,dy])=>{x.beginPath();x.arc(dx,dy,4,0,TAU);x.fillStyle='rgba(235,248,255,.9)';x.fill();x.lineWidth=1.2;x.strokeStyle=INK;x.stroke();});
+   x.fillStyle=INK;x.font='600 15px Inter, system-ui, sans-serif';x.fillText('picked at dawn',14,26);
+  }
+}
+
+// ---------------- loop ----------------
+let lastTS=0, lastLive=0;
+function render(light){drawDial();if(!light)updatePanel();}
+function frame(ts){
+  const dt=lastTS?Math.min(.1,(ts-lastTS)/1000):0; lastTS=ts;
+  let need=false, tchg=false;
+  if(state.playing){state.t=(state.t+dt*1.2)%24;need=tchg=true;}   // a day in about 20 s
+  else if(state.live&&ts-lastLive>15000){lastLive=ts;state.t=nowHours();need=tchg=true;}
+  if(!REDUCED){animClock+=dt;need=true;}
+  if(need){drawDial(); if(tchg) updatePanelThrottled(ts);}
+  requestAnimationFrame(frame);
+}
+let lastPanel=0;
+function updatePanelThrottled(ts){if(ts-lastPanel>120||!state.playing){lastPanel=ts;updatePanel();}}
+function init(){
+  buildDecor(); layout(); buildGantt();
+  // pick a sensible default selection: the flower that opened most recently
+  let best=0,bd=99;FL.forEach(f=>{const d=((state.t-f.o)+24)%24;if(isOpen(f,state.t)&&d<bd){bd=d;best=f.i;}});state.sel=best;
+  render(); requestAnimationFrame(frame);
+}
+window.addEventListener('resize',()=>{layout();render();});
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>render());
+init();
+</script>
+</body>
+</html>
